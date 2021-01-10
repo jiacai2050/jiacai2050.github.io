@@ -1,7 +1,7 @@
-#+TITLE: Rust China 大会回顾总结
+#+TITLE: Rust China 大会总结
 #+DATE: 2021-01-09T12:54:15+08:00
 #+TAGS[]: rust
-#+CATEGORIES[]:
+#+CATEGORIES[]: 编程语言
 
 2020 年 12 月 26/27 日，第一届 Rust China 大会在深圳隆重开幕，来自五湖四海的 Rustacean 相聚于此，畅聊使用 Rust 构建应用的心得与挑战。参会人员除了企业开发者、独立开发者外，还有来自高校的师生，演讲主题涵盖广泛。我有幸参与了这次大会，本文就来总结此次参会的经历，让更多的读者一起享受这次饕餮盛宴。
 
@@ -254,8 +254,10 @@ StratoVirt 代码量在 2 万行左右。
 #+end_src
 *** Rust 可信编程在华为
 该讲师从宏观角度谈了华为对 Rust 的探索，包括：代码自动生成、支持 AArch64 指令集，在 Rust 社区方面，起草相关编码规范，安全代码度量工具 [[https://github.com/rust-secure-code/cargo-geiger][geiger]] 等。
+
 #+CAPTION: 华为对 Rust 语言和技术的一些探索
 [[/images/2021-01-10_13-02-13_screenshot.jpg]]
+
 虽然这个演讲只有十几分钟，但是能感觉到华为对 Rust 的投入。此外华为还有下面两个演讲，这两个方向不是很了解，这里不再讲述。
 - 《Rust 和 ROS 机器人开发》
 - 《Rust 数值计算生态盘点》
