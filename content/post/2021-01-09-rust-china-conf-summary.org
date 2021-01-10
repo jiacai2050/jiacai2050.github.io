@@ -16,6 +16,24 @@
 
 ** 数据库系统
 数据库相关领域，通常是系统语言的“试金石”。目前业界主流使用 C/C++ 编写，既然 Rust 的目标是下一代的[[https://stackoverflow.blog/2020/01/20/what-is-rust-and-why-is-it-so-popular/][系统语言]]，数据库领域是其落地的最佳场景之一。本次大会有三个与数据库相关的演讲，下面来一一介绍
+*** 使用 Rust 构建高性能时序数据库 CeresDB
+from Ant Group (蚂蚁集团)
+
+这个演讲是我们组的，基于对「安全」、「高性能」的追求，选择了 Rust 来构建时序数据库，目前已在蚂蚁主站落地使用。本次演讲主要分享以下几点实践经验：
+1. 针对 LSM 类型存储引擎优化编码。 =timestamp+series_id= or =series_id+timesample=
+   #+attr_org: :width 600px
+   [[/images/2021-01-10_11-47-11_screenshot.jpg]]
+2. 查询时合并小请求，减少不必要的线程切换
+3. 充分利用内存。借鉴 Facebook Gorilla 实现内存时序数据库，并且支持毫秒精度与更新。
+
+在使用 Rust 的过程中，遇到过下面几个坑：
+
+1. 忽视 match 作用域，导致死锁，具体可参考：[[https://vojtechkral.github.io/blag/rust-drop-order/][Drop order in Rust: It's tricky]]
+2. match enum 时使用全匹配，导致业务逻辑变更时部分分支出现 bug
+3. 误认为 =None= 大小为 0
+
+我们在生产环境遇到过更复杂的问题，比如 Rayon 线程使用不当导致的 [[https://github.com/rayon-rs/rayon/issues/751][stackoverflow]]， 但碍于篇幅，就没在这次演讲中讲述，后面有机会再聊。这里建议读者在项目中开启 clippy 来保障代码质量。
+
 *** 高性能 Rust tracing 库设计
 提到 Rust，国内首先联想到的公司就是 PingCAP。除了贡献各种好用的库外，PingCAP 的 [[https://github.com/tikv/tikv][TiKV]] 证明了使用 Rust 开发大型数据库系统的可行性。根据 loc 统计，TiKV 代码量大概在二十多万行左右：
 
@@ -51,24 +69,6 @@
 [[/images/2021-01-09_16-49-07_screenshot.jpg]]
 
 关于 TiKV 更多的技术介绍，可以参考其[[https://pingcap.com/blog-cn/#TiKV][官方博客]]。
-*** 使用 Rust 构建高性能时序数据库 CeresDB
-from Ant Group (蚂蚁集团)
-
-这个演讲是我们组的，基于对「安全」、「高性能」的追求，选择了 Rust 来构建时序数据库，主要有以下几点实践经验：
-1. 针对 LSM 类型存储引擎优化编码。 =timestamp+series_id= or =series_id+timesample=
-   #+attr_org: :width 600px
-   [[/images/2021-01-10_11-47-11_screenshot.jpg]]
-2. 查询时合并小请求，减少不必要的线程切换
-3. 充分利用内存。借鉴 Facebook Gorilla 实现内存时序数据库，并且支持毫秒精度与更新。
-
-在使用 Rust 的过程中，遇到过下面几个坑：
-
-1. 忽视 match 作用域，导致死锁，具体可参考：[[https://vojtechkral.github.io/blag/rust-drop-order/][Drop order in Rust: It's tricky]]
-2. match enum 时使用全匹配，导致业务逻辑变更时部分分支出现 bug
-3. 误认为 =None= 大小为 0
-
-建议读者在项目中开启 clippy 检查来保障代码质量。
-
 *** 基于 Rust 构建高性能新型开源数据仓库 [[https://github.com/tensorbase/tensorbase][TensorBase]]
 from Jin Mingjian (金明剑)
 
@@ -81,7 +81,7 @@ TensorBase 是讲师个人项目，一个高性能、低成本的数据仓库。
 - Current OLAPs are far from taking use of the full capabilities of modern CPU
 - Speed of IO is on par with or faster than that of memory (in throughput)
 - In memory OLAP is economically cost prohibitive for massive data analysis
-在架构相关内容里，介绍的相关技术也是数据库领域中比较成熟的技术，比如 JIT 编译、查询改写（对于文稿中 Layered IR），不清楚 TensorBase 是如何做到比 ClickHouse 有四五倍的性能提升。GitHub 上开源版本的 loc 只有八千行，不像是完整代码，而且讲师也提到写入流程是用 Rust 实现，而查询部分是用 C++/Rust 混合实现的，C++ 的部分目前应该没有开源出来。
+在架构相关内容里，介绍的相关技术也是数据库领域中比较成熟的技术，比如 JIT 编译、查询改写（对应文稿中 Layered IR），不清楚 TensorBase 是如何做到比 ClickHouse 有四五倍的性能提升。GitHub 上开源版本的 loc 只有八千行，不像是完整代码，而且讲师也提到写入流程是用 Rust 实现，而查询部分是用 C++/Rust 混合实现的，C++ 的部分目前应该没有开源出来。
 
 #+attr_org: :width 600px
 [[/images/2021-01-09_22-32-21_screenshot.jpg]]
@@ -92,18 +92,18 @@ TensorBase 是讲师个人项目，一个高性能、低成本的数据仓库。
 - 生命周期使得编程更困难，代码更复杂。讲师这里推荐 =Always recommends: to dance with, rather than to evade= ，不清楚讲师是怎么 dance 的😂，个人感觉一但把 struct 内的一个成员改为引用，代码写起来就非常恶心，rust-analyzer 核心开发者的一篇博客 [[https://matklad.github.io//2018/05/04/encapsulating-lifetime-of-the-field.html][Encapsulating Lifetime of the Field]] 提出一个规避方法，但感觉也不是很理想。讲师这里提到 TensorBase 用了两种策略来规避生命周期的问题：
   1. Arena allocator: TensorBase IR
   2. Unsafe into C: TensorBase kernel algorithms in C
-- 缺少 happen-before 内存模型。[[https://doc.rust-lang.org/1.49.0/std/sync/mpsc/fn.channel.html][Channel]] 通过[[https://doc.rust-lang.org/book/ch16-02-message-passing.html][消息传递]]的方式来解决线程安全，对于高性能应用来说消息传递带来的拷贝代价太高，需要用 [[https://doc.rust-lang.org/book/ch16-03-shared-state.html][communicate by sharing memory]] 的方式来实现线程安全，目前 Rust 里面只能使用锁（Mutex），但锁的性能损耗比较高。Java 里面 [[https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/package-summary.html#MemoryVisibility][happen-before]] 的内存模型则可以避免加锁的问题。可参考：
+- 缺少清晰的[[https://doc.rust-lang.org/reference/memory-model.html][内存模型]]。[[https://doc.rust-lang.org/1.49.0/std/sync/mpsc/fn.channel.html][Channel]] 通过[[https://doc.rust-lang.org/book/ch16-02-message-passing.html][消息传递]]的方式来解决线程安全，对于高性能应用来说消息传递带来的拷贝代价太高，需要用 [[https://doc.rust-lang.org/book/ch16-03-shared-state.html][communicate by sharing memory]] 的方式来实现线程安全，目前 Rust 里面只能使用锁（Mutex），但锁的性能损耗比较高。Java 里面 [[https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/package-summary.html#MemoryVisibility][happen-before]] 的内存模型则可以避免加锁的问题。可参考：
   1. [[https://www.cs.umd.edu/~pugh/java/memoryModel/jsr-133-faq.html#volatile][[JSR 133 FAQ] What does volatile do?]]
   2. [[https://stackoverflow.com/questions/3519664/difference-between-volatile-and-synchronized-in-java][Difference between volatile and synchronized in Java]]
 通过上面的内容可以看出讲师有非常深厚的功力，后面会持续关注这个项目的发展，争取揭开 TensorBase 的神秘面纱。
 ** 操作系统/文件系统
 *** 用 Rust 实现用户态高性能存储
-[[https://github.com/datenlord/datenlord][DatenLord]] 是此次大会最为“硬”核的分享。DatenLord 和 TensorBase 的出发点类似，一开始都讲述了现代硬件性能已经越来越强劲，Linux 内核中的模块已经无法充分利用其性能的前提，直接在通过用户态编写存储来绕过内核。这里有必要贴一下 Google 大神 Jeff Dean 提出的 [[http://norvig.com/21-days.html#answers][Numbers Everyone Should Know]]，不过随着时间推移，这里面的数字可能已经不准确，因为有人制作了不同年份的[[https://colin-scott.github.io/personal_website/research/interactive_latency.html][可视化网站]]来展示：
+[[https://github.com/datenlord/datenlord][DatenLord]] 是此次大会最为“硬”核的分享。DatenLord 和 TensorBase 的出发点类似，一开始都讲述了现代硬件性能已经越来越强劲，Linux 内核中的模块已经无法充分利用硬件性能，通过在用户态编写存储来绕过内核。这里有必要贴一下 Google 大神 Jeff Dean 提出的 [[http://norvig.com/21-days.html#answers][Numbers Everyone Should Know]]，不过随着时间推移，这里面的数字可能已经不准确，因此有人制作了不同年份的[[https://colin-scott.github.io/personal_website/research/interactive_latency.html][可视化网站]]来展示：
 
-#+attr_org: :width 600px
+#+CAPTION: Numbers Everyone Should Know
 [[/images/2021-01-10_00-15-35_screenshot.jpg]]
 
-讲师这里也提到了使用 Rust 进行系统编程的体验，和上面的总结差不多：
+讲师这里也提到了使用 Rust 进行系统编程的体验，和上面 TensorBase 讲师的总结差不多：
 | 优点               | 缺点                       |
 |--------------------+----------------------------|
 | 强规约（类型安全） | 宏过于灵活                 |
@@ -177,7 +177,7 @@ from Parity Asia
 
 主要分享了 newtype/builder [[https://rust-unofficial.github.io/patterns/patterns/index.html][设计模式]]，然后对“宏”元编程进行了大笔墨介绍。对于接触过 Lisp 的我来说，宏是在熟悉不过的了。Rust 的宏相比 C/C++ 中简单的文本替换来说无疑是巨大进步，但是由于 Rust 语法不具备[[https://en.wikipedia.org/wiki/Homoiconicity][同像性（homoiconicity）]]，导致写宏的过程比较痛快，需要去区分 [[https://doc.rust-lang.org/1.49.0/reference/macros-by-example.html#metavariables][ident/item/block]] 等语法单元，对于简单的宏还好，对于稍微复杂一点 DSL，就没有可读性了。
 
-印象中本次大会还有四五个演讲也提到了宏的便利性，但希望读者能意识到宏带来的 **调试复杂性** ，慎重使用。这里分享一个创建 map 的宏（与 vec 类似）：
+印象中本次大会还有四五个演讲也提到了宏的便利性，但希望读者能意识到宏带来的 *调试复杂性* ，慎重使用。这里顺便分享一个我用的比较多的宏：
   #+begin_src rust
 #[macro_export]
 macro_rules! map(
@@ -199,10 +199,11 @@ from Solana
 
 BPF 是新一代的程序诊断工具，相当于在 Linux 内核中嵌入了一个锚点，可以执行用户编写的脚本程序，最初用来捕获数据包，后来功能逐渐增加，诞生了像 [[https://github.com/iovisor/bcc][BCC]] 这样的开发套件简化 BPF 的编写。
 
-  来自 Solana 的工程师分享了如何在其区块链上嵌入使用 Rust 编写的 BPF 虚拟机来支持智能合约（如果把区块链比做数据库，那么智能合约大概相当于 UDF）。根据需求，在社区开源版本的基础上，做了下面几个修改：
+  来自 Solana 的工程师分享了如何在其区块链上嵌入使用 Rust 编写的 BPF 虚拟机来支持智能合约（如果把区块链比做数据库，那么智能合约大概相当于 UDF）。Solana 在社区开源版本的基础上，做了下面几个修改：
   - 分叉 [[https://github.com/solana-labs/llvm-project][LLVM]] 改变 BPF 后端，主要包括：栈帧大小、函数参数数目、跨函数访问栈帧
   - 分叉 [[https://github.com/solana-labs/rust][rustc]]，增加 BPF 目标，定制标准库
 
+之前没接触过 BPF，后面会抽时间看看如何用它来定位线上问题。
 与区块链相关的其他演讲还有下面几个，这里不做讲述，感兴趣读者可自行阅读。
 - 《Rust, RISC-V 和智能合约》from 秘猿科技
 - 《经验教训-使用 Rust 构建去中心关键任务系统》from Near & Cdot
@@ -224,16 +225,17 @@ BPF 是新一代的程序诊断工具，相当于在 Linux 内核中嵌入了一
 StratoVirt 是一个面向面向云数据中心的企业级虚拟化平台，实现了一套架构，支持虚拟机、容器、Serverless三种场景。
 一些 Rust 工程经验：
 - 单线程 epoll 处理 IO：降低内存开销
-- 使用 error_chain 处理错误，代码优雅。PS：这是唯一一个说 Rust 错误处理优雅的 😂
+- 使用 error_chain 处理错误，代码优雅。（PS：印象中这是大会唯一一个说 Rust 错误处理优雅的 😂）
 
 缺点和其他讲师差别不多，集中在 Unsafe/锁的使用与性能上，此外还提到了[[https://gitee.com/openeuler/community/issues/I27O6U][热补丁技术]]，对于企业级虚拟化平台来说，能够在线打补丁是非常重要的。
-讲师这里还提到 Rust 语言的一个不足，即 trait object 不能组合，即 =Box<Write + Read>= 是不允许的，与此相关的问题还有：subtrait 不能转为 trait 类型。
 
-这两个问题其实是一致的，与 Rust trait object 实现机制有关，更准确的说是 vtable 的实现，这个话题比较复杂，这里不展开讨论，感兴趣的读者可阅读下面的链接：
+讲师还提到 Rust 语言的一个不足，即 trait object 不能组合，即 =Box<Write + Read>= 是不允许的，与此相关的问题还有：subtrait 不能转为 trait 类型。
+
+这两个问题其实是一致的，与 trait object 实现机制有关，更准确的说是 vtable 的实现，这个话题比较复杂，这里不展开讨论，感兴趣的读者可阅读下面的链接：
 - [[https://github.com/rust-lang/rfcs/issues/2035][Trait objects for multiple traits #2035]]
 - [[https://github.com/rust-lang/rfcs/issues/2765][Objects should be upcastable to supertraits #2765]]
 
-目前的解法
+目前这两个问题的解法如下：
 - 对于不能组合的问题，可以通过定义另外一个 trait object 来解决
 - 对于不能转化的问题，通过定义个 AsTrait 来解决，可参考[[https://stackoverflow.com/questions/28632968/why-doesnt-rust-support-trait-object-upcasting/28664881#28664881][这里]]。
 
