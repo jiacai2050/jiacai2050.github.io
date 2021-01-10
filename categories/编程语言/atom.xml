@@ -6,7 +6,16 @@
     <description>Recent content in 编程语言 on Keep Coding</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>zh-cn</language>
-    <lastBuildDate>Sat, 08 Aug 2020 00:00:00 +0000</lastBuildDate><atom:link href="https://liujiacai.net/categories/%E7%BC%96%E7%A8%8B%E8%AF%AD%E8%A8%80/atom.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Sat, 09 Jan 2021 00:00:00 +0000</lastBuildDate><atom:link href="https://liujiacai.net/categories/%E7%BC%96%E7%A8%8B%E8%AF%AD%E8%A8%80/atom.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Rust China 大会总结</title>
+      <link>https://liujiacai.net/blog/2021/01/09/rust-china-conf-summary/</link>
+      <pubDate>Sat, 09 Jan 2021 00:00:00 +0000</pubDate>
+      
+      <guid>https://liujiacai.net/blog/2021/01/09/rust-china-conf-summary/</guid>
+      <description>2020 年 12 月 26/27 日，第一届 Rust China 大会在深圳隆重开幕，来自五湖四海的 Rustacean 相聚于此，畅聊使用 Rust 构建应用的心得与挑战。参会人员除了企业开发者、独立开发者外，</description>
+    </item>
+    
     <item>
       <title>实践总结：在 Java 中调用 Go 代码</title>
       <link>https://liujiacai.net/blog/2020/08/08/go-meet-java/</link>
