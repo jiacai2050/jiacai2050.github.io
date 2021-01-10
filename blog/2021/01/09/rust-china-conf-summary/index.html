@@ -45,12 +45,12 @@
 <meta property="og:type" content="article" />
 <meta property="og:url" content="https://liujiacai.net/blog/2021/01/09/rust-china-conf-summary/" />
 <meta property="article:published_time" content="2021-01-09T12:54:15+08:00" />
-<meta property="article:modified_time" content="2021-01-10T13:58:43+08:00" />
+<meta property="article:modified_time" content="2021-01-10T21:21:45+08:00" />
 <meta itemprop="name" content="Rust China 大会总结">
 <meta itemprop="description" content="2020 年 12 月 26/27 日，第一届 Rust China 大会在深圳隆重开幕，来自五湖四海的 Rustacean 相聚于此，畅聊使用 Rust 构建应用的心得与挑战。参会人员除了企业开发者、独立开发者外，">
 <meta itemprop="datePublished" content="2021-01-09T12:54:15+08:00" />
-<meta itemprop="dateModified" content="2021-01-10T13:58:43+08:00" />
-<meta itemprop="wordCount" content="5514">
+<meta itemprop="dateModified" content="2021-01-10T21:21:45+08:00" />
+<meta itemprop="wordCount" content="5647">
 
 
 
@@ -139,7 +139,7 @@
         <div class="post-category">
             <a href="/categories/%E7%BC%96%E7%A8%8B%E8%AF%AD%E8%A8%80/"> 编程语言 </a>
             </div>
-          <span class="more-meta"> 约 5514 字 </span>
+          <span class="more-meta"> 约 5647 字 </span>
           <span class="more-meta"> 预计阅读 12 分钟 </span>
         
       </div>
@@ -154,9 +154,9 @@
 <ul>
 <li><a href="#headline-2">数据库系统</a>
 <ul>
-<li><a href="#headline-3">高性能 Rust tracing 库设计</a>
+<li><a href="#headline-3">使用 Rust 构建高性能时序数据库 CeresDB</a>
 </li>
-<li><a href="#headline-4">使用 Rust 构建高性能时序数据库 CeresDB</a>
+<li><a href="#headline-4">高性能 Rust tracing 库设计</a>
 </li>
 <li><a href="#headline-5">基于 Rust 构建高性能新型开源数据仓库 TensorBase</a>
 </li>
@@ -232,9 +232,44 @@
 <p>数据库相关领域，通常是系统语言的“试金石”。目前业界主流使用 C/C++ 编写，既然 Rust 的目标是下一代的<a href="https://stackoverflow.blog/2020/01/20/what-is-rust-and-why-is-it-so-popular/">系统语言</a>，数据库领域是其落地的最佳场景之一。本次大会有三个与数据库相关的演讲，下面来一一介绍</p>
 <div id="outline-container-headline-3" class="outline-4">
 <h4 id="headline-3">
-高性能 Rust tracing 库设计
+使用 Rust 构建高性能时序数据库 CeresDB
 </h4>
 <div id="outline-text-headline-3" class="outline-text-4">
+<p>from Ant Group (蚂蚁集团)</p>
+<p>
+这个演讲是我们组的，基于对「安全」、「高性能」的追求，选择了 Rust 来构建时序数据库，目前已在蚂蚁主站落地使用。本次演讲主要分享以下几点实践经验：</p>
+<ol>
+<li>
+<p>针对 LSM 类型存储引擎优化编码。 <code class="verbatim">timestamp+series_id</code> or <code class="verbatim">series_id+timesample</code></p>
+<p><img src="/images/2021-01-10_11-47-11_screenshot.jpg" alt="/images/2021-01-10_11-47-11_screenshot.jpg" title="/images/2021-01-10_11-47-11_screenshot.jpg" /></p>
+</li>
+<li>
+<p>查询时合并小请求，减少不必要的线程切换</p>
+</li>
+<li>
+<p>充分利用内存。借鉴 Facebook Gorilla 实现内存时序数据库，并且支持毫秒精度与更新。</p>
+</li>
+</ol>
+<p>在使用 Rust 的过程中，遇到过下面几个坑：</p>
+<ol>
+<li>
+<p>忽视 match 作用域，导致死锁，具体可参考：<a href="https://vojtechkral.github.io/blag/rust-drop-order/">Drop order in Rust: It&#39;s tricky</a></p>
+</li>
+<li>
+<p>match enum 时使用全匹配，导致业务逻辑变更时部分分支出现 bug</p>
+</li>
+<li>
+<p>误认为 <code class="verbatim">None</code> 大小为 0</p>
+</li>
+</ol>
+<p>我们在生产环境遇到过更复杂的问题，比如 Rayon 线程使用不当导致的 <a href="https://github.com/rayon-rs/rayon/issues/751">stackoverflow</a>， 但碍于篇幅，就没在这次演讲中讲述，后面有机会再聊。这里建议读者在项目中开启 clippy 来保障代码质量。</p>
+</div>
+</div>
+<div id="outline-container-headline-4" class="outline-4">
+<h4 id="headline-4">
+高性能 Rust tracing 库设计
+</h4>
+<div id="outline-text-headline-4" class="outline-text-4">
 <p>提到 Rust，国内首先联想到的公司就是 PingCAP。除了贡献各种好用的库外，PingCAP 的 <a href="https://github.com/tikv/tikv">TiKV</a> 证明了使用 Rust 开发大型数据库系统的可行性。根据 loc 统计，TiKV 代码量大概在二十多万行左右：</p>
 <div class="src src-text">
 <div class="highlight"><div class="chroma">
@@ -302,41 +337,6 @@ minitrace 采用 local + batch 方式收集
 关于 TiKV 更多的技术介绍，可以参考其<a href="https://pingcap.com/blog-cn/#TiKV">官方博客</a>。</p>
 </div>
 </div>
-<div id="outline-container-headline-4" class="outline-4">
-<h4 id="headline-4">
-使用 Rust 构建高性能时序数据库 CeresDB
-</h4>
-<div id="outline-text-headline-4" class="outline-text-4">
-<p>from Ant Group (蚂蚁集团)</p>
-<p>
-这个演讲是我们组的，基于对「安全」、「高性能」的追求，选择了 Rust 来构建时序数据库，主要有以下几点实践经验：</p>
-<ol>
-<li>
-<p>针对 LSM 类型存储引擎优化编码。 <code class="verbatim">timestamp+series_id</code> or <code class="verbatim">series_id+timesample</code></p>
-<p><img src="/images/2021-01-10_11-47-11_screenshot.jpg" alt="/images/2021-01-10_11-47-11_screenshot.jpg" title="/images/2021-01-10_11-47-11_screenshot.jpg" /></p>
-</li>
-<li>
-<p>查询时合并小请求，减少不必要的线程切换</p>
-</li>
-<li>
-<p>充分利用内存。借鉴 Facebook Gorilla 实现内存时序数据库，并且支持毫秒精度与更新。</p>
-</li>
-</ol>
-<p>在使用 Rust 的过程中，遇到过下面几个坑：</p>
-<ol>
-<li>
-<p>忽视 match 作用域，导致死锁，具体可参考：<a href="https://vojtechkral.github.io/blag/rust-drop-order/">Drop order in Rust: It&#39;s tricky</a></p>
-</li>
-<li>
-<p>match enum 时使用全匹配，导致业务逻辑变更时部分分支出现 bug</p>
-</li>
-<li>
-<p>误认为 <code class="verbatim">None</code> 大小为 0</p>
-</li>
-</ol>
-<p>建议读者在项目中开启 clippy 检查来保障代码质量。</p>
-</div>
-</div>
 <div id="outline-container-headline-5" class="outline-4">
 <h4 id="headline-5">
 基于 Rust 构建高性能新型开源数据仓库 <a href="https://github.com/tensorbase/tensorbase">TensorBase</a>
@@ -367,7 +367,7 @@ TensorBase 是讲师个人项目，一个高性能、低成本的数据仓库。
 <p>In memory OLAP is economically cost prohibitive for massive data analysis</p>
 </li>
 </ul>
-<p>在架构相关内容里，介绍的相关技术也是数据库领域中比较成熟的技术，比如 JIT 编译、查询改写（对于文稿中 Layered IR），不清楚 TensorBase 是如何做到比 ClickHouse 有四五倍的性能提升。GitHub 上开源版本的 loc 只有八千行，不像是完整代码，而且讲师也提到写入流程是用 Rust 实现，而查询部分是用 C++/Rust 混合实现的，C++ 的部分目前应该没有开源出来。</p>
+<p>在架构相关内容里，介绍的相关技术也是数据库领域中比较成熟的技术，比如 JIT 编译、查询改写（对应文稿中 Layered IR），不清楚 TensorBase 是如何做到比 ClickHouse 有四五倍的性能提升。GitHub 上开源版本的 loc 只有八千行，不像是完整代码，而且讲师也提到写入流程是用 Rust 实现，而查询部分是用 C++/Rust 混合实现的，C++ 的部分目前应该没有开源出来。</p>
 <p><img src="/images/2021-01-09_22-32-21_screenshot.jpg" alt="/images/2021-01-09_22-32-21_screenshot.jpg" title="/images/2021-01-09_22-32-21_screenshot.jpg" /></p>
 <p>
 最后讲师介绍了 Engineering Rust 的一些经验，总的来看，Rust 作为底层的系统语言，提供了很多高级语言具备的功能，比如 cargo 包管理、过程宏定义 DSL、零成本与 C 交互、禁止类型隐式转化，但 Rust 作为一门年轻的语言，也存在一些工程化的问题，主要有：</p>
@@ -390,7 +390,7 @@ TensorBase 是讲师个人项目，一个高性能、低成本的数据仓库。
 </ol>
 </li>
 <li>
-<p>缺少 happen-before 内存模型。<a href="https://doc.rust-lang.org/1.49.0/std/sync/mpsc/fn.channel.html">Channel</a> 通过<a href="https://doc.rust-lang.org/book/ch16-02-message-passing.html">消息传递</a>的方式来解决线程安全，对于高性能应用来说消息传递带来的拷贝代价太高，需要用 <a href="https://doc.rust-lang.org/book/ch16-03-shared-state.html">communicate by sharing memory</a> 的方式来实现线程安全，目前 Rust 里面只能使用锁（Mutex），但锁的性能损耗比较高。Java 里面 <a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/package-summary.html#MemoryVisibility">happen-before</a> 的内存模型则可以避免加锁的问题。可参考：</p>
+<p>缺少清晰的<a href="https://doc.rust-lang.org/reference/memory-model.html">内存模型</a>。<a href="https://doc.rust-lang.org/1.49.0/std/sync/mpsc/fn.channel.html">Channel</a> 通过<a href="https://doc.rust-lang.org/book/ch16-02-message-passing.html">消息传递</a>的方式来解决线程安全，对于高性能应用来说消息传递带来的拷贝代价太高，需要用 <a href="https://doc.rust-lang.org/book/ch16-03-shared-state.html">communicate by sharing memory</a> 的方式来实现线程安全，目前 Rust 里面只能使用锁（Mutex），但锁的性能损耗比较高。Java 里面 <a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/package-summary.html#MemoryVisibility">happen-before</a> 的内存模型则可以避免加锁的问题。可参考：</p>
 <ol>
 <li>
 <p><a href="https://www.cs.umd.edu/~pugh/java/memoryModel/jsr-133-faq.html#volatile">[JSR 133 FAQ] What does volatile do?</a></p>
@@ -416,10 +416,14 @@ TensorBase 是讲师个人项目，一个高性能、低成本的数据仓库。
 用 Rust 实现用户态高性能存储
 </h4>
 <div id="outline-text-headline-7" class="outline-text-4">
-<p><a href="https://github.com/datenlord/datenlord">DatenLord</a> 是此次大会最为“硬”核的分享。DatenLord 和 TensorBase 的出发点类似，一开始都讲述了现代硬件性能已经越来越强劲，Linux 内核中的模块已经无法充分利用其性能的前提，直接在通过用户态编写存储来绕过内核。这里有必要贴一下 Google 大神 Jeff Dean 提出的 <a href="http://norvig.com/21-days.html#answers">Numbers Everyone Should Know</a>，不过随着时间推移，这里面的数字可能已经不准确，因为有人制作了不同年份的<a href="https://colin-scott.github.io/personal_website/research/interactive_latency.html">可视化网站</a>来展示：</p>
-<p><img src="/images/2021-01-10_00-15-35_screenshot.jpg" alt="/images/2021-01-10_00-15-35_screenshot.jpg" title="/images/2021-01-10_00-15-35_screenshot.jpg" /></p>
+<p><a href="https://github.com/datenlord/datenlord">DatenLord</a> 是此次大会最为“硬”核的分享。DatenLord 和 TensorBase 的出发点类似，一开始都讲述了现代硬件性能已经越来越强劲，Linux 内核中的模块已经无法充分利用硬件性能，通过在用户态编写存储来绕过内核。这里有必要贴一下 Google 大神 Jeff Dean 提出的 <a href="http://norvig.com/21-days.html#answers">Numbers Everyone Should Know</a>，不过随着时间推移，这里面的数字可能已经不准确，因此有人制作了不同年份的<a href="https://colin-scott.github.io/personal_website/research/interactive_latency.html">可视化网站</a>来展示：</p>
+<figure>
+<img src="/images/2021-01-10_00-15-35_screenshot.jpg" alt="/images/2021-01-10_00-15-35_screenshot.jpg" title="/images/2021-01-10_00-15-35_screenshot.jpg" /><figcaption>
+Numbers Everyone Should Know
+</figcaption>
+</figure>
 <p>
-讲师这里也提到了使用 Rust 进行系统编程的体验，和上面的总结差不多：</p>
+讲师这里也提到了使用 Rust 进行系统编程的体验，和上面 TensorBase 讲师的总结差不多：</p>
 <table>
 <thead>
 <tr>
@@ -570,7 +574,7 @@ Substrate 中的 Rust 设计模式
 <p>
 主要分享了 newtype/builder <a href="https://rust-unofficial.github.io/patterns/patterns/index.html">设计模式</a>，然后对“宏”元编程进行了大笔墨介绍。对于接触过 Lisp 的我来说，宏是在熟悉不过的了。Rust 的宏相比 C/C++ 中简单的文本替换来说无疑是巨大进步，但是由于 Rust 语法不具备<a href="https://en.wikipedia.org/wiki/Homoiconicity">同像性（homoiconicity）</a>，导致写宏的过程比较痛快，需要去区分 <a href="https://doc.rust-lang.org/1.49.0/reference/macros-by-example.html#metavariables">ident/item/block</a> 等语法单元，对于简单的宏还好，对于稍微复杂一点 DSL，就没有可读性了。</p>
 <p>
-印象中本次大会还有四五个演讲也提到了宏的便利性，但希望读者能意识到宏带来的 <strong><strong>调试复杂性</strong></strong> ，慎重使用。这里分享一个创建 map 的宏（与 vec 类似）：</p>
+印象中本次大会还有四五个演讲也提到了宏的便利性，但希望读者能意识到宏带来的 <strong>调试复杂性</strong> ，慎重使用。这里顺便分享一个我用的比较多的宏：</p>
 <div class="src src-rust">
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
@@ -619,7 +623,7 @@ Rust 和 BPF
 <p>
 BPF 是新一代的程序诊断工具，相当于在 Linux 内核中嵌入了一个锚点，可以执行用户编写的脚本程序，最初用来捕获数据包，后来功能逐渐增加，诞生了像 <a href="https://github.com/iovisor/bcc">BCC</a> 这样的开发套件简化 BPF 的编写。</p>
 <p>
-  来自 Solana 的工程师分享了如何在其区块链上嵌入使用 Rust 编写的 BPF 虚拟机来支持智能合约（如果把区块链比做数据库，那么智能合约大概相当于 UDF）。根据需求，在社区开源版本的基础上，做了下面几个修改：</p>
+  来自 Solana 的工程师分享了如何在其区块链上嵌入使用 Rust 编写的 BPF 虚拟机来支持智能合约（如果把区块链比做数据库，那么智能合约大概相当于 UDF）。Solana 在社区开源版本的基础上，做了下面几个修改：</p>
 <ul>
 <li>
 <p>分叉 <a href="https://github.com/solana-labs/llvm-project">LLVM</a> 改变 BPF 后端，主要包括：栈帧大小、函数参数数目、跨函数访问栈帧</p>
@@ -628,7 +632,8 @@ BPF 是新一代的程序诊断工具，相当于在 Linux 内核中嵌入了一
 <p>分叉 <a href="https://github.com/solana-labs/rust">rustc</a>，增加 BPF 目标，定制标准库</p>
 </li>
 </ul>
-<p>与区块链相关的其他演讲还有下面几个，这里不做讲述，感兴趣读者可自行阅读。</p>
+<p>之前没接触过 BPF，后面会抽时间看看如何用它来定位线上问题。
+与区块链相关的其他演讲还有下面几个，这里不做讲述，感兴趣读者可自行阅读。</p>
 <ul>
 <li>
 <p>《Rust, RISC-V 和智能合约》from 秘猿科技</p>
@@ -688,13 +693,14 @@ WASM
 <p>单线程 epoll 处理 IO：降低内存开销</p>
 </li>
 <li>
-<p>使用 error_chain 处理错误，代码优雅。PS：这是唯一一个说 Rust 错误处理优雅的 😂</p>
+<p>使用 error_chain 处理错误，代码优雅。（PS：印象中这是大会唯一一个说 Rust 错误处理优雅的 😂）</p>
 </li>
 </ul>
-<p>缺点和其他讲师差别不多，集中在 Unsafe/锁的使用与性能上，此外还提到了<a href="https://gitee.com/openeuler/community/issues/I27O6U">热补丁技术</a>，对于企业级虚拟化平台来说，能够在线打补丁是非常重要的。
-讲师这里还提到 Rust 语言的一个不足，即 trait object 不能组合，即 <code class="verbatim">Box&lt;Write + Read&gt;</code> 是不允许的，与此相关的问题还有：subtrait 不能转为 trait 类型。</p>
+<p>缺点和其他讲师差别不多，集中在 Unsafe/锁的使用与性能上，此外还提到了<a href="https://gitee.com/openeuler/community/issues/I27O6U">热补丁技术</a>，对于企业级虚拟化平台来说，能够在线打补丁是非常重要的。</p>
 <p>
-这两个问题其实是一致的，与 Rust trait object 实现机制有关，更准确的说是 vtable 的实现，这个话题比较复杂，这里不展开讨论，感兴趣的读者可阅读下面的链接：</p>
+讲师还提到 Rust 语言的一个不足，即 trait object 不能组合，即 <code class="verbatim">Box&lt;Write + Read&gt;</code> 是不允许的，与此相关的问题还有：subtrait 不能转为 trait 类型。</p>
+<p>
+这两个问题其实是一致的，与 trait object 实现机制有关，更准确的说是 vtable 的实现，这个话题比较复杂，这里不展开讨论，感兴趣的读者可阅读下面的链接：</p>
 <ul>
 <li>
 <p><a href="https://github.com/rust-lang/rfcs/issues/2035">Trait objects for multiple traits #2035</a></p>
@@ -703,7 +709,7 @@ WASM
 <p><a href="https://github.com/rust-lang/rfcs/issues/2765">Objects should be upcastable to supertraits #2765</a></p>
 </li>
 </ul>
-<p>目前的解法</p>
+<p>目前这两个问题的解法如下：</p>
 <ul>
 <li>
 <p>对于不能组合的问题，可以通过定义另外一个 trait object 来解决</p>
@@ -893,7 +899,7 @@ Rust 可信编程在华为
     <span class="item-title">上次更新</span>
     <span class="item-content">
         2021-01-10
-        <a href="https://github.com/jiacai2050/jiacai2050.github.io/commit/4b0ade27ff0c310a2cc3a4402d7b6575d85cbc04" title="add category">(4b0ade2)</a>
+        <a href="https://github.com/jiacai2050/jiacai2050.github.io/commit/a85024f557d7f06ed82ca604e39a73ec95e8f731" title="typo">(a85024f)</a>
     </span>
   </p>
   
