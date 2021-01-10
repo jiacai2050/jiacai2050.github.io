@@ -2,6 +2,41 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   
   <url>
+    <loc>https://liujiacai.net/</loc>
+    <lastmod>2021-01-10T13:53:24+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://liujiacai.net/post/</loc>
+    <lastmod>2021-01-10T13:53:24+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://liujiacai.net/tags/rust/</loc>
+    <lastmod>2021-01-10T13:53:24+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://liujiacai.net/blog/2021/01/09/rust-china-conf-summary/</loc>
+    <lastmod>2021-01-10T13:53:24+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://liujiacai.net/tags/</loc>
+    <lastmod>2021-01-10T13:53:24+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
     <loc>https://liujiacai.net/tags/blog/</loc>
     <lastmod>2020-12-09T22:41:50+08:00</lastmod>
     <changefreq>weekly</changefreq>
@@ -17,27 +52,6 @@
   
   <url>
     <loc>https://liujiacai.net/tags/emacs/</loc>
-    <lastmod>2020-12-09T22:41:50+08:00</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  
-  <url>
-    <loc>https://liujiacai.net/</loc>
-    <lastmod>2020-12-09T22:41:50+08:00</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  
-  <url>
-    <loc>https://liujiacai.net/post/</loc>
-    <lastmod>2020-12-09T22:41:50+08:00</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  
-  <url>
-    <loc>https://liujiacai.net/tags/</loc>
     <lastmod>2020-12-09T22:41:50+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
