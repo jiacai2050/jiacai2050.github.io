@@ -145,22 +145,21 @@ The Zircon kernel is built using a restricted set of technologies that have esta
 
 2020 年，清华的师生开始研究 Zircon，在 rCore 的基础上开发 [[https://github.com/rcore-os/zCore][zCore]]，兼容 Zircon。没想到清华的教学这么先进！给清华的师生点赞👍
 
-在 [[https://fuchsia.googlesource.com/fuchsia/][Fuchsia]] 中，Rust 的 loc 达到两百万，可见 Rust 在 Fuchsia 中被重度使用，那 [[https://lwn.net/Articles/829858/][Linux 支持 Rust]] 还远嘛？
+在 [[https://fuchsia.googlesource.com/fuchsia/][Fuchsia]] 中，Rust 的 loc 有近一百万行（除去 third_party），可见 Rust 在 Fuchsia 中被重度使用，那 [[https://lwn.net/Articles/829858/][Linux 支持 Rust]] 还远嘛？
 #+begin_src
 --------------------------------------------------------------------------------
  Language             Files        Lines        Blank      Comment         Code
 --------------------------------------------------------------------------------
- Rust                  9581      2871035       274625       451417      2144993
- C++                   8288      1894913       302681       174482      1417750
- C/C++ Header          6940       843845       141523       186451       515871
- C                     1740       373956        51463        54478       268015
- Markdown              2250       239850        62565            0       177285
- Go                     967       184602        21912        17231       145459
- Assembly               237       151035        15983         5621       129431
- Plain Text             310       131606        15886            0       115720
+ C++                   8042      1816064       290815       165840      1359409
+ Rust                  3570      1148496       107910       115386       925200
+ C/C++ Header          6133       669094       120848       145137       403109
+ Go                     960       181372        21636        16925       142811
+ Markdown              1553       163623        42306            0       121317
+ C                      402       103873        15068        13679        75126
+ Dart                   355        45281         5737         6346        33198
 .....省略其他统计...
 --------------------------------------------------------------------------------
- Total                33694      7037849       923999       942500      5171350
+ Total                22850      4305722       624242       487881      3193599
 --------------------------------------------------------------------------------
 #+end_src
 ** 区块链
@@ -300,5 +299,6 @@ Rust，[[https://gitlab.com/carols10cents/rust-next-40-years][未来可期]]！
 #+end_quote
 
 * 参考
-- https://www.freecodecamp.org/news/must-know-numbers-for-every-computer-engineer/
-- https://stackoverflow.blog/2020/01/20/what-is-rust-and-why-is-it-so-popular/
+- [[https://www.freecodecamp.org/news/must-know-numbers-for-every-computer-engineer/][These are the numbers every computer engineer should know]]
+- [[https://stackoverflow.blog/2020/01/20/what-is-rust-and-why-is-it-so-popular/][What is Rust and why is it so popular?]]
+- [[https://www.reddit.com/r/rust/comments/k9r3s4/fuchsia_lines_of_code_over_last_two_years_c_c_rust/][Fuchsia lines of code over last two years (C, C++, Rust)]]
