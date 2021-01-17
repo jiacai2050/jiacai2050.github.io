@@ -45,12 +45,12 @@
 <meta property="og:type" content="article" />
 <meta property="og:url" content="https://liujiacai.net/blog/2021/01/09/rust-china-conf-summary/" />
 <meta property="article:published_time" content="2021-01-09T12:54:15+08:00" />
-<meta property="article:modified_time" content="2021-01-10T21:21:45+08:00" />
+<meta property="article:modified_time" content="2021-01-17T11:40:18+08:00" />
 <meta itemprop="name" content="Rust China 大会总结">
 <meta itemprop="description" content="2020 年 12 月 26/27 日，第一届 Rust China 大会在深圳隆重开幕，来自五湖四海的 Rustacean 相聚于此，畅聊使用 Rust 构建应用的心得与挑战。参会人员除了企业开发者、独立开发者外，">
 <meta itemprop="datePublished" content="2021-01-09T12:54:15+08:00" />
-<meta itemprop="dateModified" content="2021-01-10T21:21:45+08:00" />
-<meta itemprop="wordCount" content="5647">
+<meta itemprop="dateModified" content="2021-01-17T11:40:18+08:00" />
+<meta itemprop="wordCount" content="5685">
 
 
 
@@ -139,7 +139,7 @@
         <div class="post-category">
             <a href="/categories/%E7%BC%96%E7%A8%8B%E8%AF%AD%E8%A8%80/"> 编程语言 </a>
             </div>
-          <span class="more-meta"> 约 5647 字 </span>
+          <span class="more-meta"> 约 5685 字 </span>
           <span class="more-meta"> 预计阅读 12 分钟 </span>
         
       </div>
@@ -207,21 +207,13 @@
 <p>
 2020 年 12 月 26/27 日，第一届 Rust China 大会在深圳隆重开幕，来自五湖四海的 Rustacean 相聚于此，畅聊使用 Rust 构建应用的心得与挑战。参会人员除了企业开发者、独立开发者外，还有来自高校的师生，演讲主题涵盖广泛。我有幸参与了这次大会，本文就来总结此次参会的经历，让更多的读者一起享受这次饕餮盛宴。</p>
 <p>
-注：</p>
-<ol>
-<li>
-<p>由于作者水平有限，文中难免存在一些不足和错误之处，诚请各位批评指正</p>
-</li>
-<li>
-<p>此次大会的演讲文稿/视频均可在<a href="https://2020conf.rustcc.cn/schedule.html">官方网站</a>查阅</p>
-</li>
-</ol>
+同时，也希望通过本文，激发读者学习 Rust 的兴趣，毕竟 Rust 是近几年最受程序员<a href="https://stackoverflow.blog/2020/06/05/why-the-developers-who-use-rust-love-it-so-much/">喜爱的语言</a>。</p>
 <div id="outline-container-headline-1" class="outline-2">
 <h2 id="headline-1">
 演讲归纳
 </h2>
 <div id="outline-text-headline-1" class="outline-text-2">
-<p>此次大会议程两天，共有 36 个演讲，基本上 30 分钟一个，内容非常多，想在一篇文章里涵盖全部演讲会显得有些臃肿，而且更重要的是，很多领域对我来说也比较陌生，因此这里会对演讲进行分类，重点聊聊对我感兴趣的几个演讲，读者可以根据喜好自行学习。</p>
+<p>此次大会议程两天，共有 36 个演讲，基本上 30 分钟一个，内容非常多，想在一篇文章里涵盖全部演讲会显得有些臃肿，而且更重要的是，很多领域对我来说也比较陌生，因此这里会对演讲进行分类，重点聊聊对我感兴趣的几个演讲。读者可以根据喜好自行学习，所有的演讲文稿/视频均可在<a href="https://2020conf.rustcc.cn/schedule.html">官方网站</a>查阅。</p>
 <p>
 其次，对于本次大会接触的几个开源项目，使用 <a href="https://github.com/cgag/loc">loc</a> 进行代码量统计（截止 2020/12/29 主干分支的提交）。尽管代码量的意义非常局限，但代码量可以对陌生项目有直观印象，而且对于 Rust 这个新生代的编程语言来说，也需要在构建大型系统中去“提炼“自身，到底谁会是 Rust 的杀手锏应用（killer app），让我们拭目以待。</p>
 <div id="outline-container-headline-2" class="outline-3">
@@ -509,7 +501,7 @@ Google 在 16 年推出的 Fuchsia 操作系统，其内核 <a href="https://fuc
 <p>
 2020 年，清华的师生开始研究 Zircon，在 rCore 的基础上开发 <a href="https://github.com/rcore-os/zCore">zCore</a>，兼容 Zircon。没想到清华的教学这么先进！给清华的师生点赞👍</p>
 <p>
-在 <a href="https://fuchsia.googlesource.com/fuchsia/">Fuchsia</a> 中，Rust 的 loc 达到两百万，可见 Rust 在 Fuchsia 中被重度使用，那 <a href="https://lwn.net/Articles/829858/">Linux 支持 Rust</a> 还远嘛？</p>
+在 <a href="https://fuchsia.googlesource.com/fuchsia/">Fuchsia</a> 中，Rust 的 loc 有近一百万行（除去 third_party），可见 Rust 在 Fuchsia 中被重度使用，那 <a href="https://lwn.net/Articles/829858/">Linux 支持 Rust</a> 还远嘛？</p>
 <div class="src src-text">
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
@@ -527,23 +519,21 @@ Google 在 16 年推出的 Fuchsia 操作系统，其内核 <a href="https://fuc
 </span><span class="lnt">12
 </span><span class="lnt">13
 </span><span class="lnt">14
-</span><span class="lnt">15
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-text" data-lang="text">--------------------------------------------------------------------------------
  Language             Files        Lines        Blank      Comment         Code
 --------------------------------------------------------------------------------
- Rust                  9581      2871035       274625       451417      2144993
- C++                   8288      1894913       302681       174482      1417750
- C/C++ Header          6940       843845       141523       186451       515871
- C                     1740       373956        51463        54478       268015
- Markdown              2250       239850        62565            0       177285
- Go                     967       184602        21912        17231       145459
- Assembly               237       151035        15983         5621       129431
- Plain Text             310       131606        15886            0       115720
+ C++                   8042      1816064       290815       165840      1359409
+ Rust                  3570      1148496       107910       115386       925200
+ C/C++ Header          6133       669094       120848       145137       403109
+ Go                     960       181372        21636        16925       142811
+ Markdown              1553       163623        42306            0       121317
+ C                      402       103873        15068        13679        75126
+ Dart                   355        45281         5737         6346        33198
 .....省略其他统计...
 --------------------------------------------------------------------------------
- Total                33694      7037849       923999       942500      5171350
+ Total                22850      4305722       624242       487881      3193599
 --------------------------------------------------------------------------------</code></pre></td></tr></table>
 </div>
 </div>
@@ -864,7 +854,7 @@ Rust 可信编程在华为
 总结
 </h2>
 <div id="outline-text-headline-18" class="outline-text-2">
-<p>Rust 在 2010 年问世以来，到 2020 年正好十年。尽管 Rust 语言如此年轻，但通过上面的演讲来看，Rust 已经在各个领域展露头脚。而且，社区内也有很多开发者尝试用 Rust 重写古老的 C/C++ 项目，比如 <a href="https://sequoia-pgp.org/">GPG</a>/<a href="https://daniel.haxx.se/blog/2020/10/09/rust-in-curl-with-hyper/">Curl</a>/<a href="https://github.com/remacs/remacs">Emacs</a>/<a href="https://people.gnome.org/~federico/blog/librsvg-is-almost-rustified.html">Librsvg</a> 等。</p>
+<p>Rust 在 2010 年问世以来，到 2020 年正好十年。尽管 Rust 语言如此年轻，但通过上面的演讲来看，Rust 已经在各个领域展露头脚。而且，社区内不时也会有 <a href="https://github.com/ansuz/RIIR">RIIR</a>(why not Rewrite It In Rust) 的消息，比如 <a href="https://sequoia-pgp.org/">GPG</a>/<a href="https://daniel.haxx.se/blog/2020/10/09/rust-in-curl-with-hyper/">Curl</a>/<a href="https://github.com/remacs/remacs">Emacs</a>/<a href="https://people.gnome.org/~federico/blog/librsvg-is-almost-rustified.html">Librsvg</a> 等。</p>
 <p>
 虽然 Rust 的学习曲线相比其他大部分语言要陡峭，但无疑 Rust 降低了系统开发的成本，Java/Python/Go 之类的程序员在与编译器斗争后，都可以写出安全、健壮的系统软件。相信后面会有越来越多的企业去“吃螃蟹”🦀️。</p>
 <blockquote>
@@ -879,10 +869,16 @@ Rust 可信编程在华为
 <div id="outline-text-headline-19" class="outline-text-2">
 <ul>
 <li>
-<p><a href="https://www.freecodecamp.org/news/must-know-numbers-for-every-computer-engineer/">https://www.freecodecamp.org/news/must-know-numbers-for-every-computer-engineer/</a></p>
+<p><a href="https://www.freecodecamp.org/news/must-know-numbers-for-every-computer-engineer/">These are the numbers every computer engineer should know</a></p>
 </li>
 <li>
-<p><a href="https://stackoverflow.blog/2020/01/20/what-is-rust-and-why-is-it-so-popular/">https://stackoverflow.blog/2020/01/20/what-is-rust-and-why-is-it-so-popular/</a></p>
+<p><a href="https://stackoverflow.blog/2020/01/20/what-is-rust-and-why-is-it-so-popular/">What is Rust and why is it so popular?</a></p>
+</li>
+<li>
+<p><a href="https://www.reddit.com/r/rust/comments/k9r3s4/fuchsia_lines_of_code_over_last_two_years_c_c_rust/">Fuchsia lines of code over last two years (C, C++, Rust)</a></p>
+</li>
+<li>
+<p><a href="https://timmmm.github.io/curl-vulnerabilities-rust/">Would Rust secure cURL?</a></p>
 </li>
 </ul>
 </div>
@@ -898,8 +894,8 @@ Rust 可信编程在华为
   <p class="copyright-item">
     <span class="item-title">上次更新</span>
     <span class="item-content">
-        2021-01-10
-        <a href="https://github.com/jiacai2050/jiacai2050.github.io/commit/a85024f557d7f06ed82ca604e39a73ec95e8f731" title="typo">(a85024f)</a>
+        2021-01-17
+        <a href="https://github.com/jiacai2050/jiacai2050.github.io/commit/aa92d276e564e118330fd7e64b01a21d4d14fc41" title="add RIIR link (Rewrite It In Rust)">(aa92d27)</a>
     </span>
   </p>
   
