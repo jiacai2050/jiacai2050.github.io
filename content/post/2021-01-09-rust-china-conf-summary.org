@@ -5,12 +5,10 @@
 
 2020 年 12 月 26/27 日，第一届 Rust China 大会在深圳隆重开幕，来自五湖四海的 Rustacean 相聚于此，畅聊使用 Rust 构建应用的心得与挑战。参会人员除了企业开发者、独立开发者外，还有来自高校的师生，演讲主题涵盖广泛。我有幸参与了这次大会，本文就来总结此次参会的经历，让更多的读者一起享受这次饕餮盛宴。
 
-注：
-1. 由于作者水平有限，文中难免存在一些不足和错误之处，诚请各位批评指正
-2. 此次大会的演讲文稿/视频均可在[[https://2020conf.rustcc.cn/schedule.html][官方网站]]查阅
+同时，也希望通过本文，激发读者学习 Rust 的兴趣，毕竟 Rust 是近几年最受程序员[[https://stackoverflow.blog/2020/06/05/why-the-developers-who-use-rust-love-it-so-much/][喜爱的语言]]。
 
 * 演讲归纳
-此次大会议程两天，共有 36 个演讲，基本上 30 分钟一个，内容非常多，想在一篇文章里涵盖全部演讲会显得有些臃肿，而且更重要的是，很多领域对我来说也比较陌生，因此这里会对演讲进行分类，重点聊聊对我感兴趣的几个演讲，读者可以根据喜好自行学习。
+此次大会议程两天，共有 36 个演讲，基本上 30 分钟一个，内容非常多，想在一篇文章里涵盖全部演讲会显得有些臃肿，而且更重要的是，很多领域对我来说也比较陌生，因此这里会对演讲进行分类，重点聊聊对我感兴趣的几个演讲。读者可以根据喜好自行学习，所有的演讲文稿/视频均可在[[https://2020conf.rustcc.cn/schedule.html][官方网站]]查阅。
 
 其次，对于本次大会接触的几个开源项目，使用 [[https://github.com/cgag/loc][loc]] 进行代码量统计（截止 2020/12/29 主干分支的提交）。尽管代码量的意义非常局限，但代码量可以对陌生项目有直观印象，而且对于 Rust 这个新生代的编程语言来说，也需要在构建大型系统中去“提炼“自身，到底谁会是 Rust 的杀手锏应用（killer app），让我们拭目以待。
 
@@ -290,7 +288,7 @@ StratoVirt 代码量在 2 万行左右。
 - 《Async-graphql 的介绍与实现》from 老油条 [[https://github.com/async-graphql/async-graphql][ GitHub]]
 
 * 总结
-Rust 在 2010 年问世以来，到 2020 年正好十年。尽管 Rust 语言如此年轻，但通过上面的演讲来看，Rust 已经在各个领域展露头脚。而且，社区内也有很多开发者尝试用 Rust 重写古老的 C/C++ 项目，比如 [[https://sequoia-pgp.org/][GPG]]/[[https://daniel.haxx.se/blog/2020/10/09/rust-in-curl-with-hyper/][Curl]]/[[https://github.com/remacs/remacs][Emacs]]/[[https://people.gnome.org/~federico/blog/librsvg-is-almost-rustified.html][Librsvg]] 等。
+Rust 在 2010 年问世以来，到 2020 年正好十年。尽管 Rust 语言如此年轻，但通过上面的演讲来看，Rust 已经在各个领域展露头脚。而且，社区内不时也会有 [[https://github.com/ansuz/RIIR][RIIR]](why not Rewrite It In Rust) 的消息，比如 [[https://sequoia-pgp.org/][GPG]]/[[https://daniel.haxx.se/blog/2020/10/09/rust-in-curl-with-hyper/][Curl]]/[[https://github.com/remacs/remacs][Emacs]]/[[https://people.gnome.org/~federico/blog/librsvg-is-almost-rustified.html][Librsvg]] 等。
 
 虽然 Rust 的学习曲线相比其他大部分语言要陡峭，但无疑 Rust 降低了系统开发的成本，Java/Python/Go 之类的程序员在与编译器斗争后，都可以写出安全、健壮的系统软件。相信后面会有越来越多的企业去“吃螃蟹”🦀️。
 
@@ -302,3 +300,4 @@ Rust，[[https://gitlab.com/carols10cents/rust-next-40-years][未来可期]]！
 - [[https://www.freecodecamp.org/news/must-know-numbers-for-every-computer-engineer/][These are the numbers every computer engineer should know]]
 - [[https://stackoverflow.blog/2020/01/20/what-is-rust-and-why-is-it-so-popular/][What is Rust and why is it so popular?]]
 - [[https://www.reddit.com/r/rust/comments/k9r3s4/fuchsia_lines_of_code_over_last_two_years_c_c_rust/][Fuchsia lines of code over last two years (C, C++, Rust)]]
+- [[https://timmmm.github.io/curl-vulnerabilities-rust/][Would Rust secure cURL?]]
