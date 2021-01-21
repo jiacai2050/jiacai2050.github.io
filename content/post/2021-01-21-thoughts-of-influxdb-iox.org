@@ -1,0 +1,66 @@
+#+TITLE: InfluxDB IOx：时序数据库的未来
+#+DATE: 2021-01-21T21:37:45+08:00
+#+TAGS[]: tsdb, database
+#+CATEGORIES[]:
+
+InfluxDB CTO Paul 在 2020/12/10 号在其官方博客发表一篇文章：[[https://www.influxdata.com/blog/announcing-influxdb-iox/][Announcing InfluxDB IOx – The Future Core of InfluxDB Built with Rust and Arrow]]，介绍了一个新项目 InfluxDB IOx，可以把它看作下一代的 InfluxDB。
+
+在时序数据库领域，InfluxDB 是当之无愧的佼佼者，常年在 [[https://db-engines.com/en/ranking/time+series+dbms][DB-Engine TimeSeries]] 分类下名列第一。因此，InfluxDB 的一举一动，也备受关注，毕竟时序这个圈就这么大。
+
+其实 InfluxDB 是有重写引擎的“传统”，在介绍 IOx 项目之前，先来回顾下 InfluxDB 的发展历程。
+
+* 重写历程
+在 [[https://www.slideshare.net/influxdata/inside-the-influx-db-storage-engine][Inside the InfluxDB storage engine]] 讲稿中有详细介绍 InfluxDB 要解决的问题以及迭代历史，不了解时序的读者可以先参考，这里只总结其迭代过程：
+1. 使用基于 LSM 的 LevelDB 来开发存储引擎，但是有下面几个问题
+   - 删除代价高
+   - 需要打开过多的文件句柄
+2. 接着换成了基于 mmap COW B+Tree 的 BoltDB，问题有如下几个：
+   - 写吞吐不高
+   - 不支持压缩
+3. 不再基于开源项目，从头自研 [[https://docs.influxdata.com/influxdb/v1.8/concepts/storage_engine/][TSM]] 引擎，这也是现在使用的引擎。具体结构这里不展开了，感兴趣的可以参考：
+   - [[https://medium.com/dataseries/analysis-of-the-storage-mechanism-in-influxdb-b84d686f3697][Analysis of the Storage Mechanism in InfluxDB]]
+
+InfluxDB 迭代这么多次，个人觉的主要是两方面原因：
+1. 随着时间推移，时序场景的使用越来复杂
+2. 数据量越来越多，现有架构不足以支持
+
+由此，InfluxDB 开始着手新一代引擎的开发，也就是今天的主角：InfluxDB IOx。
+
+* InfluxDB IOx
+这里结合 Paul 的文章来分析 IOx 的
+** 开源模式
+比较有意思的是，Paul 的文章花了很大篇幅来讲述 InfluxDB 公司应该如何基于开源产品来盈利。
+
+InfluxDB 现在的策略是开源单机版，闭源分布式版本。Paul 认为这种模式不利于其长远发展，主要原因有：
+1. 闭源分布式版本意味着放弃了这个市场，也就是说会有更多竟品出来争夺这个市场
+2. 基础性软件如果功能受限，就会导致一部分用户放弃使用它
+
+因为，InfluxDB 想要真正成为被广大开发者接受的基础软件，必须开源更多组件，而不是闭门造车。只有这样才能吸引更多用户；同时，使用的开源协议必须对商业公司友好，否则商业公司不会采纳，云托管厂商不会托管它，而是会开发他们自己的版本，这样就导致了社区的分裂，因此 IOx 采用 MIT & Apache 2 双协议开源方式。
+
+全部组件都开源，公司如何盈利呢？文章中提到：系统的设计不仅仅是整体架构是否合理，也需要考虑如何进行商业化。那么 IOx 是如何设计的呢？
+- 联邦式（federated）的 share-nothing 架构
+
+用户对所有服务器上的服务有绝对的控制器，这也就意味着用户需要一些额外的工具来辅助其管理集群。简单来说，这些工具可以是 shell 脚本与 cron 定时任务，在更复杂的场景下，就需要专业工具的支持了。而这就是 InfluxDB 的赢利点。
+
+感觉这一点可以用 Hadoop 与 Cloudera 类比，接触过大数据的读者应该会比较清楚，我在很久之前也写过一些[[https://liujiacai.net/blog/2014/07/17/cdh-ha-installation/][文章]]，Hadoop 生态内的系统安装、运维是个很繁琐的事情。而使用 Cloudera，安装就是鼠标点几下的事，并且安装后有丰富的监控图表、运维工具，非常方便。
+
+** Why IOx
+上面讲述了 InfluxDB 今后的商业运作模式，那么这次为什么又要从头开始重写整个系统呢？毕竟 InfluxDB 公司已经成立七年，已经有了不少商业用户。
+
+Paul 在文章中提到现有设计主要有以下几个致命性问题：
+1. 无法解决时间线膨胀的问题
+2. 在云原生环境下，对内存管理要求比较严格，这意味 mmap 不在适用，而且 InfluxDB 需要支持无本地盘的运行模式
+3. 由于索引与数据分开存储，导致高效的数据导入导出功能难以实现
+
+上述这三个问题都是现有设计的核心之处，因为要想支持现阶段需求，重写是个比较好的选择。
+
+** Why Apache Arrow
+Apache Arrow 是一个通用性的基于内存的列式数据格式标准，它诞生的目的就是解决不同系统间如何高效交换数据。在大数据生态内，Parquet 是最为流行的文件存储格式，那为什么还需要 Arrow 呢？主要原因就在于 Parquet 主要是磁盘设计，磁盘的 IO 一般是系统的瓶颈，因此 Parquet 采用压缩来减小体积，在读取时，通过消耗一些 CPU 来补偿压缩带来优势；而对于内存而言，吞吐量不再是瓶颈，因此 CPU 资源就比较珍贵。
+
+根据 [[http://dbmsmusings.blogspot.com/2017/10/apache-arrow-vs-parquet-and-orc-do-we.html][Daniel Abadi]] 的实验，对于内存数据结构而言，行存/列存的区别不是很大，这是由于 CPU 的处理速度（12GB/s）小于内存到 CPU 的传输速度（30GB/s）。因此不论是行存还是列存，从内存中输送 0.25GB 还是 1.5GB 数据到 CPU 中，都不会对结果有大的影响。
+
+因为对于内存性的数据格式而言，压缩会让 CPU 更加负重不堪。
+
+
+* 参考
+- [[https://tech.ipalfish.com/blog/2020/12/08/apache_arrow_summary/][Apache Arrow：一种适合异构大数据系统的内存列存数据格式标准]]
