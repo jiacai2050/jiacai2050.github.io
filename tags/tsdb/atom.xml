@@ -13,7 +13,7 @@
       <pubDate>Thu, 21 Jan 2021 00:00:00 +0000</pubDate>
       
       <guid>https://liujiacai.net/blog/2021/01/21/thoughts-of-influxdb-iox/</guid>
-      <description>InfluxDB CTO Paul 在 2020/12/10 号在其官方博客发表一篇文章：Announcing InfluxDB IOx – The Future Core of InfluxDB Built with Rust and Arrow，介绍了一个新项目 InfluxDB IOx，可以把它看作下一代的</description>
+      <description>InfluxDB CTO Paul 在 2020/12/10 号在其官方博客发表一篇文章：Announcing InfluxDB IOx – The Future Core of InfluxDB Built with Rust and Arrow，介绍了一个新项目 InfluxDB IOx，下一代的时序引擎。在</description>
     </item>
     
   </channel>
