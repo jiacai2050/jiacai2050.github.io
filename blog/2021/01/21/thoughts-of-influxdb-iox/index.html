@@ -45,12 +45,12 @@
 <meta property="og:type" content="article" />
 <meta property="og:url" content="https://liujiacai.net/blog/2021/01/21/thoughts-of-influxdb-iox/" />
 <meta property="article:published_time" content="2021-01-21T21:37:45+08:00" />
-<meta property="article:modified_time" content="2021-01-22T10:02:33+08:00" />
+<meta property="article:modified_time" content="2021-01-22T11:22:12+08:00" />
 <meta itemprop="name" content="InfluxDB IOx：时序数据库的未来">
 <meta itemprop="description" content="InfluxDB CTO Paul 在 2020/12/10 号在其官方博客发表一篇文章：Announcing InfluxDB IOx – The Future Core of InfluxDB Built with Rust and Arrow，介绍了一个新项目 InfluxDB IOx，可以把它看作下一代的">
 <meta itemprop="datePublished" content="2021-01-21T21:37:45+08:00" />
-<meta itemprop="dateModified" content="2021-01-22T10:02:33+08:00" />
-<meta itemprop="wordCount" content="2914">
+<meta itemprop="dateModified" content="2021-01-22T11:22:12+08:00" />
+<meta itemprop="wordCount" content="2980">
 
 
 
@@ -137,7 +137,7 @@
       <div class="post-meta">
         <span class="post-time"> 2021-01-21 </span>
         
-          <span class="more-meta"> 约 2914 字 </span>
+          <span class="more-meta"> 约 2980 字 </span>
           <span class="more-meta"> 预计阅读 6 分钟 </span>
         
       </div>
@@ -156,9 +156,9 @@
 </li>
 <li><a href="#headline-4">Why IOx</a>
 </li>
-<li><a href="#headline-5">Why Columnar database</a>
+<li><a href="#headline-5">Why Apache Arrow</a>
 </li>
-<li><a href="#headline-6">Why Apache Arrow</a>
+<li><a href="#headline-6">Why Columnar database</a>
 </li>
 <li><a href="#headline-7">Why Rust</a>
 </li>
@@ -235,13 +235,12 @@ InfluxDB CTO Paul 在 2020/12/10 号在其官方博客发表一篇文章：<a hr
 InfluxDB IOx
 </h2>
 <div id="outline-text-headline-2" class="outline-text-2">
-<p>这里结合 Paul 的文章来分析 IOx 的</p>
 <div id="outline-container-headline-3" class="outline-3">
 <h3 id="headline-3">
 开源模式
 </h3>
 <div id="outline-text-headline-3" class="outline-text-3">
-<p>比较有意思的是，Paul 的文章花了很大篇幅来讲述 InfluxDB 公司应该如何基于开源产品来盈利。</p>
+<p>比较有意思的是，Paul 的文章一开始花了很大篇幅来讲述 InfluxDB 公司应该如何基于开源产品来盈利。</p>
 <p>
 InfluxDB 现在的策略是开源单机版，闭源分布式版本。Paul 认为这种模式不利于其长远发展，主要原因有：</p>
 <ol>
@@ -252,7 +251,7 @@ InfluxDB 现在的策略是开源单机版，闭源分布式版本。Paul 认为
 <p>基础性软件如果功能受限，就会导致一部分用户放弃使用它</p>
 </li>
 </ol>
-<p>因为，InfluxDB 想要真正成为被广大开发者接受的基础软件，必须开源更多组件，而不是闭门造车。只有这样才能吸引更多用户；同时，使用的开源协议必须对商业公司友好，否则商业公司不会采纳，云托管厂商不会托管它，而是会开发他们自己的版本，这样就导致了社区的分裂，因此 IOx 采用 MIT &amp; Apache 2 双协议开源方式。</p>
+<p>因此 InfluxDB 想要真正成为被广大开发者接受的基础软件，必须开源更多组件，而不是闭门造车。只有这样才能吸引更多用户；同时，使用的开源协议必须对商业公司友好，否则商业公司不会采纳，云托管厂商不会托管它，而是会开发他们自己的版本，这样就导致了社区的分裂，因此 IOx 采用 MIT &amp; Apache 2 双协议开源方式。</p>
 <p>
 全部组件都开源，公司如何盈利呢？文章中提到：系统的设计不仅仅是整体架构是否合理，也需要考虑如何进行商业化。那么 IOx 是如何设计的呢？</p>
 <ul>
@@ -272,9 +271,7 @@ InfluxDB 现在的策略是开源单机版，闭源分布式版本。Paul 认为
 Why IOx
 </h3>
 <div id="outline-text-headline-4" class="outline-text-3">
-<p>上面讲述了 InfluxDB 今后的商业运作模式，那么这次为什么又要从头开始重写整个系统呢？毕竟 InfluxDB 公司已经成立七年，已经有了不少商业用户。</p>
-<p>
-Paul 在文章中提到现有设计主要有以下几个致命性问题：</p>
+<p>上面讲述了 InfluxDB 今后的商业运作模式，那么这次为什么又要从头开始重写整个系统呢？毕竟 InfluxDB 公司已经成立七年，已经有了不少商业用户。在文章中提到现有设计主要有以下几个致命性问题：</p>
 <ol>
 <li>
 <p>无法解决时间线膨胀的问题</p>
@@ -286,14 +283,30 @@ Paul 在文章中提到现有设计主要有以下几个致命性问题：</p>
 <p>由于索引与数据分开存储，导致高效的数据导入导出功能难以实现</p>
 </li>
 </ol>
-<p>上述这三个问题都是现有设计的核心之处，因此要想支持现阶段需求，重写是个比较好的选择。</p>
+<p>上述这三个问题都是现有设计的核心之处，因此要想支持现阶段需求，重写是个比较好的选择。决定了重写，下一步就是技术栈的选择，InfluxDB 选择了 Rust + Apache Arrow 来构建下一代产品。</p>
 </div>
 </div>
 <div id="outline-container-headline-5" class="outline-3">
 <h3 id="headline-5">
-Why Columnar database
+Why Apache Arrow
 </h3>
 <div id="outline-text-headline-5" class="outline-text-3">
+<p>Apache Arrow 是一个通用性的基于内存的列式数据格式标准，它诞生的目的就是解决不同系统间如何高效交换数据。在大数据生态内，Parquet 是最为流行的文件存储格式，那为什么还需要 Arrow 呢？主要原因就在于 Parquet 主要是磁盘设计，磁盘的 IO 一般是系统的瓶颈，因此 Parquet 采用压缩来减小体积，在读取时，通过消耗一些 CPU 来补偿压缩带来优势；而对于内存而言，吞吐量不再是瓶颈，因此 CPU 资源就比较珍贵。</p>
+<p>
+根据 <a href="http://dbmsmusings.blogspot.com/2017/10/apache-arrow-vs-parquet-and-orc-do-we.html">Daniel Abadi</a> 的实验，对于内存数据结构而言，行存/列存的区别不是很大，这是由于 CPU 的处理速度（12GB/s）小于内存到 CPU 的传输速度（30GB/s）。因此不论是行存还是列存，从内存中输送 0.25GB 还是 1.5GB 数据到 CPU 中，都不会对结果有大的影响。</p>
+<p>
+因为对于内存性的数据格式而言，压缩会让 CPU 更加负重不堪，由此专门为内存设计的、与语言无关的、列存格式 Arrow 应运而生，可以充分利用硬件的特性，比如 SIMD。</p>
+<p>
+同时，比较特别的是这个项目的启动形式与其他项目也不相同，Arrow 项目的草台班子由 5 个 Apache Members、6 个 PMC Chairs 和一些其它项目的 PMC 及 committer 构成，他们直接找到 ASF 董事会，征得同意后直接以顶级 Apache 项目身份启动。</p>
+<p>
+对 IOx 而言，磁盘上采用 Parquet，内存中使用 Arrow 是个显而易见的选择。这里回答了是什么的问题，但是没有回答为什么要选择列村，下面就来分析这个问题。</p>
+</div>
+</div>
+<div id="outline-container-headline-6" class="outline-3">
+<h3 id="headline-6">
+Why Columnar database
+</h3>
+<div id="outline-text-headline-6" class="outline-text-3">
 <p>列存数据库的主要场景是 OLAP，而时序数据库算是 OLAP 的一个特殊场景，市面上的列存数据库多如牛毛，InfluxDB 为什么重新造一个轮子呢？Paul 认为主要有以下两个原因：</p>
 <ul>
 <li>
@@ -308,22 +321,6 @@ Why Columnar database
 对 InfluxDB 而言，采用列存数据库不仅可以吸取这个领域上已经比较成熟的技术，从根本上解决时间线膨胀的问题，而且也扩大了其使用场景，更多的分析场景也可以采用 InfluxDB 来实现。</p>
 </div>
 </div>
-<div id="outline-container-headline-6" class="outline-3">
-<h3 id="headline-6">
-Why Apache Arrow
-</h3>
-<div id="outline-text-headline-6" class="outline-text-3">
-<p>Apache Arrow 是一个通用性的基于内存的列式数据格式标准，它诞生的目的就是解决不同系统间如何高效交换数据。在大数据生态内，Parquet 是最为流行的文件存储格式，那为什么还需要 Arrow 呢？主要原因就在于 Parquet 主要是磁盘设计，磁盘的 IO 一般是系统的瓶颈，因此 Parquet 采用压缩来减小体积，在读取时，通过消耗一些 CPU 来补偿压缩带来优势；而对于内存而言，吞吐量不再是瓶颈，因此 CPU 资源就比较珍贵。</p>
-<p>
-根据 <a href="http://dbmsmusings.blogspot.com/2017/10/apache-arrow-vs-parquet-and-orc-do-we.html">Daniel Abadi</a> 的实验，对于内存数据结构而言，行存/列存的区别不是很大，这是由于 CPU 的处理速度（12GB/s）小于内存到 CPU 的传输速度（30GB/s）。因此不论是行存还是列存，从内存中输送 0.25GB 还是 1.5GB 数据到 CPU 中，都不会对结果有大的影响。</p>
-<p>
-因为对于内存性的数据格式而言，压缩会让 CPU 更加负重不堪，由此专门为内存设计的、与语言无关的、列存格式 Arrow 应运而生，可以充分利用硬件的特性，比如 SIMD。</p>
-<p>
-同时，比较特别的是这个项目的启动形式与其他项目也不相同，Arrow 项目的草台班子由 5 个 Apache Members、6 个 PMC Chairs 和一些其它项目的 PMC 及 committer 构成，他们直接找到 ASF 董事会，征得同意后直接以顶级 Apache 项目身份启动。</p>
-<p>
-对 IOx 而言，磁盘上采用 Parquet，内存中使用 Arrow 是个显而易见的选择。</p>
-</div>
-</div>
 <div id="outline-container-headline-7" class="outline-3">
 <h3 id="headline-7">
 Why Rust
@@ -331,7 +328,7 @@ Why Rust
 <div id="outline-text-headline-7" class="outline-text-3">
 <p>对于 Rust 语言本身的优势可以参考我上一篇文章<a href="/blog/2021/01/09/rust-china-conf-summary/">《Rust China 大会总结》</a>，这里不再赘述。</p>
 <p>
-此外，值得关注的是，Arrow 项目的 Rust 语言里面的 DataFusion 模块，它是个通用的查询引擎，支持 SQL 与 DataFrame 两种接口。</p>
+值得关注的是，Arrow 项目 Rust 语言里面的 <a href="https://arrow.apache.org/blog/2019/02/04/datafusion-donation/">DataFusion</a> 模块，它是个通用的查询引擎，支持 SQL 与 DataFrame 两种接口。</p>
 <p>
 我大概看了下 DataFusion 的实现，质量非常高，核心开发者 <a href="https://github.com/andygrove">Andy Grove</a> 在查询引擎方面具有<a href="https://www.andygrove.io/about/">十多年</a>的功底，整个项目的设计也非常漂亮，从 LogicalPlan 到 PhysicalPlan 也支持不少优化，在它基础之上来构建自己的引擎是在合适不过了，后面我也尝试下，看看是否有机会在 <a href="https://ruby-china.org/topics/40817">CeresDB</a> 中引入 DataFusion，OLAP 的支持也是我们组后面的发力点。</p>
 </div>
@@ -343,14 +340,15 @@ Why Rust
 总结
 </h2>
 <div id="outline-text-headline-8" class="outline-text-2">
-<p>IOx 项目现在还处于起步期，但我觉得 IOx 一个可能颠覆行业格局的项目。在这个 <a href="https://news.ycombinator.com/item?id=25049253">Hacker News</a> 的讨论贴上看，与 IOx 类似的项目其实不少，比如 <a href="https://news.ycombinator.com/item?id=25056991">Durid</a>, <a href="https://news.ycombinator.com/item?id=25052481">Dremio</a>, <a href="https://news.ycombinator.com/item?id=25057320">ClickHouse</a>，每个项目出来时会宣传自己多牛叉，记得之前在 <a href="https://zhuanlan.zhihu.com/p/338893564">TerarkDB 完整开源及我的一些思考</a>中看到过一个笑话：</p>
+<p>在这个 <a href="https://news.ycombinator.com/item?id=25049253">Hacker News</a> 的讨论贴上看，与 IOx 类似的项目其实不少，比如 <a href="https://news.ycombinator.com/item?id=25056991">Durid</a>, <a href="https://news.ycombinator.com/item?id=25052481">Dremio</a>, <a href="https://news.ycombinator.com/item?id=25057320">ClickHouse</a>，每个项目出来时会宣传自己多牛叉，记得之前在<a href="https://zhuanlan.zhihu.com/p/338893564">TerarkDB 完整开源及我的一些思考</a>中看到过一个笑话：</p>
 <blockquote>
 <p>Oracle 平均每个月被干趴下一次</p>
 </blockquote>
 <p>
 想想这种“震惊体”也是无奈之举，否则怎么在如今信息爆炸的时代去推广自己的产品呢？不过我觉得 IOx 真正做到了颠覆，相比其他类似项目来说，IOx 是个开放式的系统，对于 InfluxDB 不擅长的领域，用户可以用合适的工具来处理存储在 S3 上的 Parquet 文件，比如数据分析师可以继续用 Pandas，大数据工程师可以继续用 Spark。这种开放性才是真正的利器。</p>
 <p>
-最后，用原文的一段话来总结此文，感兴趣的读者都可以去了解/参考这个项目。</p>
+IOx 项目现在还处于起步期，但我觉得 IOx 一个可能颠覆行业格局的项目，感兴趣的读者都可以去了解/参与到这个项目中。
+最后，用原文的一段话来总结此文：</p>
 <blockquote>
 <p>Open source is about creating a cambrian explosion in software that creates value that far outstrips what a single vendor manages to monetize. Open source is not a zero sum game. A larger community and ecosystem brings more opportunity to all vendors.</p>
 </blockquote>
@@ -389,7 +387,7 @@ Why Rust
     <span class="item-title">上次更新</span>
     <span class="item-content">
         2021-01-22
-        <a href="https://github.com/jiacai2050/jiacai2050.github.io/commit/c79c41a30f108bb742985fbb9ed06e9b7d440c86" title="finish iox post">(c79c41a)</a>
+        <a href="https://github.com/jiacai2050/jiacai2050.github.io/commit/66b85e19eab6a6af4462225cab58d80eeb84927a" title="polish iox">(66b85e1)</a>
     </span>
   </p>
   
