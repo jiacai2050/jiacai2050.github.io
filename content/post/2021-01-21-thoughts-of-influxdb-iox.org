@@ -44,6 +44,8 @@ InfluxDB 现在的策略是开源单机版，闭源分布式版本。Paul 认为
 
 感觉这一点可以用 Hadoop 与 Cloudera 类比，接触过大数据的读者应该会比较清楚，我在很久之前也写过一些[[https://liujiacai.net/blog/2014/07/17/cdh-ha-installation/][文章]]，Hadoop 生态内的系统安装、运维是个很繁琐的事情。而使用 Cloudera，安装就是鼠标点几下的事，并且安装后有丰富的监控图表、运维工具，非常方便。
 
+就在写这篇文章的同时，HN 上又出现与这个的话题相关的热贴 [[https://news.ycombinator.com/item?id=25865094][AWS announces forks of Elasticsearch and Kibana]]，所以说开源的模式还需要更多的探索，希望 InfluxDB 能成功。
+
 ** Why IOx
 上面讲述了 InfluxDB 今后的商业运作模式，那么这次为什么又要从头开始重写整个系统呢？毕竟 InfluxDB 公司已经成立七年，已经有了不少商业用户。
 
@@ -52,15 +54,52 @@ Paul 在文章中提到现有设计主要有以下几个致命性问题：
 2. 在云原生环境下，对内存管理要求比较严格，这意味 mmap 不在适用，而且 InfluxDB 需要支持无本地盘的运行模式
 3. 由于索引与数据分开存储，导致高效的数据导入导出功能难以实现
 
-上述这三个问题都是现有设计的核心之处，因为要想支持现阶段需求，重写是个比较好的选择。
+上述这三个问题都是现有设计的核心之处，因此要想支持现阶段需求，重写是个比较好的选择。
+
+** Why Columnar database
+列存数据库的主要场景是 OLAP，而时序数据库算是 OLAP 的一个特殊场景，市面上的列存数据库多如牛毛，InfluxDB 为什么重新造一个轮子呢？Paul 认为主要有以下两个原因：
+- 在查询层，需要支持字典压缩；基于窗口的聚合函数是一等成员，且需要特殊优化
+- 在持久化层，希望做到存储计算分离
+
+存储与计算的分离是近几年流行的方式，这一方面归功于像 S3 类似的对象存储逐渐流行，另一方面是网络带宽已经有了质提高，万兆网卡（10Gb/s 即 1.25GB/s）也是云厂商的标配，这不比本地 SSD 差不少，再加上本地缓存、[[https://en.wikipedia.org/wiki/Decision_tree_pruning][剪枝]]技术，真正需要读取的数据并不是很多。Snowflakes 是在这个方向上先驱者，早在 2016 发表的论文 [[http://pages.cs.wisc.edu/~remzi/Classes/739/Spring2004/Papers/p215-dageville-snowflake.pdf][The Snowflake Elastic Data Warehouse]] 就阐述了相关思想。推荐读者阅读。
+
+对 InfluxDB 而言，采用列存数据库不仅可以吸取这个领域上已经比较成熟的技术，从根本上解决时间线膨胀的问题，而且也扩大了其使用场景，更多的分析场景也可以采用 InfluxDB 来实现。
 
 ** Why Apache Arrow
 Apache Arrow 是一个通用性的基于内存的列式数据格式标准，它诞生的目的就是解决不同系统间如何高效交换数据。在大数据生态内，Parquet 是最为流行的文件存储格式，那为什么还需要 Arrow 呢？主要原因就在于 Parquet 主要是磁盘设计，磁盘的 IO 一般是系统的瓶颈，因此 Parquet 采用压缩来减小体积，在读取时，通过消耗一些 CPU 来补偿压缩带来优势；而对于内存而言，吞吐量不再是瓶颈，因此 CPU 资源就比较珍贵。
 
 根据 [[http://dbmsmusings.blogspot.com/2017/10/apache-arrow-vs-parquet-and-orc-do-we.html][Daniel Abadi]] 的实验，对于内存数据结构而言，行存/列存的区别不是很大，这是由于 CPU 的处理速度（12GB/s）小于内存到 CPU 的传输速度（30GB/s）。因此不论是行存还是列存，从内存中输送 0.25GB 还是 1.5GB 数据到 CPU 中，都不会对结果有大的影响。
 
-因为对于内存性的数据格式而言，压缩会让 CPU 更加负重不堪。
+因为对于内存性的数据格式而言，压缩会让 CPU 更加负重不堪，由此专门为内存设计的、与语言无关的、列存格式 Arrow 应运而生，可以充分利用硬件的特性，比如 SIMD。
 
+同时，比较特别的是这个项目的启动形式与其他项目也不相同，Arrow 项目的草台班子由 5 个 Apache Members、6 个 PMC Chairs 和一些其它项目的 PMC 及 committer 构成，他们直接找到 ASF 董事会，征得同意后直接以顶级 Apache 项目身份启动。
+
+对 IOx 而言，磁盘上采用 Parquet，内存中使用 Arrow 是个显而易见的选择。
+
+** Why Rust
+对于 Rust 语言本身的优势可以参考我上一篇文章[[/blog/2021/01/09/rust-china-conf-summary/][《Rust China 大会总结》]]，这里不再赘述。
+
+此外，值得关注的是，Arrow 项目的 Rust 语言里面的 DataFusion 模块，它是个通用的查询引擎，支持 SQL 与 DataFrame 两种接口。
+
+我大概看了下 DataFusion 的实现，质量非常高，核心开发者 [[https://github.com/andygrove][Andy Grove]] 在查询引擎方面具有[[https://www.andygrove.io/about/][十多年]]的功底，整个项目的设计也非常漂亮，从 LogicalPlan 到 PhysicalPlan 也支持不少优化，在它基础之上来构建自己的引擎是在合适不过了，后面我也尝试下，看看是否有机会在 [[https://ruby-china.org/topics/40817][CeresDB]] 中引入 DataFusion，OLAP 的支持也是我们组后面的发力点。
+
+* 总结
+IOx 项目现在还处于起步期，但我觉得 IOx 一个可能颠覆行业格局的项目。在这个 [[https://news.ycombinator.com/item?id=25049253][Hacker News]] 的讨论贴上看，与 IOx 类似的项目其实不少，比如 [[https://news.ycombinator.com/item?id=25056991][Durid]], [[https://news.ycombinator.com/item?id=25052481][Dremio]], [[https://news.ycombinator.com/item?id=25057320][ClickHouse]]，每个项目出来时会宣传自己多牛叉，记得之前在 [[https://zhuanlan.zhihu.com/p/338893564][TerarkDB 完整开源及我的一些思考]]中看到过一个笑话：
+
+#+begin_quote
+Oracle 平均每个月被干趴下一次
+#+end_quote
+
+想想这种“震惊体”也是无奈之举，否则怎么在如今信息爆炸的时代去推广自己的产品呢？不过我觉得 IOx 真正做到了颠覆，相比其他类似项目来说，IOx 是个开放式的系统，对于 InfluxDB 不擅长的领域，用户可以用合适的工具来处理存储在 S3 上的 Parquet 文件，比如数据分析师可以继续用 Pandas，大数据工程师可以继续用 Spark。这种开放性才是真正的利器。
+
+最后，用原文的一段话来总结此文，感兴趣的读者都可以去了解/参考这个项目。
+
+#+begin_quote
+Open source is about creating a cambrian explosion in software that creates value that far outstrips what a single vendor manages to monetize. Open source is not a zero sum game. A larger community and ecosystem brings more opportunity to all vendors.
+#+end_quote
 
 * 参考
 - [[https://tech.ipalfish.com/blog/2020/12/08/apache_arrow_summary/][Apache Arrow：一种适合异构大数据系统的内存列存数据格式标准]]
+- [[https://zhuanlan.zhihu.com/p/163236128][浅谈OLAP系统核心技术点]]
+- [[https://pingcap.com/blog-cn/distributed-system-in-2010s-1/][分布式系统 in 2010s ：存储之数据库篇]]
+- [[https://zhuanlan.zhihu.com/p/97085692][从大数据到数据库]]
