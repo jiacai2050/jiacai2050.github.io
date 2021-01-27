@@ -1,4 +1,4 @@
-#+TITLE: InfluxDB IOx：时序数据库的未来
+#+TITLE: 解读 InfluxDB IOx：基于列存的时序数据库
 #+DATE: 2021-01-21T21:37:45+08:00
 #+TAGS[]: tsdb, database
 #+CATEGORIES[]:
@@ -105,7 +105,7 @@ Snowflakes 是在这个方向上先驱者，早在 2016 发表的论文 [[http:/
 对 IOx 而言，Arrow + DataFusion 为实现一个高性能列存数据库提供了坚定的基础，其开放的特性也符合 InfluxDB 迎合开源的设计初衷。Paul 认为开发者使用的工具处于不断的变化中，以 S3 为代表的对象存储已经取代 Hadoop 生态系统；容器化和 K8S 彻底改变了系统的部署与编排方式；下一个在大数据方向上的变革很有可能就是 Arrow 以及其关联项目，它们会是未来构建分析场景的基石。
 
 * 总结
-在这个 [[https://news.ycombinator.com/item?id=25049253][Hacker News]] 的讨论贴上看，与 IOx 类似的项目其实不少，比如 [[https://news.ycombinator.com/item?id=25056991][Durid]], [[https://news.ycombinator.com/item?id=25052481][Dremio]], [[https://news.ycombinator.com/item?id=25057320][ClickHouse]]，每个项目出来时会宣传自己多牛叉，记得之前在[[https://zhuanlan.zhihu.com/p/338893564][TerarkDB 完整开源及我的一些思考]]中看到过一个梗：
+在这个[[https://news.ycombinator.com/item?id=25049253][HN的讨论帖]]上看，与 IOx 类似的项目其实不少，比如 [[https://news.ycombinator.com/item?id=25056991][Durid]], [[https://news.ycombinator.com/item?id=25052481][Dremio]], [[https://news.ycombinator.com/item?id=25057320][ClickHouse]]，每个项目出来时会宣传自己多牛叉，记得之前在[[https://zhuanlan.zhihu.com/p/338893564][TerarkDB 完整开源及我的一些思考]]中看到过一个梗：
 
 #+begin_quote
 Oracle 平均每个月被干趴下一次
