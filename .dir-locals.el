@@ -1,6 +1,6 @@
 ((org-mode . ((eval .
                     (progn
-                      (setq-local org-download-image-dir (expand-file-name "./static/images" easy-hugo-basedir)
+                      (setq-local org-download-image-dir (expand-file-name "./static/images" (file-name-directory buffer-file-name))
 
                                   org-download-link-format-function (lambda (filename)
                                                                       (format "[[/images/%s]]" (file-name-nondirectory filename))))
