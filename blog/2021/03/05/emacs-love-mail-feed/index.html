@@ -45,12 +45,12 @@
 <meta property="og:type" content="article" />
 <meta property="og:url" content="https://liujiacai.net/blog/2021/03/05/emacs-love-mail-feed/" />
 <meta property="article:published_time" content="2021-03-05T23:27:30+08:00" />
-<meta property="article:modified_time" content="2021-03-06T11:33:35+08:00" />
+<meta property="article:modified_time" content="2021-03-06T11:47:26+08:00" />
 <meta itemprop="name" content="使用 Emacs 阅读邮件与 Feed 信息流">
 <meta itemprop="description" content="对于程序员来说，除了编写代码外，阅读邮件与技术文章是耗时比较久的事情，更重要的一点是，这两个的信息输入量都比较大，会涉及到做笔记、TODO 等">
 <meta itemprop="datePublished" content="2021-03-05T23:27:30+08:00" />
-<meta itemprop="dateModified" content="2021-03-06T11:33:35+08:00" />
-<meta itemprop="wordCount" content="2848">
+<meta itemprop="dateModified" content="2021-03-06T11:47:26+08:00" />
+<meta itemprop="wordCount" content="2833">
 
 
 
@@ -139,7 +139,7 @@
         <div class="post-category">
             <a href="/categories/%E6%95%88%E7%8E%87%E5%B7%A5%E5%85%B7/"> 效率工具 </a>
             </div>
-          <span class="more-meta"> 约 2848 字 </span>
+          <span class="more-meta"> 约 2833 字 </span>
           <span class="more-meta"> 预计阅读 6 分钟 </span>
         
       </div>
@@ -205,7 +205,7 @@
 <p>
 这篇文章就给读者分享下使用方式与心得。在介绍具体配置前，先展示下效果（主题使用 <a href="https://github.com/greduan/emacs-theme-gruvbox">gruvbox</a>）：</p>
 <figure>
-<img src="https://img.alicdn.com/imgextra/i1/581166664/O1CN015qSgGU1z6A2vfHthv_!!581166664.png" alt="https://img.alicdn.com/imgextra/i1/581166664/O1CN015qSgGU1z6A2vfHthv_!!581166664.png" title="https://img.alicdn.com/imgextra/i1/581166664/O1CN015qSgGU1z6A2vfHthv_!!581166664.png" /><figcaption>
+<img src="https://img.alicdn.com/imgextra/i2/581166664/O1CN01QsaGky1z6A2n7bWaU_!!581166664.jpg" alt="https://img.alicdn.com/imgextra/i2/581166664/O1CN01QsaGky1z6A2n7bWaU_!!581166664.jpg" title="https://img.alicdn.com/imgextra/i2/581166664/O1CN01QsaGky1z6A2n7bWaU_!!581166664.jpg" /><figcaption>
 mu4e 主界面
 </figcaption>
 </figure>
@@ -220,7 +220,7 @@ mu4e 浏览邮件
 </figcaption>
 </figure>
 <figure>
-<img src="https://img.alicdn.com/imgextra/i3/581166664/O1CN01oIAjXl1z6A2wBzcu4_!!581166664.png" alt="https://img.alicdn.com/imgextra/i3/581166664/O1CN01oIAjXl1z6A2wBzcu4_!!581166664.png" title="https://img.alicdn.com/imgextra/i3/581166664/O1CN01oIAjXl1z6A2wBzcu4_!!581166664.png" /><figcaption>
+<img src="https://img.alicdn.com/imgextra/i2/581166664/O1CN01acjyqM1z6A2n2kQdU_!!581166664.png" alt="https://img.alicdn.com/imgextra/i2/581166664/O1CN01acjyqM1z6A2n2kQdU_!!581166664.png" title="https://img.alicdn.com/imgextra/i2/581166664/O1CN01acjyqM1z6A2n2kQdU_!!581166664.png" /><figcaption>
 mu4e 回复邮件
 </figcaption>
 </figure>
@@ -323,14 +323,14 @@ nametrans = lambda folder: re.sub(&#39;^&amp;UXZO1mWHTvZZOQ-\/&#39;, &#39;=&#39;
 # 配置 ssl 证书，macOS 下安装 openssl 即可
 sslcacertfile = /usr/local/etc/openssl@1.1/cert.pem
 # 过滤掉一些目录，不进行同步
-folderfilter = lambda f: &#39;kK5O9l9SaGM&#39; not in f and &#39;&amp;UXZO1mWHTvZZOQ-&#39; != f and &#39;liujiacai&#39; not in f
+folderfilter = lambda f: &#39;kK5O9l9SaGM&#39; not in f and &#39;&amp;UXZO1mWHTvZZOQ-&#39; != f
 # 下面是 IMAP 的配置，我这里是使用的腾讯企业邮箱
 type = IMAP
 remotehost = imap.exmail.qq.com
 remoteport = 993
-remoteuser = hello@liujiacai.net
+remoteuser = hello@example.com
 # 调用 pass.py 中的函数获取密码
-remotepasseval = get_password_emacs(&#34;imap.exmail.qq.com&#34;, &#34;hello@liujiacai.net&#34;, &#34;993&#34;)
+remotepasseval = get_password_emacs(&#34;imap.exmail.qq.com&#34;, &#34;hello@example.com&#34;, &#34;993&#34;)
 # 也可通过下面配置直接设置密码
 # remotepass = YOUR_MAIL_PASSWORD
 [Account outlook]
@@ -351,8 +351,8 @@ machine mymachine login myloginname password mypassword port myport
 <p>上面描述了 netrc 文件的通用格式，下面是我邮箱的相关配置：</p>
 <pre class="example">
 # cat ~/.authinfo
-machine imap.exmail.qq.com login hello@liujiacai.net password 123456 port 993
-machine smtp.exmail.qq.com login hello@liujiacai.net password 123456 port 465
+machine imap.exmail.qq.com login hello@example.com password 123456 port 993
+machine smtp.exmail.qq.com login hello@example.com password 123456 port 465
 </pre>
 <p>993 是 imap 端口，接受邮件用；465 是 smtp 端口，发送邮件用。为了安全，还可以对 netrc 使用 GPG 加密，Emacs 会自动解密读取。</p>
 <pre class="example">
@@ -418,7 +418,6 @@ nametrans 文件名转换
 </span><span class="lnt">24
 </span><span class="lnt">25
 </span><span class="lnt">26
-</span><span class="lnt">27
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash">$ offlineimap --info
@@ -433,7 +432,7 @@ Server supports ID extension.
 Server welcome string: * OK <span class="o">[</span>CAPABILITY IMAP4 IMAP4rev1 ID <span class="nv">AUTH</span><span class="o">=</span>PLAIN <span class="nv">AUTH</span><span class="o">=</span>LOGIN NAMESPACE<span class="o">]</span> QQMail IMAP4Server ready
 Server capabilities: <span class="o">(</span><span class="s1">&#39;IMAP4&#39;</span>, <span class="s1">&#39;IMAP4REV1&#39;</span>, <span class="s1">&#39;XLIST&#39;</span>, <span class="s1">&#39;MOVE&#39;</span>, <span class="s1">&#39;IDLE&#39;</span>, <span class="s1">&#39;XAPPLEPUSHSERVICE&#39;</span>, <span class="s1">&#39;NAMESPACE&#39;</span>, <span class="s1">&#39;CHILDREN&#39;</span>, <span class="s1">&#39;ID&#39;</span>, <span class="s1">&#39;UIDPLUS&#39;</span><span class="o">)</span>
 
-<span class="nv">folderfilter</span><span class="o">=</span> lambda f: <span class="s1">&#39;kK5O9l9SaGM&#39;</span> not in f and <span class="s1">&#39;&amp;UXZO1mWHTvZZOQ-&#39;</span> !<span class="o">=</span> f and <span class="s1">&#39;liujiacai&#39;</span> not in f
+<span class="nv">folderfilter</span><span class="o">=</span> lambda f: <span class="s1">&#39;kK5O9l9SaGM&#39;</span> not in f and <span class="s1">&#39;&amp;UXZO1mWHTvZZOQ-&#39;</span> !<span class="o">=</span> f
 
 <span class="nv">nametrans</span><span class="o">=</span> lambda folder: re.sub<span class="o">(</span><span class="s1">&#39;^&amp;UXZO1mWHTvZZOQ-\/&#39;</span>, <span class="s1">&#39;=&#39;</span>, folder<span class="o">)</span>
 
@@ -442,7 +441,6 @@ Folderlist:
  <span class="p">&amp;</span>UXZO1mWHTvZZOQ-/clojure -&gt; <span class="o">=</span>clojure
  <span class="p">&amp;</span>UXZO1mWHTvZZOQ-/GitHub -&gt; <span class="o">=</span>GitHub
  <span class="p">&amp;</span>UXZO1mWHTvZZOQ-/golang -&gt; <span class="o">=</span>golang
- <span class="p">&amp;</span>UXZO1mWHTvZZOQ-/tb@liujiacai.net -&gt; <span class="o">=</span>tb@liujiacai.net <span class="o">(</span>disabled<span class="o">)</span>
  Deleted Messages
  Drafts
  INBOX
@@ -505,7 +503,7 @@ mu
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash"><span class="c1"># 只需要执行一次 init，index 在每次收取邮件后都需要执行，mu4e 可以配置自动执行</span>
-mu init --my-address liujiacai@live.com --my-address hello@liujiacai.net -m ~/.mail
+mu init --my-address your-mail@qq.com --my-address your-mail@gmail.com -m ~/.mail
 mu index</code></pre></td></tr></table>
 </div>
 </div>
@@ -783,7 +781,7 @@ elfeed-show
     <span class="item-title">上次更新</span>
     <span class="item-content">
         2021-03-06
-        <a href="https://github.com/jiacai2050/jiacai2050.github.io/commit/c3b2988f7f454dd30808836dbbde11329ee7ec17" title="new post emacs love mail feed">(c3b2988)</a>
+        <a href="https://github.com/jiacai2050/jiacai2050.github.io/commit/80a8803fa6be6d225da85080e619b075c31e433b" title="update mail addr">(80a8803)</a>
     </span>
   </p>
   
