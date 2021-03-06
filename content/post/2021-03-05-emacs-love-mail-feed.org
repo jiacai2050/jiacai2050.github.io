@@ -1,0 +1,241 @@
+#+TITLE: 使用 Emacs 阅读邮件与 Feed 信息流
+#+DATE: 2021-03-05T23:27:30+08:00
+#+TAGS[]: emacs
+#+CATEGORIES[]: 效率工具
+
+对于程序员来说，除了编写代码外，阅读邮件与技术文章是耗时比较久的事情，更重要的一点是，这两个的信息输入量都比较大，会涉及到做笔记、TODO 等，如果没有 Emacs，这些事情都是分散在不同应用解决的，比如使用 ThunderBird 作为邮件客户端，Evernote 作为笔记软件。
+
+这些软件或多或少会有不满足需求的地方，用户往往需要使用多个功能类似的软件才能满足需求。邮件客户端我使用过 Foxmail/ThunderBird/Apple Mail ，使用的笔记软件更是不胜枚举，这种十分不优雅的做法终于在遇到 Emacs 之后划上了一个句号，有什么新需求几行 ELisp 就可以搞定，不再有迁移成本。
+
+这篇文章就给读者分享下使用方式与心得。在介绍具体配置前，先展示下效果（主题使用 [[https://github.com/greduan/emacs-theme-gruvbox][gruvbox]]）：
+
+#+CAPTION: mu4e 主界面
+[[https://img.alicdn.com/imgextra/i1/581166664/O1CN015qSgGU1z6A2vfHthv_!!581166664.png]]
+
+#+CAPTION: mu4e 邮件列表，默认以话题归类
+[[https://img.alicdn.com/imgextra/i2/581166664/O1CN01EO1Wuq1z6A2u8UTWq_!!581166664.png]]
+
+#+CAPTION: mu4e 浏览邮件
+[[https://img.alicdn.com/imgextra/i3/581166664/O1CN01oIAjXl1z6A2wBzcu4_!!581166664.png]]
+
+#+CAPTION: mu4e 回复邮件
+[[https://img.alicdn.com/imgextra/i3/581166664/O1CN01oIAjXl1z6A2wBzcu4_!!581166664.png]]
+
+#+CAPTION: elfeed-dashborad 主界面
+[[https://img.alicdn.com/imgextra/i4/581166664/O1CN014tvhqR1z6A2unN0Md_!!581166664.png]]
+
+#+CAPTION: elfeed 信息流列表
+[[https://img.alicdn.com/imgextra/i2/581166664/O1CN01Sgm5pt1z6A2pZSOSa_!!581166664.png]]
+
+#+CAPTION: elfeed 浏览文章
+[[https://img.alicdn.com/imgextra/i2/581166664/O1CN01VfB4Is1z6A2u9SUjw_!!581166664.png]]
+
+* 邮件
+阅读邮件我使用的软件主要有
+- [[http://www.offlineimap.org/][offlineimap]] 使用 imap 协议，以 [[https://en.wikipedia.org/wiki/Maildir][Maildir]] 格式来同步邮件；类似的软件有 [[https://wiki.archlinux.org/index.php/isync][Mbsync]]
+- [[https://www.djcbsoftware.nl/code/mu/mu4e.html][mu4e]] mu 的 Emacs 插件，mu 可以对 Maildir 格式的邮件建索引，便于搜索；类似的软件有 [[https://en.wikipedia.org/wiki/Gnus][Gnus]]
+
+offlineimap 使用 Python 编写，在 macOS 直接使用 brew 即可安装。下面是我目前的配置文件（配置文件推荐放在 =～/.config/offlineimap/config= ，尽量避免直接在家目录创建 =~/.offlineimaprc= ）
+
+#+begin_src
+[general]
+# 默认开启的账户，可以是多个
+accounts = ljc, outlook
+# 定义额外的 python 脚本，里面有获取密码的函数
+pythonfile = ~/.config/offlineimap/pass.py
+
+# 开始配置第一个账户
+[Account ljc]
+# 一个账户主要包含 local 与 remote 这两个配置项
+localrepository = LocalLJC
+remoterepository = RemoteLJC
+# 可选配置项，邮件同步时间：这里只同步 365 天之内的
+# 需要注意，一些邮件提供商也存在同步限制，比如 QQ 邮箱默认只同步 30 天内的数据，可以在设置中修改
+maxage = 365
+
+[Repository LocalLJC]
+type = Maildir
+localfolders = ~/.mail/ljc
+# 需要与 RemoteLJC 里面的 nametrans 配置起来使用，解释见正文
+nametrans = lambda folder: re.sub('^=', '&UXZO1mWHTvZZOQ-/', folder)
+
+[Repository RemoteLJC]
+nametrans = lambda folder: re.sub('^&UXZO1mWHTvZZOQ-\/', '=', folder)
+# 配置 ssl 证书，macOS 下安装 openssl 即可
+sslcacertfile = /usr/local/etc/openssl@1.1/cert.pem
+# 过滤掉一些目录，不进行同步
+folderfilter = lambda f: 'kK5O9l9SaGM' not in f and '&UXZO1mWHTvZZOQ-' != f and 'liujiacai' not in f
+# 下面是 IMAP 的配置，我这里是使用的腾讯企业邮箱
+type = IMAP
+remotehost = imap.exmail.qq.com
+remoteport = 993
+remoteuser = hello@liujiacai.net
+# 调用 pass.py 中的函数获取密码
+remotepasseval = get_password_emacs("imap.exmail.qq.com", "hello@liujiacai.net", "993")
+# 也可通过下面配置直接设置密码
+# remotepass = YOUR_MAIL_PASSWORD
+[Account outlook]
+... 大致同上，这里不在赘述
+#+end_src
+上面的配置比较直观，也有相应注释，这里重点介绍如何设置 =remotepasseval= 与 =nametrans= 。
+
+** GPG Auth Source 配置密码
+Emacs 中使用 [[https://www.gnu.org/software/emacs/manual/html_mono/auth.html][Auth Source]] 来管理密码，它相当于一个接口层，可以对接多个存储后端，netrc 是最常见的后端，除此之外，还支持 JSON、Secret Service API、pass。很多命令，比如 [[https://www.gnu.org/software/wget/manual/html_node/Startup-File.html][wget]]、[[https://everything.curl.dev/usingcurl/netrc][curl]]、[[https://bryanwweber.com/writing/personal/2016/01/01/how-to-set-up-an-encrypted-netrc-file-with-gpg-for-github-2fa-access/][git]] 等都支持从 netrc 读取密码，因为这里只介绍其用法：
+
+#+begin_example
+machine mymachine login myloginname password mypassword port myport
+#+end_example
+上面描述了 netrc 文件的通用格式，下面是我邮箱的相关配置：
+
+#+begin_example
+# cat ~/.authinfo
+machine imap.exmail.qq.com login hello@liujiacai.net password 123456 port 993
+machine smtp.exmail.qq.com login hello@liujiacai.net password 123456 port 465
+#+end_example
+993 是 imap 端口，接受邮件用；465 是 smtp 端口，发送邮件用。为了安全，还可以对 netrc 使用 GPG 加密，Emacs 会自动解密读取。
+
+#+begin_example
+(setq auth-sources '("~/.authinfo.gpg" "~/.authinfo" "~/.netrc"))
+#+end_example
+Emacs 默认从上面几个地方找文件，读者可按需修改。
+
+我上面对配置中使用了 get_password_emacs 这个函数来获取密码，其实现如下：
+#+begin_src python
+def get_password_emacs(machine, login, port):
+    s = "machine %s login %s password ([^ ]*) port %s\n" % (
+        machine, login, port)
+    p = re.compile(s)
+    authinfo = os.popen("gpg -q --no-tty -d ~/.config/authinfo.gpg").read()
+    return p.search(authinfo).group(1)
+#+end_src
+** nametrans 文件名转换
+配置好密码后，就可以进行邮件同步了。但是在同步前，可以通过 =offlineimap --info= 命令查看邮件服务器中的内容，确认下需要同步哪些目录
+#+begin_src bash
+$ offlineimap --info
+OfflineIMAP 7.3.3
+  Licensed under the GNU GPL v2 or any later version (with an OpenSSL exception)
+imaplib2 v2.101 (bundled), Python v2.7.17, OpenSSL 1.1.1i  8 Dec 2020
+  imaplib2: 2.101 (bundled)
+Remote repository 'RemoteLJC': type 'IMAP'
+Host: imap.exmail.qq.com Port: None SSL: True
+Establishing connection to imap.exmail.qq.com:993 (RemoteLJC)
+Server supports ID extension.
+Server welcome string: * OK [CAPABILITY IMAP4 IMAP4rev1 ID AUTH=PLAIN AUTH=LOGIN NAMESPACE] QQMail IMAP4Server ready
+Server capabilities: ('IMAP4', 'IMAP4REV1', 'XLIST', 'MOVE', 'IDLE', 'XAPPLEPUSHSERVICE', 'NAMESPACE', 'CHILDREN', 'ID', 'UIDPLUS')
+
+folderfilter= lambda f: 'kK5O9l9SaGM' not in f and '&UXZO1mWHTvZZOQ-' != f and 'liujiacai' not in f
+
+nametrans= lambda folder: re.sub('^&UXZO1mWHTvZZOQ-\/', '=', folder)
+
+Folderlist:
+ &UXZO1mWHTvZZOQ- (disabled)
+ &UXZO1mWHTvZZOQ-/clojure -> =clojure
+ &UXZO1mWHTvZZOQ-/GitHub -> =GitHub
+ &UXZO1mWHTvZZOQ-/golang -> =golang
+ &UXZO1mWHTvZZOQ-/tb@liujiacai.net -> =tb@liujiacai.net (disabled)
+ Deleted Messages
+ Drafts
+ INBOX
+ Junk
+ Sent Messages
+#+end_src
+在 Folderlist 下面就是邮件服务器中的目录， =&UXZO1mWHTvZZOQ-= 开头的目录为自定义目录，为了保证同步下来的目录中没有这一串字母，我使用 =nametrans= 配置把它转化为了 ~=~ 符号。
+
+由于 IMAP 的同步是双向的，本地的状态也需要返回给远端，因此在 LocalLJC 中又使用 =nametrans= 把 ~=~ 转成了那串字母，这样两边就能正确同步邮件状态了，下面是本地的状态：
+#+begin_src bash
+Local repository 'LocalLJC': type 'Maildir'
+nametrans= lambda folder: re.sub('^=', '&UXZO1mWHTvZZOQ-/', folder)
+
+Folderlist:
+ INBOX
+ Drafts
+ Junk
+ =GitHub -> &UXZO1mWHTvZZOQ-/GitHub
+ Deleted Messages
+ =golang -> &UXZO1mWHTvZZOQ-/golang
+ =clojure -> &UXZO1mWHTvZZOQ-/clojure
+ Sent Messages
+#+end_src
+
+最后，直接运行 =offlineimap= 就可以同步邮件了。
+
+** mu
+邮件同步到本地后，在使用前需要使用 mu 建索引，两条命令即可：
+#+begin_src bash
+# 只需要执行一次 init，index 在每次收取邮件后都需要执行，mu4e 可以配置自动执行
+mu init --my-address liujiacai@live.com --my-address hello@liujiacai.net -m ~/.mail
+mu index
+#+end_src
+*** mu4e 配置
+mu4e 在 mu 的安装目录内，不需要再额外安装。除 mu4e 外，推荐安装下面这几个 Emacs 插件
+- [[https://github.com/agpchil/mu4e-maildirs-extension][maildirs]]，它可以把每个目录邮件数展示出来。mu4e 相关配置可以在
+- [[https://github.com/org-mime/org-mime][org-mime]]，它可以把 org-mode 格式转为 HTML 的邮件
+- [[https://github.com/joostkremers/visual-fill-column][visual-fill-column]]，相当于 fill-column 与 visual-line-mode 的结合版，主要方便在大屏显示器上阅读，效果是把长行拆分是多行。
+
+这几个插件的配置可以在[[https://github.com/jiacai2050/dotfiles/blob/master/.emacs.d/customizations/misc.org#email][这里]]找到，这里主要介绍核心配置，细节不再赘述：
+- 使用 =mu4e-contexts= 配置多账户
+- =mu4e-update-interval= 配置自动同步邮件与建索引间隔
+- =mu4e-get-mail-command= 配置同步邮件的命令
+- 为 =mu4e-view-actions= 增加 =mu4e-action-view-in-browser= ，这样在阅读邮件时，按 =a b= 在浏览器打开邮件，这对那些只有 html 的邮件来说比较重要
+- =message-citation-line-format= 定义符合 Gmail 的引用格式，Gmail 会用 =...= 将引用隐藏起来
+- =mu4e-maildirs-extension-custom-list= 配置目录展示顺序
+- org-mime 主要有两种使用方式
+  1. 在一个 org 文件中调用 =org-mime-org-buffer-htmlize= （推荐绑定到 =C-c C-c= ），这会自动把当前 org 文件转为 html 并打开编辑邮件的 buffer
+  2. 在编辑邮件的 buffer 中，调用 =org-mime-edit-mail-in-org-mode= （推荐绑定到 =C-c '= ）打开 org-mode 编辑区，编辑好后调用 =org-mime-htmlize= （推荐放到 =message-send-hook= 里面）将 org 格式转为 html 邮件
+
+*** 快捷键
+**** main
+- =j= 跳转目录
+- =b= 跳转书签
+- =U= 收取邮件与重建索引
+**** mu4e-view
+- =j= 跳转目录
+- =g= 访问当前邮件中的 URL
+- =a= Action 选项
+- =A= 附件选项
+- =C= 写新邮件
+- =R= 回复邮件
+**** mu4e-compose
+- =C-c C-c= 发送
+- =C-c C-k= 废弃
+- =C-c C-d= 存草稿
+- =C-c C-a= 添加附件
+* 信息流 Feed
+阅读信息流使用的是 [[https://github.com/skeeto/elfeed][elfeed]]，它的配置相比邮件就简单多了，虽然 elfeed 可以不依赖外部软件执行，但是其作者还是推荐使用 curl 而非 ELisp 中的 url-retrieve，一方面是速度更快，另一方面是更稳定。除了 elfeed，还推荐安装下面两个插件：
+- [[https://github.com/remyhonig/elfeed-org][elfeed-org]] 使用 org 文件来定义 feeds 列表，它可以很方便进行打标签，重命名。[[https://github.com/jiacai2050/dotfiles/blob/master/.emacs.d/etc/elfeed-feeds.org][elfeed-feeds.org]] 是我的配置
+- [[https://github.com/Manoj321/elfeed-dashboard][elfeed-dashboard]] 把定义的 feeds 列表按标签展示。[[https://github.com/jiacai2050/dotfiles/blob/master/.emacs.d/etc/elfeed-dashboard.org][elfeed-dashboard.org]] 是我的配置
+
+下面阐述 elfeed 核心配置，具体配置可参考[[https://github.com/jiacai2050/dotfiles/blob/master/.emacs.d/customizations/misc.org#feed][这里]]：
+- =elfeed-curl-extra-arguments= 可以配置 curl 的参数，比较常用的是配置代理
+- elfeed 默认使用 [[https://www.emacswiki.org/emacs/HtmlRendering][shr]] 展示，在加载图片是会卡住，可通过设置 =shr-inhibit-images= 为 nil 来禁用图片，之后通过自定义函数 =my/show-feed-images= 来开启图片
+- 为了方便记录重要文章，定义 =my/elfeed-toggle-star= 函数来实现「标星」效果，这样后面可以直接使用 =+starred= 来搜索
+- 默认 elfeed 列表行间距太小，可以通过 =(setq-local line-spacing 0.3)= 调整
+
+** 常用快捷键
+*** elfeed-search
+- =s= 在 minibuffer 重新输入搜索词
+- =y= yank 当前行文章的 URL，并去掉 unread 标签
+- =b= 调用外部浏览器打开所选行文章
+- =g= 刷新当前 feed 列表
+- =G= 重新抓取 feed 记录
+*** elfeed-show
+- =TAB= 切换到下一个超链接处
+- =g= 刷新
+- =b= 调用外部浏览器打开文章
+
+* 笔记
+通过上面的配置，已经可以很好地在 Emacs 中阅读邮件与文章，还剩下如何记笔记没有介绍，对于 Emacser 来说，org-mode 是笔记的第一首选，而且 mu4e/elfeed 都支持 org-capture，直接在当前阅读的邮件或文章中执行 capture 就可以了。
+
+* 总结
+通过把邮件与信息流整合进 Emacs，可以充分进行沉浸式阅读，不再需要什么额外的软件，所有操作都在 Emacs 内完成，这是之前从未有过的体验。这可能也是 Emacs 自由、开放的魅力所在。
+
+#+begin_src emacs-lisp
+M-x Happy Reading
+#+end_src
+* 参考
+- [[http://cachestocaches.com/2017/3/complete-guide-email-emacs-using-mu-and-/][A Complete Guide to Email in Emacs using Mu and Mu4e]]
+- http://pragmaticemacs.com/category/mu4e/
+- https://github.com/munen/emacs.d/#mu4e
+- https://jherrlin.github.io/posts/emacs-mu4e/
+- https://noonker.github.io/posts/2020-04-22-elfeed/
+- [[https://nullprogram.com/blog/2013/09/04/][Introducing Elfeed, an Emacs Web Feed Reader]]
