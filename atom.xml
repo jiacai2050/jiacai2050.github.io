@@ -6,7 +6,16 @@
     <description>Recent content on Keep Coding</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>zh-cn</language>
-    <lastBuildDate>Thu, 21 Jan 2021 00:00:00 +0000</lastBuildDate><atom:link href="https://liujiacai.net/atom.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Fri, 05 Mar 2021 00:00:00 +0000</lastBuildDate><atom:link href="https://liujiacai.net/atom.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>使用 Emacs 阅读邮件与 Feed 信息流</title>
+      <link>https://liujiacai.net/blog/2021/03/05/emacs-love-mail-feed/</link>
+      <pubDate>Fri, 05 Mar 2021 00:00:00 +0000</pubDate>
+      
+      <guid>https://liujiacai.net/blog/2021/03/05/emacs-love-mail-feed/</guid>
+      <description>对于程序员来说，除了编写代码外，阅读邮件与技术文章是耗时比较久的事情，更重要的一点是，这两个的信息输入量都比较大，会涉及到做笔记、TODO 等</description>
+    </item>
+    
     <item>
       <title>解读 InfluxDB IOx：基于列存的时序数据库</title>
       <link>https://liujiacai.net/blog/2021/01/21/thoughts-of-influxdb-iox/</link>

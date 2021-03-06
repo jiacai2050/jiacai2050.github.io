@@ -1,0 +1,906 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <title>使用 Emacs 阅读邮件与 Feed 信息流 - Keep Coding</title>
+  <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author" content="刘家财" /><meta name="description" content="对于程序员来说，除了编写代码外，阅读邮件与技术文章是耗时比较久的事情，更重要的一点是，这两个的信息输入量都比较大，会涉及到做笔记、TODO 等" /><meta name="keywords" content="lisp, clojure, emacs, database, life" />
+
+
+
+
+
+
+<meta name="generator" content="Hugo 0.79.0 with theme even" />
+
+
+<link rel="canonical" href="https://liujiacai.net/blog/2021/03/05/emacs-love-mail-feed/" />
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+
+
+
+<link href="/sass/main.min.c7bc1becf36bcf6a9ebd25d2947e43a2eb745ddb0c9a32b43126fd7fa460c351.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+<link rel="stylesheet" href="/css/jiacai.css">
+
+
+<meta property="og:title" content="使用 Emacs 阅读邮件与 Feed 信息流" />
+<meta property="og:description" content="对于程序员来说，除了编写代码外，阅读邮件与技术文章是耗时比较久的事情，更重要的一点是，这两个的信息输入量都比较大，会涉及到做笔记、TODO 等" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://liujiacai.net/blog/2021/03/05/emacs-love-mail-feed/" />
+<meta property="article:published_time" content="2021-03-05T23:27:30+08:00" />
+<meta property="article:modified_time" content="2021-03-06T11:33:35+08:00" />
+<meta itemprop="name" content="使用 Emacs 阅读邮件与 Feed 信息流">
+<meta itemprop="description" content="对于程序员来说，除了编写代码外，阅读邮件与技术文章是耗时比较久的事情，更重要的一点是，这两个的信息输入量都比较大，会涉及到做笔记、TODO 等">
+<meta itemprop="datePublished" content="2021-03-05T23:27:30+08:00" />
+<meta itemprop="dateModified" content="2021-03-06T11:33:35+08:00" />
+<meta itemprop="wordCount" content="2848">
+
+
+
+<meta itemprop="keywords" content="emacs," />
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="使用 Emacs 阅读邮件与 Feed 信息流"/>
+<meta name="twitter:description" content="对于程序员来说，除了编写代码外，阅读邮件与技术文章是耗时比较久的事情，更重要的一点是，这两个的信息输入量都比较大，会涉及到做笔记、TODO 等"/>
+
+<!--[if lte IE 9]>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/classlist/1.1.20170427/classList.min.js"></script>
+<![endif]-->
+
+<!--[if lt IE 9]>
+  <script src="https://cdn.jsdelivr.net/npm/html5shiv@3.7.3/dist/html5shiv.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/respond.js@1.4.2/dest/respond.min.js"></script>
+<![endif]-->
+
+</head>
+<body>
+  <div id="mobile-navbar" class="mobile-navbar">
+  <div class="mobile-header-logo">
+    <a href="/" class="logo">Keep Coding</a>
+  </div>
+  <div class="mobile-navbar-icon">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+  <ul class="mobile-menu-list">
+    <a href="/">
+        <li class="mobile-menu-item">主页</li>
+      </a><a href="/post/">
+        <li class="mobile-menu-item">归档</li>
+      </a><a href="/tags/">
+        <li class="mobile-menu-item">标签</li>
+      </a><a href="/categories/">
+        <li class="mobile-menu-item">分类</li>
+      </a><a href="/podcast/">
+        <li class="mobile-menu-item">Podcast</li>
+      </a><a href="/blogrolls/">
+        <li class="mobile-menu-item">友链</li>
+      </a><a href="/about/">
+        <li class="mobile-menu-item">关于</li>
+      </a>
+  </ul>
+</nav>
+  <div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+  <a href="/" class="logo">Keep Coding</a>
+</div>
+
+<nav class="site-navbar">
+  <ul id="menu" class="menu">
+    <li class="menu-item">
+        <a class="menu-item-link" href="/">主页</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/post/">归档</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/tags/">标签</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/categories/">分类</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/podcast/">Podcast</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/blogrolls/">友链</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/about/">关于</a>
+      </li>
+  </ul>
+</nav>
+    </header>
+
+    <main id="main" class="main">
+      <div class="content-wrapper">
+        <div id="content" class="content">
+          <article class="post">
+    
+    <header class="post-header">
+      <h1 class="post-title">使用 Emacs 阅读邮件与 Feed 信息流</h1>
+
+      <div class="post-meta">
+        <span class="post-time"> 2021-03-05 </span>
+        <div class="post-category">
+            <a href="/categories/%E6%95%88%E7%8E%87%E5%B7%A5%E5%85%B7/"> 效率工具 </a>
+            </div>
+          <span class="more-meta"> 约 2848 字 </span>
+          <span class="more-meta"> 预计阅读 6 分钟 </span>
+        
+      </div>
+    </header>
+
+    <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content always-active">
+    <nav id="TableOfContents">
+<ul>
+<li><a href="#headline-1">邮件</a>
+<ul>
+<li><a href="#headline-2">GPG Auth Source 配置密码</a>
+</li>
+<li><a href="#headline-3">nametrans 文件名转换</a>
+</li>
+<li><a href="#headline-4">mu</a>
+<ul>
+<li><a href="#headline-5">mu4e 配置</a>
+</li>
+<li><a href="#headline-6">快捷键</a>
+<ul>
+<li><a href="#headline-7">main</a>
+</li>
+<li><a href="#headline-8">mu4e-view</a>
+</li>
+<li><a href="#headline-9">mu4e-compose</a>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href="#headline-10">信息流 Feed</a>
+<ul>
+<li><a href="#headline-11">常用快捷键</a>
+<ul>
+<li><a href="#headline-12">elfeed-search</a>
+</li>
+<li><a href="#headline-13">elfeed-show</a>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href="#headline-14">笔记</a>
+</li>
+<li><a href="#headline-15">总结</a>
+</li>
+<li><a href="#headline-16">参考</a>
+</li>
+</ul>
+</nav>
+  </div>
+</div>
+    <div class="post-content">
+      
+<p>
+对于程序员来说，除了编写代码外，阅读邮件与技术文章是耗时比较久的事情，更重要的一点是，这两个的信息输入量都比较大，会涉及到做笔记、TODO 等，如果没有 Emacs，这些事情都是分散在不同应用解决的，比如使用 ThunderBird 作为邮件客户端，Evernote 作为笔记软件。</p>
+<p>
+这些软件或多或少会有不满足需求的地方，用户往往需要使用多个功能类似的软件才能满足需求。邮件客户端我使用过 Foxmail/ThunderBird/Apple Mail ，使用的笔记软件更是不胜枚举，这种十分不优雅的做法终于在遇到 Emacs 之后划上了一个句号，有什么新需求几行 ELisp 就可以搞定，不再有迁移成本。</p>
+<p>
+这篇文章就给读者分享下使用方式与心得。在介绍具体配置前，先展示下效果（主题使用 <a href="https://github.com/greduan/emacs-theme-gruvbox">gruvbox</a>）：</p>
+<figure>
+<img src="https://img.alicdn.com/imgextra/i1/581166664/O1CN015qSgGU1z6A2vfHthv_!!581166664.png" alt="https://img.alicdn.com/imgextra/i1/581166664/O1CN015qSgGU1z6A2vfHthv_!!581166664.png" title="https://img.alicdn.com/imgextra/i1/581166664/O1CN015qSgGU1z6A2vfHthv_!!581166664.png" /><figcaption>
+mu4e 主界面
+</figcaption>
+</figure>
+<figure>
+<img src="https://img.alicdn.com/imgextra/i2/581166664/O1CN01EO1Wuq1z6A2u8UTWq_!!581166664.png" alt="https://img.alicdn.com/imgextra/i2/581166664/O1CN01EO1Wuq1z6A2u8UTWq_!!581166664.png" title="https://img.alicdn.com/imgextra/i2/581166664/O1CN01EO1Wuq1z6A2u8UTWq_!!581166664.png" /><figcaption>
+mu4e 邮件列表，默认以话题归类
+</figcaption>
+</figure>
+<figure>
+<img src="https://img.alicdn.com/imgextra/i3/581166664/O1CN01oIAjXl1z6A2wBzcu4_!!581166664.png" alt="https://img.alicdn.com/imgextra/i3/581166664/O1CN01oIAjXl1z6A2wBzcu4_!!581166664.png" title="https://img.alicdn.com/imgextra/i3/581166664/O1CN01oIAjXl1z6A2wBzcu4_!!581166664.png" /><figcaption>
+mu4e 浏览邮件
+</figcaption>
+</figure>
+<figure>
+<img src="https://img.alicdn.com/imgextra/i3/581166664/O1CN01oIAjXl1z6A2wBzcu4_!!581166664.png" alt="https://img.alicdn.com/imgextra/i3/581166664/O1CN01oIAjXl1z6A2wBzcu4_!!581166664.png" title="https://img.alicdn.com/imgextra/i3/581166664/O1CN01oIAjXl1z6A2wBzcu4_!!581166664.png" /><figcaption>
+mu4e 回复邮件
+</figcaption>
+</figure>
+<figure>
+<img src="https://img.alicdn.com/imgextra/i4/581166664/O1CN014tvhqR1z6A2unN0Md_!!581166664.png" alt="https://img.alicdn.com/imgextra/i4/581166664/O1CN014tvhqR1z6A2unN0Md_!!581166664.png" title="https://img.alicdn.com/imgextra/i4/581166664/O1CN014tvhqR1z6A2unN0Md_!!581166664.png" /><figcaption>
+elfeed-dashborad 主界面
+</figcaption>
+</figure>
+<figure>
+<img src="https://img.alicdn.com/imgextra/i2/581166664/O1CN01Sgm5pt1z6A2pZSOSa_!!581166664.png" alt="https://img.alicdn.com/imgextra/i2/581166664/O1CN01Sgm5pt1z6A2pZSOSa_!!581166664.png" title="https://img.alicdn.com/imgextra/i2/581166664/O1CN01Sgm5pt1z6A2pZSOSa_!!581166664.png" /><figcaption>
+elfeed 信息流列表
+</figcaption>
+</figure>
+<figure>
+<img src="https://img.alicdn.com/imgextra/i2/581166664/O1CN01VfB4Is1z6A2u9SUjw_!!581166664.png" alt="https://img.alicdn.com/imgextra/i2/581166664/O1CN01VfB4Is1z6A2u9SUjw_!!581166664.png" title="https://img.alicdn.com/imgextra/i2/581166664/O1CN01VfB4Is1z6A2u9SUjw_!!581166664.png" /><figcaption>
+elfeed 浏览文章
+</figcaption>
+</figure>
+<div id="outline-container-headline-1" class="outline-2">
+<h2 id="headline-1">
+邮件
+</h2>
+<div id="outline-text-headline-1" class="outline-text-2">
+<p>阅读邮件我使用的软件主要有</p>
+<ul>
+<li>
+<p><a href="http://www.offlineimap.org/">offlineimap</a> 使用 imap 协议，以 <a href="https://en.wikipedia.org/wiki/Maildir">Maildir</a> 格式来同步邮件；类似的软件有 <a href="https://wiki.archlinux.org/index.php/isync">Mbsync</a></p>
+</li>
+<li>
+<p><a href="https://www.djcbsoftware.nl/code/mu/mu4e.html">mu4e</a> mu 的 Emacs 插件，mu 可以对 Maildir 格式的邮件建索引，便于搜索；类似的软件有 <a href="https://en.wikipedia.org/wiki/Gnus">Gnus</a></p>
+</li>
+</ul>
+<p>offlineimap 使用 Python 编写，在 macOS 直接使用 brew 即可安装。下面是我目前的配置文件（配置文件推荐放在 <code class="verbatim">～/.config/offlineimap/config</code> ，尽量避免直接在家目录创建 <code class="verbatim">~/.offlineimaprc</code> ）</p>
+<div class="src src-text">
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-text" data-lang="text">[general]
+# 默认开启的账户，可以是多个
+accounts = ljc, outlook
+# 定义额外的 python 脚本，里面有获取密码的函数
+pythonfile = ~/.config/offlineimap/pass.py
+
+# 开始配置第一个账户
+[Account ljc]
+# 一个账户主要包含 local 与 remote 这两个配置项
+localrepository = LocalLJC
+remoterepository = RemoteLJC
+# 可选配置项，邮件同步时间：这里只同步 365 天之内的
+# 需要注意，一些邮件提供商也存在同步限制，比如 QQ 邮箱默认只同步 30 天内的数据，可以在设置中修改
+maxage = 365
+
+[Repository LocalLJC]
+type = Maildir
+localfolders = ~/.mail/ljc
+# 需要与 RemoteLJC 里面的 nametrans 配置起来使用，解释见正文
+nametrans = lambda folder: re.sub(&#39;^=&#39;, &#39;&amp;UXZO1mWHTvZZOQ-/&#39;, folder)
+
+[Repository RemoteLJC]
+nametrans = lambda folder: re.sub(&#39;^&amp;UXZO1mWHTvZZOQ-\/&#39;, &#39;=&#39;, folder)
+# 配置 ssl 证书，macOS 下安装 openssl 即可
+sslcacertfile = /usr/local/etc/openssl@1.1/cert.pem
+# 过滤掉一些目录，不进行同步
+folderfilter = lambda f: &#39;kK5O9l9SaGM&#39; not in f and &#39;&amp;UXZO1mWHTvZZOQ-&#39; != f and &#39;liujiacai&#39; not in f
+# 下面是 IMAP 的配置，我这里是使用的腾讯企业邮箱
+type = IMAP
+remotehost = imap.exmail.qq.com
+remoteport = 993
+remoteuser = hello@liujiacai.net
+# 调用 pass.py 中的函数获取密码
+remotepasseval = get_password_emacs(&#34;imap.exmail.qq.com&#34;, &#34;hello@liujiacai.net&#34;, &#34;993&#34;)
+# 也可通过下面配置直接设置密码
+# remotepass = YOUR_MAIL_PASSWORD
+[Account outlook]
+... 大致同上，这里不在赘述</code></pre></td></tr></table>
+</div>
+</div>
+</div>
+<p>上面的配置比较直观，也有相应注释，这里重点介绍如何设置 <code class="verbatim">remotepasseval</code> 与 <code class="verbatim">nametrans</code> 。</p>
+<div id="outline-container-headline-2" class="outline-3">
+<h3 id="headline-2">
+GPG Auth Source 配置密码
+</h3>
+<div id="outline-text-headline-2" class="outline-text-3">
+<p>Emacs 中使用 <a href="https://www.gnu.org/software/emacs/manual/html_mono/auth.html">Auth Source</a> 来管理密码，它相当于一个接口层，可以对接多个存储后端，netrc 是最常见的后端，除此之外，还支持 JSON、Secret Service API、pass。很多命令，比如 <a href="https://www.gnu.org/software/wget/manual/html_node/Startup-File.html">wget</a>、<a href="https://everything.curl.dev/usingcurl/netrc">curl</a>、<a href="https://bryanwweber.com/writing/personal/2016/01/01/how-to-set-up-an-encrypted-netrc-file-with-gpg-for-github-2fa-access/">git</a> 等都支持从 netrc 读取密码，因为这里只介绍其用法：</p>
+<pre class="example">
+machine mymachine login myloginname password mypassword port myport
+</pre>
+<p>上面描述了 netrc 文件的通用格式，下面是我邮箱的相关配置：</p>
+<pre class="example">
+# cat ~/.authinfo
+machine imap.exmail.qq.com login hello@liujiacai.net password 123456 port 993
+machine smtp.exmail.qq.com login hello@liujiacai.net password 123456 port 465
+</pre>
+<p>993 是 imap 端口，接受邮件用；465 是 smtp 端口，发送邮件用。为了安全，还可以对 netrc 使用 GPG 加密，Emacs 会自动解密读取。</p>
+<pre class="example">
+(setq auth-sources &#39;(&#34;~/.authinfo.gpg&#34; &#34;~/.authinfo&#34; &#34;~/.netrc&#34;))
+</pre>
+<p>Emacs 默认从上面几个地方找文件，读者可按需修改。</p>
+<p>
+我上面对配置中使用了 get_password_emacs 这个函数来获取密码，其实现如下：</p>
+<div class="src src-python">
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-python" data-lang="python"><span class="k">def</span> <span class="nf">get_password_emacs</span><span class="p">(</span><span class="n">machine</span><span class="p">,</span> <span class="n">login</span><span class="p">,</span> <span class="n">port</span><span class="p">):</span>
+    <span class="n">s</span> <span class="o">=</span> <span class="s2">&#34;machine </span><span class="si">%s</span><span class="s2"> login </span><span class="si">%s</span><span class="s2"> password ([^ ]*) port </span><span class="si">%s</span><span class="se">\n</span><span class="s2">&#34;</span> <span class="o">%</span> <span class="p">(</span>
+        <span class="n">machine</span><span class="p">,</span> <span class="n">login</span><span class="p">,</span> <span class="n">port</span><span class="p">)</span>
+    <span class="n">p</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
+    <span class="n">authinfo</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">popen</span><span class="p">(</span><span class="s2">&#34;gpg -q --no-tty -d ~/.config/authinfo.gpg&#34;</span><span class="p">)</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">p</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">authinfo</span><span class="p">)</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span></code></pre></td></tr></table>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div id="outline-container-headline-3" class="outline-3">
+<h3 id="headline-3">
+nametrans 文件名转换
+</h3>
+<div id="outline-text-headline-3" class="outline-text-3">
+<p>配置好密码后，就可以进行邮件同步了。但是在同步前，可以通过 <code class="verbatim">offlineimap --info</code> 命令查看邮件服务器中的内容，确认下需要同步哪些目录</p>
+<div class="src src-bash">
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ offlineimap --info
+OfflineIMAP 7.3.3
+  Licensed under the GNU GPL v2 or any later version <span class="o">(</span>with an OpenSSL exception<span class="o">)</span>
+imaplib2 v2.101 <span class="o">(</span>bundled<span class="o">)</span>, Python v2.7.17, OpenSSL 1.1.1i  <span class="m">8</span> Dec <span class="m">2020</span>
+  imaplib2: 2.101 <span class="o">(</span>bundled<span class="o">)</span>
+Remote repository <span class="s1">&#39;RemoteLJC&#39;</span>: <span class="nb">type</span> <span class="s1">&#39;IMAP&#39;</span>
+Host: imap.exmail.qq.com Port: None SSL: True
+Establishing connection to imap.exmail.qq.com:993 <span class="o">(</span>RemoteLJC<span class="o">)</span>
+Server supports ID extension.
+Server welcome string: * OK <span class="o">[</span>CAPABILITY IMAP4 IMAP4rev1 ID <span class="nv">AUTH</span><span class="o">=</span>PLAIN <span class="nv">AUTH</span><span class="o">=</span>LOGIN NAMESPACE<span class="o">]</span> QQMail IMAP4Server ready
+Server capabilities: <span class="o">(</span><span class="s1">&#39;IMAP4&#39;</span>, <span class="s1">&#39;IMAP4REV1&#39;</span>, <span class="s1">&#39;XLIST&#39;</span>, <span class="s1">&#39;MOVE&#39;</span>, <span class="s1">&#39;IDLE&#39;</span>, <span class="s1">&#39;XAPPLEPUSHSERVICE&#39;</span>, <span class="s1">&#39;NAMESPACE&#39;</span>, <span class="s1">&#39;CHILDREN&#39;</span>, <span class="s1">&#39;ID&#39;</span>, <span class="s1">&#39;UIDPLUS&#39;</span><span class="o">)</span>
+
+<span class="nv">folderfilter</span><span class="o">=</span> lambda f: <span class="s1">&#39;kK5O9l9SaGM&#39;</span> not in f and <span class="s1">&#39;&amp;UXZO1mWHTvZZOQ-&#39;</span> !<span class="o">=</span> f and <span class="s1">&#39;liujiacai&#39;</span> not in f
+
+<span class="nv">nametrans</span><span class="o">=</span> lambda folder: re.sub<span class="o">(</span><span class="s1">&#39;^&amp;UXZO1mWHTvZZOQ-\/&#39;</span>, <span class="s1">&#39;=&#39;</span>, folder<span class="o">)</span>
+
+Folderlist:
+ <span class="p">&amp;</span>UXZO1mWHTvZZOQ- <span class="o">(</span>disabled<span class="o">)</span>
+ <span class="p">&amp;</span>UXZO1mWHTvZZOQ-/clojure -&gt; <span class="o">=</span>clojure
+ <span class="p">&amp;</span>UXZO1mWHTvZZOQ-/GitHub -&gt; <span class="o">=</span>GitHub
+ <span class="p">&amp;</span>UXZO1mWHTvZZOQ-/golang -&gt; <span class="o">=</span>golang
+ <span class="p">&amp;</span>UXZO1mWHTvZZOQ-/tb@liujiacai.net -&gt; <span class="o">=</span>tb@liujiacai.net <span class="o">(</span>disabled<span class="o">)</span>
+ Deleted Messages
+ Drafts
+ INBOX
+ Junk
+ Sent Messages</code></pre></td></tr></table>
+</div>
+</div>
+</div>
+<p>在 Folderlist 下面就是邮件服务器中的目录， <code class="verbatim">&amp;UXZO1mWHTvZZOQ-</code> 开头的目录为自定义目录，为了保证同步下来的目录中没有这一串字母，我使用 <code class="verbatim">nametrans</code> 配置把它转化为了 <code>=</code> 符号。</p>
+<p>
+由于 IMAP 的同步是双向的，本地的状态也需要返回给远端，因此在 LocalLJC 中又使用 <code class="verbatim">nametrans</code> 把 <code>=</code> 转成了那串字母，这样两边就能正确同步邮件状态了，下面是本地的状态：</p>
+<div class="src src-bash">
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">Local repository <span class="s1">&#39;LocalLJC&#39;</span>: <span class="nb">type</span> <span class="s1">&#39;Maildir&#39;</span>
+<span class="nv">nametrans</span><span class="o">=</span> lambda folder: re.sub<span class="o">(</span><span class="s1">&#39;^=&#39;</span>, <span class="s1">&#39;&amp;UXZO1mWHTvZZOQ-/&#39;</span>, folder<span class="o">)</span>
+
+Folderlist:
+ INBOX
+ Drafts
+ <span class="nv">Junk</span>
+ <span class="o">=</span>GitHub -&gt; <span class="p">&amp;</span>UXZO1mWHTvZZOQ-/GitHub
+ Deleted <span class="nv">Messages</span>
+ <span class="o">=</span>golang -&gt; <span class="p">&amp;</span>UXZO1mWHTvZZOQ-/golang
+ <span class="o">=</span>clojure -&gt; <span class="p">&amp;</span>UXZO1mWHTvZZOQ-/clojure
+ Sent Messages</code></pre></td></tr></table>
+</div>
+</div>
+</div>
+<p>
+最后，直接运行 <code class="verbatim">offlineimap</code> 就可以同步邮件了。</p>
+</div>
+</div>
+<div id="outline-container-headline-4" class="outline-3">
+<h3 id="headline-4">
+mu
+</h3>
+<div id="outline-text-headline-4" class="outline-text-3">
+<p>邮件同步到本地后，在使用前需要使用 mu 建索引，两条命令即可：</p>
+<div class="src src-bash">
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="c1"># 只需要执行一次 init，index 在每次收取邮件后都需要执行，mu4e 可以配置自动执行</span>
+mu init --my-address liujiacai@live.com --my-address hello@liujiacai.net -m ~/.mail
+mu index</code></pre></td></tr></table>
+</div>
+</div>
+</div>
+<div id="outline-container-headline-5" class="outline-4">
+<h4 id="headline-5">
+mu4e 配置
+</h4>
+<div id="outline-text-headline-5" class="outline-text-4">
+<p>mu4e 在 mu 的安装目录内，不需要再额外安装。除 mu4e 外，推荐安装下面这几个 Emacs 插件</p>
+<ul>
+<li>
+<p><a href="https://github.com/agpchil/mu4e-maildirs-extension">maildirs</a>，它可以把每个目录邮件数展示出来。mu4e 相关配置可以在</p>
+</li>
+<li>
+<p><a href="https://github.com/org-mime/org-mime">org-mime</a>，它可以把 org-mode 格式转为 HTML 的邮件</p>
+</li>
+<li>
+<p><a href="https://github.com/joostkremers/visual-fill-column">visual-fill-column</a>，相当于 fill-column 与 visual-line-mode 的结合版，主要方便在大屏显示器上阅读，效果是把长行拆分是多行。</p>
+</li>
+</ul>
+<p>这几个插件的配置可以在<a href="https://github.com/jiacai2050/dotfiles/blob/master/.emacs.d/customizations/misc.org#email">这里</a>找到，这里主要介绍核心配置，细节不再赘述：</p>
+<ul>
+<li>
+<p>使用 <code class="verbatim">mu4e-contexts</code> 配置多账户</p>
+</li>
+<li>
+<p><code class="verbatim">mu4e-update-interval</code> 配置自动同步邮件与建索引间隔</p>
+</li>
+<li>
+<p><code class="verbatim">mu4e-get-mail-command</code> 配置同步邮件的命令</p>
+</li>
+<li>
+<p>为 <code class="verbatim">mu4e-view-actions</code> 增加 <code class="verbatim">mu4e-action-view-in-browser</code> ，这样在阅读邮件时，按 <code class="verbatim">a b</code> 在浏览器打开邮件，这对那些只有 html 的邮件来说比较重要</p>
+</li>
+<li>
+<p><code class="verbatim">message-citation-line-format</code> 定义符合 Gmail 的引用格式，Gmail 会用 <code class="verbatim">...</code> 将引用隐藏起来</p>
+</li>
+<li>
+<p><code class="verbatim">mu4e-maildirs-extension-custom-list</code> 配置目录展示顺序</p>
+</li>
+<li>
+<p>org-mime 主要有两种使用方式</p>
+<ol>
+<li>
+<p>在一个 org 文件中调用 <code class="verbatim">org-mime-org-buffer-htmlize</code> （推荐绑定到 <code class="verbatim">C-c C-c</code> ），这会自动把当前 org 文件转为 html 并打开编辑邮件的 buffer</p>
+</li>
+<li>
+<p>在编辑邮件的 buffer 中，调用 <code class="verbatim">org-mime-edit-mail-in-org-mode</code> （推荐绑定到 <code class="verbatim">C-c &#39;</code> ）打开 org-mode 编辑区，编辑好后调用 <code class="verbatim">org-mime-htmlize</code> （推荐放到 <code class="verbatim">message-send-hook</code> 里面）将 org 格式转为 html 邮件</p>
+</li>
+</ol>
+</li>
+</ul>
+</div>
+</div>
+<div id="outline-container-headline-6" class="outline-4">
+<h4 id="headline-6">
+快捷键
+</h4>
+<div id="outline-text-headline-6" class="outline-text-4">
+<div id="outline-container-headline-7" class="outline-5">
+<h5 id="headline-7">
+main
+</h5>
+<div id="outline-text-headline-7" class="outline-text-5">
+<ul>
+<li>
+<p><code class="verbatim">j</code> 跳转目录</p>
+</li>
+<li>
+<p><code class="verbatim">b</code> 跳转书签</p>
+</li>
+<li>
+<p><code class="verbatim">U</code> 收取邮件与重建索引</p>
+</li>
+</ul>
+</div>
+</div>
+<div id="outline-container-headline-8" class="outline-5">
+<h5 id="headline-8">
+mu4e-view
+</h5>
+<div id="outline-text-headline-8" class="outline-text-5">
+<ul>
+<li>
+<p><code class="verbatim">j</code> 跳转目录</p>
+</li>
+<li>
+<p><code class="verbatim">g</code> 访问当前邮件中的 URL</p>
+</li>
+<li>
+<p><code class="verbatim">a</code> Action 选项</p>
+</li>
+<li>
+<p><code class="verbatim">A</code> 附件选项</p>
+</li>
+<li>
+<p><code class="verbatim">C</code> 写新邮件</p>
+</li>
+<li>
+<p><code class="verbatim">R</code> 回复邮件</p>
+</li>
+</ul>
+</div>
+</div>
+<div id="outline-container-headline-9" class="outline-5">
+<h5 id="headline-9">
+mu4e-compose
+</h5>
+<div id="outline-text-headline-9" class="outline-text-5">
+<ul>
+<li>
+<p><code class="verbatim">C-c C-c</code> 发送</p>
+</li>
+<li>
+<p><code class="verbatim">C-c C-k</code> 废弃</p>
+</li>
+<li>
+<p><code class="verbatim">C-c C-d</code> 存草稿</p>
+</li>
+<li>
+<p><code class="verbatim">C-c C-a</code> 添加附件</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div id="outline-container-headline-10" class="outline-2">
+<h2 id="headline-10">
+信息流 Feed
+</h2>
+<div id="outline-text-headline-10" class="outline-text-2">
+<p>阅读信息流使用的是 <a href="https://github.com/skeeto/elfeed">elfeed</a>，它的配置相比邮件就简单多了，虽然 elfeed 可以不依赖外部软件执行，但是其作者还是推荐使用 curl 而非 ELisp 中的 url-retrieve，一方面是速度更快，另一方面是更稳定。除了 elfeed，还推荐安装下面两个插件：</p>
+<ul>
+<li>
+<p><a href="https://github.com/remyhonig/elfeed-org">elfeed-org</a> 使用 org 文件来定义 feeds 列表，它可以很方便进行打标签，重命名。<a href="https://github.com/jiacai2050/dotfiles/blob/master/.emacs.d/etc/elfeed-feeds.org">elfeed-feeds.org</a> 是我的配置</p>
+</li>
+<li>
+<p><a href="https://github.com/Manoj321/elfeed-dashboard">elfeed-dashboard</a> 把定义的 feeds 列表按标签展示。<a href="https://github.com/jiacai2050/dotfiles/blob/master/.emacs.d/etc/elfeed-dashboard.org">elfeed-dashboard.org</a> 是我的配置</p>
+</li>
+</ul>
+<p>下面阐述 elfeed 核心配置，具体配置可参考<a href="https://github.com/jiacai2050/dotfiles/blob/master/.emacs.d/customizations/misc.org#feed">这里</a>：</p>
+<ul>
+<li>
+<p><code class="verbatim">elfeed-curl-extra-arguments</code> 可以配置 curl 的参数，比较常用的是配置代理</p>
+</li>
+<li>
+<p>elfeed 默认使用 <a href="https://www.emacswiki.org/emacs/HtmlRendering">shr</a> 展示，在加载图片是会卡住，可通过设置 <code class="verbatim">shr-inhibit-images</code> 为 nil 来禁用图片，之后通过自定义函数 <code class="verbatim">my/show-feed-images</code> 来开启图片</p>
+</li>
+<li>
+<p>为了方便记录重要文章，定义 <code class="verbatim">my/elfeed-toggle-star</code> 函数来实现「标星」效果，这样后面可以直接使用 <code class="verbatim">+starred</code> 来搜索</p>
+</li>
+<li>
+<p>默认 elfeed 列表行间距太小，可以通过 <code class="verbatim">(setq-local line-spacing 0.3)</code> 调整</p>
+</li>
+</ul>
+<div id="outline-container-headline-11" class="outline-3">
+<h3 id="headline-11">
+常用快捷键
+</h3>
+<div id="outline-text-headline-11" class="outline-text-3">
+<div id="outline-container-headline-12" class="outline-4">
+<h4 id="headline-12">
+elfeed-search
+</h4>
+<div id="outline-text-headline-12" class="outline-text-4">
+<ul>
+<li>
+<p><code class="verbatim">s</code> 在 minibuffer 重新输入搜索词</p>
+</li>
+<li>
+<p><code class="verbatim">y</code> yank 当前行文章的 URL，并去掉 unread 标签</p>
+</li>
+<li>
+<p><code class="verbatim">b</code> 调用外部浏览器打开所选行文章</p>
+</li>
+<li>
+<p><code class="verbatim">g</code> 刷新当前 feed 列表</p>
+</li>
+<li>
+<p><code class="verbatim">G</code> 重新抓取 feed 记录</p>
+</li>
+</ul>
+</div>
+</div>
+<div id="outline-container-headline-13" class="outline-4">
+<h4 id="headline-13">
+elfeed-show
+</h4>
+<div id="outline-text-headline-13" class="outline-text-4">
+<ul>
+<li>
+<p><code class="verbatim">TAB</code> 切换到下一个超链接处</p>
+</li>
+<li>
+<p><code class="verbatim">g</code> 刷新</p>
+</li>
+<li>
+<p><code class="verbatim">b</code> 调用外部浏览器打开文章</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div id="outline-container-headline-14" class="outline-2">
+<h2 id="headline-14">
+笔记
+</h2>
+<div id="outline-text-headline-14" class="outline-text-2">
+<p>通过上面的配置，已经可以很好地在 Emacs 中阅读邮件与文章，还剩下如何记笔记没有介绍，对于 Emacser 来说，org-mode 是笔记的第一首选，而且 mu4e/elfeed 都支持 org-capture，直接在当前阅读的邮件或文章中执行 capture 就可以了。</p>
+</div>
+</div>
+<div id="outline-container-headline-15" class="outline-2">
+<h2 id="headline-15">
+总结
+</h2>
+<div id="outline-text-headline-15" class="outline-text-2">
+<p>通过把邮件与信息流整合进 Emacs，可以充分进行沉浸式阅读，不再需要什么额外的软件，所有操作都在 Emacs 内完成，这是之前从未有过的体验。这可能也是 Emacs 自由、开放的魅力所在。</p>
+<div class="src src-emacs-lisp">
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-emacs-lisp" data-lang="emacs-lisp"><span class="nv">M-x</span> <span class="nv">Happy</span> <span class="nv">Reading</span></code></pre></td></tr></table>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div id="outline-container-headline-16" class="outline-2">
+<h2 id="headline-16">
+参考
+</h2>
+<div id="outline-text-headline-16" class="outline-text-2">
+<ul>
+<li>
+<p><a href="http://cachestocaches.com/2017/3/complete-guide-email-emacs-using-mu-and-/">A Complete Guide to Email in Emacs using Mu and Mu4e</a></p>
+</li>
+<li>
+<p><a href="http://pragmaticemacs.com/category/mu4e/">http://pragmaticemacs.com/category/mu4e/</a></p>
+</li>
+<li>
+<p><a href="https://github.com/munen/emacs.d/#mu4e">https://github.com/munen/emacs.d/#mu4e</a></p>
+</li>
+<li>
+<p><a href="https://jherrlin.github.io/posts/emacs-mu4e/">https://jherrlin.github.io/posts/emacs-mu4e/</a></p>
+</li>
+<li>
+<p><a href="https://noonker.github.io/posts/2020-04-22-elfeed/">https://noonker.github.io/posts/2020-04-22-elfeed/</a></p>
+</li>
+<li>
+<p><a href="https://nullprogram.com/blog/2013/09/04/">Introducing Elfeed, an Emacs Web Feed Reader</a></p>
+</li>
+</ul>
+</div>
+</div>
+
+    </div>
+
+    <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    <span class="item-content">刘家财</span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+        2021-03-06
+        <a href="https://github.com/jiacai2050/jiacai2050.github.io/commit/c3b2988f7f454dd30808836dbbde11329ee7ec17" title="new post emacs love mail feed">(c3b2988)</a>
+    </span>
+  </p>
+  
+  <p class="copyright-item">
+    <span class="item-title">许可协议</span>
+    <span class="item-content"><a rel="license noopener" href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank">CC BY-NC-ND 4.0</a></span>
+  </p>
+</div>
+<footer class="post-footer">
+      <div class="post-tags">
+          <a href="/tags/emacs/">emacs</a>
+          </div>
+      <nav class="post-nav">
+        
+        <a class="next" href="/blog/2021/01/21/thoughts-of-influxdb-iox/">
+            <span class="next-text nav-default">解读 InfluxDB IOx：基于列存的时序数据库</span>
+            <span class="next-text nav-mobile">下一篇</span>
+            <i class="iconfont icon-right"></i>
+          </a>
+      </nav>
+    </footer>
+  </article>
+        </div>
+        <div id="disqus_thread"></div>
+    <script type="text/javascript">
+    (function() {
+      
+      
+      if (window.location.hostname === 'localhost') return;
+
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      var disqus_shortname = 'jiacai2050';
+      dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+
+  
+
+  
+
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="social-links">
+      <a href="mailto:jiacai2050&#43;blog@gmail.com" class="iconfont icon-email" title="email"></a>
+      <a href="https://stackoverflow.com/users/2163429/jiacai-liu" class="iconfont icon-stack-overflow" title="stack-overflow"></a>
+      <a href="https://www.twitter.com/liujiacai" class="iconfont icon-twitter" title="twitter"></a>
+      <a href="https://github.com/jiacai2050" class="iconfont icon-github" title="github"></a>
+      <a href="http://weibo.com/liujiacai" class="iconfont icon-weibo" title="weibo"></a>
+      <a href="https://www.zhihu.com/people/jiacai2050" class="iconfont icon-zhihu" title="zhihu"></a>
+      <a href="https://www.douban.com/people/liujiacai/" class="iconfont icon-douban" title="douban"></a>
+  <a href="https://liujiacai.net/atom.xml" type="application/rss+xml" class="iconfont icon-rss" title="rss"></a>
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://gohugo.io">Hugo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 - 
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  
+
+  <span class="copyright-year">
+    &copy; 
+    2014 - 
+    2021<span class="heart"><i class="iconfont icon-heart"></i></span><span>刘家财</span>
+  </span>
+</div>
+
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+      <i class="iconfont icon-up"></i>
+    </div>
+  </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+
+
+
+<script type="text/javascript" src="/js/main.min.c12618f9a600c40bd024996677e951e64d3487006775aeb22e200c990006c5c7.js"></script>
+
+
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'UA-50745138-1', 'auto');
+	ga('set', 'anonymizeIp', true);
+	ga('send', 'pageview');
+}
+</script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
+<script id="baidu_analytics">
+  var _hmt = _hmt || [];
+  (function() {
+    if (window.location.hostname === 'localhost') return;
+    var hm = document.createElement("script"); hm.async = true;
+    hm.src = "https://hm.baidu.com/hm.js?3ffc15f400ce3f8b1db5afc4f29b6ce9";
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(hm, s);
+  })();
+</script>
+
+
+
+
+
+
+</body>
+</html>
