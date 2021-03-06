@@ -10,7 +10,7 @@
 这篇文章就给读者分享下使用方式与心得。在介绍具体配置前，先展示下效果（主题使用 [[https://github.com/greduan/emacs-theme-gruvbox][gruvbox]]）：
 
 #+CAPTION: mu4e 主界面
-[[https://img.alicdn.com/imgextra/i1/581166664/O1CN015qSgGU1z6A2vfHthv_!!581166664.png]]
+[[https://img.alicdn.com/imgextra/i2/581166664/O1CN01QsaGky1z6A2n7bWaU_!!581166664.jpg]]
 
 #+CAPTION: mu4e 邮件列表，默认以话题归类
 [[https://img.alicdn.com/imgextra/i2/581166664/O1CN01EO1Wuq1z6A2u8UTWq_!!581166664.png]]
@@ -19,7 +19,7 @@
 [[https://img.alicdn.com/imgextra/i3/581166664/O1CN01oIAjXl1z6A2wBzcu4_!!581166664.png]]
 
 #+CAPTION: mu4e 回复邮件
-[[https://img.alicdn.com/imgextra/i3/581166664/O1CN01oIAjXl1z6A2wBzcu4_!!581166664.png]]
+[[https://img.alicdn.com/imgextra/i2/581166664/O1CN01acjyqM1z6A2n2kQdU_!!581166664.png]]
 
 #+CAPTION: elfeed-dashborad 主界面
 [[https://img.alicdn.com/imgextra/i4/581166664/O1CN014tvhqR1z6A2unN0Md_!!581166664.png]]
@@ -64,14 +64,14 @@ nametrans = lambda folder: re.sub('^&UXZO1mWHTvZZOQ-\/', '=', folder)
 # 配置 ssl 证书，macOS 下安装 openssl 即可
 sslcacertfile = /usr/local/etc/openssl@1.1/cert.pem
 # 过滤掉一些目录，不进行同步
-folderfilter = lambda f: 'kK5O9l9SaGM' not in f and '&UXZO1mWHTvZZOQ-' != f and 'liujiacai' not in f
+folderfilter = lambda f: 'kK5O9l9SaGM' not in f and '&UXZO1mWHTvZZOQ-' != f
 # 下面是 IMAP 的配置，我这里是使用的腾讯企业邮箱
 type = IMAP
 remotehost = imap.exmail.qq.com
 remoteport = 993
-remoteuser = hello@liujiacai.net
+remoteuser = hello@example.com
 # 调用 pass.py 中的函数获取密码
-remotepasseval = get_password_emacs("imap.exmail.qq.com", "hello@liujiacai.net", "993")
+remotepasseval = get_password_emacs("imap.exmail.qq.com", "hello@example.com", "993")
 # 也可通过下面配置直接设置密码
 # remotepass = YOUR_MAIL_PASSWORD
 [Account outlook]
@@ -89,8 +89,8 @@ machine mymachine login myloginname password mypassword port myport
 
 #+begin_example
 # cat ~/.authinfo
-machine imap.exmail.qq.com login hello@liujiacai.net password 123456 port 993
-machine smtp.exmail.qq.com login hello@liujiacai.net password 123456 port 465
+machine imap.exmail.qq.com login hello@example.com password 123456 port 993
+machine smtp.exmail.qq.com login hello@example.com password 123456 port 465
 #+end_example
 993 是 imap 端口，接受邮件用；465 是 smtp 端口，发送邮件用。为了安全，还可以对 netrc 使用 GPG 加密，Emacs 会自动解密读取。
 
@@ -123,7 +123,7 @@ Server supports ID extension.
 Server welcome string: * OK [CAPABILITY IMAP4 IMAP4rev1 ID AUTH=PLAIN AUTH=LOGIN NAMESPACE] QQMail IMAP4Server ready
 Server capabilities: ('IMAP4', 'IMAP4REV1', 'XLIST', 'MOVE', 'IDLE', 'XAPPLEPUSHSERVICE', 'NAMESPACE', 'CHILDREN', 'ID', 'UIDPLUS')
 
-folderfilter= lambda f: 'kK5O9l9SaGM' not in f and '&UXZO1mWHTvZZOQ-' != f and 'liujiacai' not in f
+folderfilter= lambda f: 'kK5O9l9SaGM' not in f and '&UXZO1mWHTvZZOQ-' != f
 
 nametrans= lambda folder: re.sub('^&UXZO1mWHTvZZOQ-\/', '=', folder)
 
@@ -132,7 +132,6 @@ Folderlist:
  &UXZO1mWHTvZZOQ-/clojure -> =clojure
  &UXZO1mWHTvZZOQ-/GitHub -> =GitHub
  &UXZO1mWHTvZZOQ-/golang -> =golang
- &UXZO1mWHTvZZOQ-/tb@liujiacai.net -> =tb@liujiacai.net (disabled)
  Deleted Messages
  Drafts
  INBOX
@@ -163,7 +162,7 @@ Folderlist:
 邮件同步到本地后，在使用前需要使用 mu 建索引，两条命令即可：
 #+begin_src bash
 # 只需要执行一次 init，index 在每次收取邮件后都需要执行，mu4e 可以配置自动执行
-mu init --my-address liujiacai@live.com --my-address hello@liujiacai.net -m ~/.mail
+mu init --my-address your-mail@qq.com --my-address your-mail@gmail.com -m ~/.mail
 mu index
 #+end_src
 *** mu4e 配置
