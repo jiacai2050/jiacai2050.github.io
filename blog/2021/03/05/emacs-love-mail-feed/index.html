@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
-  <title>使用 Emacs 阅读邮件与 Feed 信息流 - Keep Coding</title>
+  <title>使用 Emacs 阅读邮件与 RSS - Keep Coding</title>
   <meta name="renderer" content="webkit" />
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
 
@@ -40,23 +40,23 @@
 <link rel="stylesheet" href="/css/jiacai.css">
 
 
-<meta property="og:title" content="使用 Emacs 阅读邮件与 Feed 信息流" />
+<meta property="og:title" content="使用 Emacs 阅读邮件与 RSS" />
 <meta property="og:description" content="Emacs as Email client 对于程序员来说，除了编写代码外，阅读邮件与技术文章是耗时比较久的事情，更重要的一点是，这两个的信息输入量都比较大，会涉及到做笔记、T" />
 <meta property="og:type" content="article" />
 <meta property="og:url" content="https://liujiacai.net/blog/2021/03/05/emacs-love-mail-feed/" />
 <meta property="article:published_time" content="2021-03-05T23:27:30+08:00" />
-<meta property="article:modified_time" content="2021-03-06T13:58:50+08:00" />
-<meta itemprop="name" content="使用 Emacs 阅读邮件与 Feed 信息流">
+<meta property="article:modified_time" content="2021-03-08T21:50:12+08:00" />
+<meta itemprop="name" content="使用 Emacs 阅读邮件与 RSS">
 <meta itemprop="description" content="Emacs as Email client 对于程序员来说，除了编写代码外，阅读邮件与技术文章是耗时比较久的事情，更重要的一点是，这两个的信息输入量都比较大，会涉及到做笔记、T">
 <meta itemprop="datePublished" content="2021-03-05T23:27:30+08:00" />
-<meta itemprop="dateModified" content="2021-03-06T13:58:50+08:00" />
-<meta itemprop="wordCount" content="2977">
+<meta itemprop="dateModified" content="2021-03-08T21:50:12+08:00" />
+<meta itemprop="wordCount" content="3024">
 
 
 
 <meta itemprop="keywords" content="emacs," />
 <meta name="twitter:card" content="summary"/>
-<meta name="twitter:title" content="使用 Emacs 阅读邮件与 Feed 信息流"/>
+<meta name="twitter:title" content="使用 Emacs 阅读邮件与 RSS"/>
 <meta name="twitter:description" content="Emacs as Email client 对于程序员来说，除了编写代码外，阅读邮件与技术文章是耗时比较久的事情，更重要的一点是，这两个的信息输入量都比较大，会涉及到做笔记、T"/>
 
 <!--[if lte IE 9]>
@@ -132,15 +132,15 @@
           <article class="post">
     
     <header class="post-header">
-      <h1 class="post-title">使用 Emacs 阅读邮件与 Feed 信息流</h1>
+      <h1 class="post-title">使用 Emacs 阅读邮件与 RSS</h1>
 
       <div class="post-meta">
         <span class="post-time"> 2021-03-05 </span>
         <div class="post-category">
             <a href="/categories/%E6%95%88%E7%8E%87%E5%B7%A5%E5%85%B7/"> 效率工具 </a>
             </div>
-          <span class="more-meta"> 约 2977 字 </span>
-          <span class="more-meta"> 预计阅读 6 分钟 </span>
+          <span class="more-meta"> 约 3024 字 </span>
+          <span class="more-meta"> 预计阅读 7 分钟 </span>
         
       </div>
     </header>
@@ -160,25 +160,25 @@
 <ul>
 <li><a href="#headline-5">配置</a>
 </li>
-<li><a href="#headline-6">Flags 含义</a>
-</li>
-<li><a href="#headline-7">查询语法</a>
-</li>
-<li><a href="#headline-8">快捷键</a>
+<li><a href="#headline-6">快捷键</a>
 <ul>
-<li><a href="#headline-9">main</a>
+<li><a href="#headline-7">main</a>
 </li>
-<li><a href="#headline-10">mu4e-view</a>
+<li><a href="#headline-8">view</a>
 </li>
-<li><a href="#headline-11">mu4e-compose</a>
+<li><a href="#headline-9">compose</a>
+</li>
+</ul>
+</li>
+<li><a href="#headline-10">Flags 含义</a>
+</li>
+<li><a href="#headline-11">查询语法</a>
 </li>
 </ul>
 </li>
 </ul>
 </li>
-</ul>
-</li>
-<li><a href="#headline-12">信息流 Feed</a>
+<li><a href="#headline-12">RSS</a>
 <ul>
 <li><a href="#headline-13">查询语法</a>
 </li>
@@ -210,11 +210,9 @@ Emacs as Email client
 </figcaption>
 </figure>
 <p>
-对于程序员来说，除了编写代码外，阅读邮件与技术文章是耗时比较久的事情，更重要的一点是，这两个的信息输入量都比较大，会涉及到做笔记、TODO 等，如果没有 Emacs，这些事情都是分散在不同应用解决的，比如使用 ThunderBird 作为邮件客户端，Evernote 作为笔记软件。</p>
+对于程序员来说，除了编写代码外，阅读邮件与技术文章是耗时比较久的事情，更重要的一点是，这两个的信息输入量都比较大，会涉及到做笔记、TODO 等，一般来说这些事情都是分散在不同应用解决的，但对 Emacs 用户来说，自然希望能<a href="https://1byte.io/how-to-do-everything-in-emacs/">在 Emacs 里做所有事</a>。</p>
 <p>
-这些软件或多或少会有不满足需求的地方，用户往往需要使用多个功能类似的软件才能满足需求。邮件客户端我使用过 Foxmail/ThunderBird/Apple Mail ，使用的笔记软件更是不胜枚举，这种十分不优雅的做法终于在遇到 Emacs 之后划上了一个句号，有什么新需求几行 ELisp 就可以搞定，不再有迁移成本。</p>
-<p>
-这篇文章就给读者分享下使用方式与心得。在介绍具体配置前，先展示下效果（主题使用 <a href="https://github.com/greduan/emacs-theme-gruvbox">gruvbox</a>）：</p>
+这篇文章就给读者分享下 Emacs 作为邮件、RSS 客户端的使用方式与心得。在介绍具体配置前，先展示下使用效果（主题使用 <a href="https://github.com/greduan/emacs-theme-gruvbox">gruvbox</a>），以便读者欣赏。</p>
 <figure>
 <img src="https://img.alicdn.com/imgextra/i2/581166664/O1CN01QsaGky1z6A2n7bWaU_!!581166664.jpg" alt="https://img.alicdn.com/imgextra/i2/581166664/O1CN01QsaGky1z6A2n7bWaU_!!581166664.jpg" title="https://img.alicdn.com/imgextra/i2/581166664/O1CN01QsaGky1z6A2n7bWaU_!!581166664.jpg" /><figcaption>
 mu4e 主界面
@@ -242,7 +240,7 @@ elfeed-dashborad 主界面
 </figure>
 <figure>
 <img src="https://img.alicdn.com/imgextra/i2/581166664/O1CN01Sgm5pt1z6A2pZSOSa_!!581166664.png" alt="https://img.alicdn.com/imgextra/i2/581166664/O1CN01Sgm5pt1z6A2pZSOSa_!!581166664.png" title="https://img.alicdn.com/imgextra/i2/581166664/O1CN01Sgm5pt1z6A2pZSOSa_!!581166664.png" /><figcaption>
-elfeed 信息流列表
+elfeed 文章列表
 </figcaption>
 </figure>
 <figure>
@@ -504,21 +502,26 @@ Folderlist:
 mu4e
 </h3>
 <div id="outline-text-headline-4" class="outline-text-3">
-<p>邮件同步到本地后，在使用前需要使用 mu 建索引，两条命令即可：</p>
+<p>邮件同步到本地后，在使用前需要使用 mu 建索引，参考命令：</p>
 <div class="src src-bash">
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
 <pre class="chroma"><code><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="c1"># 只需要执行一次 init，index 在每次收取邮件后都需要执行，mu4e 可以配置自动执行</span>
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="nb">export</span> <span class="nv">XAPIAN_CJK_NGRAM</span><span class="o">=</span><span class="nb">true</span>
+<span class="c1"># 只需要执行一次 init，可以指定多个邮件地址</span>
 mu init --my-address your-mail@qq.com --my-address your-mail@gmail.com -m ~/.mail
+<span class="c1"># index 在每次收取邮件后都需要执行，mu4e 可以配置自动执行</span>
 mu index</code></pre></td></tr></table>
 </div>
 </div>
 </div>
+<p><code class="verbatim">XAPIAN_CJK_NGRAM</code> 环境变量主要是开启对 CJK 的分词，方便用中文搜索邮件。不过 mu 使用的 <a href="https://xapian.org/">Xapian</a> 对中文支持比较弱，只能搜索两个字的词，比如搜「雷峰塔」就不行，可参考<a href="https://emacs-china.org/t/topic/305/77?u=jiacai2050">这里</a>的解决方案。</p>
 <div id="outline-container-headline-5" class="outline-4">
 <h4 id="headline-5">
 配置
@@ -539,7 +542,7 @@ mu index</code></pre></td></tr></table>
 <p>这几个插件的配置可以在<a href="https://github.com/jiacai2050/dotfiles/blob/master/.emacs.d/customizations/misc.org#email">这里</a>找到，这里主要介绍核心配置，细节不再赘述：</p>
 <ul>
 <li>
-<p>使用 <code class="verbatim">mu4e-contexts</code> 配置多账户</p>
+<p><code class="verbatim">mu4e-contexts</code> 配置多账户</p>
 </li>
 <li>
 <p><code class="verbatim">mu4e-update-interval</code> 配置自动同步邮件与建索引间隔</p>
@@ -548,7 +551,7 @@ mu index</code></pre></td></tr></table>
 <p><code class="verbatim">mu4e-get-mail-command</code> 配置同步邮件的命令</p>
 </li>
 <li>
-<p>为 <code class="verbatim">mu4e-view-actions</code> 增加 <code class="verbatim">mu4e-action-view-in-browser</code> ，这样在阅读邮件时，按 <code class="verbatim">a b</code> 在浏览器打开邮件，这对那些只有 html 的邮件来说比较重要</p>
+<p><code class="verbatim">mu4e-view-actions</code> 增加 <code class="verbatim">mu4e-action-view-in-browser</code> ，这样在阅读邮件时，按 <code class="verbatim">a b</code> 在浏览器打开邮件，这对那些只有 HTML 格式的邮件来说比较重要</p>
 </li>
 <li>
 <p><code class="verbatim">message-citation-line-format</code> 定义符合 Gmail 的引用格式，Gmail 会用 <code class="verbatim">...</code> 将引用隐藏起来</p>
@@ -572,9 +575,93 @@ mu index</code></pre></td></tr></table>
 </div>
 <div id="outline-container-headline-6" class="outline-4">
 <h4 id="headline-6">
-Flags 含义
+快捷键
 </h4>
 <div id="outline-text-headline-6" class="outline-text-4">
+<p>配置好后，直接运行 <code class="verbatim">M-x mu4e</code> 就能打开主视图 <code class="verbatim">mu4e-main-view</code> ，通过快捷键来在不同视图下切换（<a href="https://junahan.netlify.app/post/emacs-mu4e/">图片来源</a>）：</p>
+<figure>
+<img src="https://img.alicdn.com/imgextra/i1/581166664/O1CN01wFq1Z31z6A2t65MJh_!!581166664.png" alt="https://img.alicdn.com/imgextra/i1/581166664/O1CN01wFq1Z31z6A2t65MJh_!!581166664.png" title="https://img.alicdn.com/imgextra/i1/581166664/O1CN01wFq1Z31z6A2t65MJh_!!581166664.png" /><figcaption>
+mu4e 主要视图交互流程
+</figcaption>
+</figure>
+<p>
+下面是我在不同视图下，常用的一些快捷键：</p>
+<div id="outline-container-headline-7" class="outline-5">
+<h5 id="headline-7">
+main
+</h5>
+<div id="outline-text-headline-7" class="outline-text-5">
+<ul>
+<li>
+<p><code class="verbatim">j</code> 跳转目录</p>
+</li>
+<li>
+<p><code class="verbatim">b</code> 跳转书签</p>
+</li>
+<li>
+<p><code class="verbatim">U</code> 收取邮件与重建索引</p>
+</li>
+</ul>
+</div>
+</div>
+<div id="outline-container-headline-8" class="outline-5">
+<h5 id="headline-8">
+view
+</h5>
+<div id="outline-text-headline-8" class="outline-text-5">
+<ul>
+<li>
+<p><code class="verbatim">g</code> 访问当前邮件中的 URL</p>
+</li>
+<li>
+<p><code class="verbatim">a</code> Action 选项</p>
+</li>
+<li>
+<p><code class="verbatim">h</code> html/text 格式切换</p>
+</li>
+<li>
+<p><code class="verbatim">.</code> 查看邮件源文件</p>
+</li>
+<li>
+<p><code class="verbatim">A</code> 附件选项</p>
+</li>
+<li>
+<p><code class="verbatim">C</code> 写新邮件</p>
+</li>
+<li>
+<p><code class="verbatim">R</code> 回复邮件</p>
+</li>
+</ul>
+</div>
+</div>
+<div id="outline-container-headline-9" class="outline-5">
+<h5 id="headline-9">
+compose
+</h5>
+<div id="outline-text-headline-9" class="outline-text-5">
+<ul>
+<li>
+<p><code class="verbatim">C-c C-c</code> 发送</p>
+</li>
+<li>
+<p><code class="verbatim">C-c C-k</code> 废弃</p>
+</li>
+<li>
+<p><code class="verbatim">C-c C-d</code> 存草稿</p>
+</li>
+<li>
+<p><code class="verbatim">C-c C-a</code> 添加附件</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+<div id="outline-container-headline-10" class="outline-4">
+<h4 id="headline-10">
+Flags 含义
+</h4>
+<div id="outline-text-headline-10" class="outline-text-4">
 <table>
 <tbody>
 <tr>
@@ -625,11 +712,11 @@ Flags 含义
 </table>
 </div>
 </div>
-<div id="outline-container-headline-7" class="outline-4">
-<h4 id="headline-7">
+<div id="outline-container-headline-11" class="outline-4">
+<h4 id="headline-11">
 <a href="https://www.djcbsoftware.nl/code/mu/mu4e/Queries.html">查询语法</a>
 </h4>
-<div id="outline-text-headline-7" class="outline-text-4">
+<div id="outline-text-headline-11" class="outline-text-4">
 <table>
 <thead>
 <tr>
@@ -656,79 +743,7 @@ Flags 含义
 </tr>
 </tbody>
 </table>
-</div>
-</div>
-<div id="outline-container-headline-8" class="outline-4">
-<h4 id="headline-8">
-快捷键
-</h4>
-<div id="outline-text-headline-8" class="outline-text-4">
-<div id="outline-container-headline-9" class="outline-5">
-<h5 id="headline-9">
-main
-</h5>
-<div id="outline-text-headline-9" class="outline-text-5">
-<ul>
-<li>
-<p><code class="verbatim">j</code> 跳转目录</p>
-</li>
-<li>
-<p><code class="verbatim">b</code> 跳转书签</p>
-</li>
-<li>
-<p><code class="verbatim">U</code> 收取邮件与重建索引</p>
-</li>
-</ul>
-</div>
-</div>
-<div id="outline-container-headline-10" class="outline-5">
-<h5 id="headline-10">
-mu4e-view
-</h5>
-<div id="outline-text-headline-10" class="outline-text-5">
-<ul>
-<li>
-<p><code class="verbatim">j</code> 跳转目录</p>
-</li>
-<li>
-<p><code class="verbatim">g</code> 访问当前邮件中的 URL</p>
-</li>
-<li>
-<p><code class="verbatim">a</code> Action 选项</p>
-</li>
-<li>
-<p><code class="verbatim">A</code> 附件选项</p>
-</li>
-<li>
-<p><code class="verbatim">C</code> 写新邮件</p>
-</li>
-<li>
-<p><code class="verbatim">R</code> 回复邮件</p>
-</li>
-</ul>
-</div>
-</div>
-<div id="outline-container-headline-11" class="outline-5">
-<h5 id="headline-11">
-mu4e-compose
-</h5>
-<div id="outline-text-headline-11" class="outline-text-5">
-<ul>
-<li>
-<p><code class="verbatim">C-c C-c</code> 发送</p>
-</li>
-<li>
-<p><code class="verbatim">C-c C-k</code> 废弃</p>
-</li>
-<li>
-<p><code class="verbatim">C-c C-d</code> 存草稿</p>
-</li>
-<li>
-<p><code class="verbatim">C-c C-a</code> 添加附件</p>
-</li>
-</ul>
-</div>
-</div>
+<p>说明：mu 使用 <a href="https://emacs-china.org/t/topic/305/77?u=jiacai2050">https://emacs-china.org/t/topic/305/77?u=jiacai2050</a></p>
 </div>
 </div>
 </div>
@@ -737,10 +752,10 @@ mu4e-compose
 </div>
 <div id="outline-container-headline-12" class="outline-2">
 <h2 id="headline-12">
-信息流 Feed
+RSS
 </h2>
 <div id="outline-text-headline-12" class="outline-text-2">
-<p>阅读信息流使用的是 <a href="https://github.com/skeeto/elfeed">elfeed</a>，它的配置相比邮件就简单多了，虽然 elfeed 可以不依赖外部软件执行，但是其作者还是推荐使用 curl 而非 ELisp 中的 url-retrieve，一方面是速度更快，另一方面是更稳定。除了 elfeed，还推荐安装下面两个插件：</p>
+<p>阅读 RSS 使用的是 <a href="https://github.com/skeeto/elfeed">elfeed</a>，它的配置相比邮件就简单多了，虽然 elfeed 可以不依赖外部软件执行，但是其作者还是推荐使用 curl 而非 ELisp 中的 url-retrieve，一方面是速度更快，另一方面是更稳定。除了 elfeed，还推荐安装下面两个插件：</p>
 <ul>
 <li>
 <p><a href="https://github.com/remyhonig/elfeed-org">elfeed-org</a> 使用 org 文件来定义 feeds 列表，它可以很方便进行打标签，重命名。<a href="https://github.com/jiacai2050/dotfiles/blob/master/.emacs.d/etc/elfeed-feeds.org">elfeed-feeds.org</a> 是我的配置</p>
@@ -755,10 +770,10 @@ mu4e-compose
 <p><code class="verbatim">elfeed-curl-extra-arguments</code> 可以配置 curl 的参数，比较常用的是配置代理</p>
 </li>
 <li>
-<p>elfeed 默认使用 <a href="https://www.emacswiki.org/emacs/HtmlRendering">shr</a> 展示，在加载图片是会卡住，可通过设置 <code class="verbatim">shr-inhibit-images</code> 为 nil 来禁用图片，之后通过自定义函数 <code class="verbatim">my/show-feed-images</code> 来开启图片</p>
+<p>elfeed 默认使用 <a href="https://www.emacswiki.org/emacs/HtmlRendering">shr</a> 展示，在加载图片是会卡住，可通过设置 <code class="verbatim">shr-inhibit-images</code> 为 <code class="verbatim">nil</code> 来禁用图片，之后通过自定义函数 <code class="verbatim">my/show-feed-images</code> 来开启图片</p>
 </li>
 <li>
-<p>为了方便记录重要文章，定义 <code class="verbatim">my/elfeed-toggle-star</code> 函数来实现「标星」效果，这样后面可以直接使用 <code class="verbatim">+starred</code> 来搜索</p>
+<p>为了方便记录重要文章，定义 <code class="verbatim">my/elfeed-toggle-star</code> 函数来实现「标星」效果，并可以使用 <code class="verbatim">+starred</code> 来搜索</p>
 </li>
 <li>
 <p>默认 elfeed 列表行间距太小，可以通过 <code class="verbatim">(setq-local line-spacing 0.3)</code> 调整</p>
@@ -849,7 +864,7 @@ elfeed-show
 笔记
 </h2>
 <div id="outline-text-headline-17" class="outline-text-2">
-<p>通过上面的配置，已经可以很好地在 Emacs 中阅读邮件与文章，还剩下如何记笔记没有介绍，对于 Emacser 来说，org-mode 是笔记的第一首选，而且 mu4e/elfeed 都支持 org-capture，直接在当前阅读的邮件或文章中执行 capture 就可以了。</p>
+<p>通过上面的配置，已经可以很好地在 Emacs 中阅读邮件与文章，还剩下如何记笔记没有介绍，对于 Emacser 来说，org-mode 是笔记的第一首选，而且 mu4e/elfeed 都支持 <a href="https://orgmode.org/manual/Using-capture.html">org-capture</a>，直接在当前阅读的邮件或文章中执行就可以了。</p>
 </div>
 </div>
 <div id="outline-container-headline-18" class="outline-2">
@@ -857,7 +872,7 @@ elfeed-show
 总结
 </h2>
 <div id="outline-text-headline-18" class="outline-text-2">
-<p>通过把邮件与信息流整合进 Emacs，可以充分进行沉浸式阅读，不再需要什么额外的软件，所有操作都在 Emacs 内完成，这是之前从未有过的体验。这可能也是 Emacs 自由、开放的魅力所在。</p>
+<p>通过把邮件与 RSS 整合进 Emacs，可以充分进行沉浸式阅读，不再需要什么额外的软件，所有操作都在 Emacs 内完成，这是之前从未有过的体验。这可能也是 Emacs 自由、开放的魅力所在。</p>
 <div class="src src-emacs-lisp">
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
@@ -908,8 +923,8 @@ elfeed-show
   <p class="copyright-item">
     <span class="item-title">上次更新</span>
     <span class="item-content">
-        2021-03-06
-        <a href="https://github.com/jiacai2050/jiacai2050.github.io/commit/46b2f02a018ac5918cfd68344d17a4d34fec456b" title="add mu4e/elfeed query syntax">(46b2f02)</a>
+        2021-03-08
+        <a href="https://github.com/jiacai2050/jiacai2050.github.io/commit/a836cea86e6247facf5d56cd96729ffb8d4fe386" title="update emacs email/rss, add XAPIAN_CJK_NGRAM=true explanation">(a836cea)</a>
     </span>
   </p>
   
