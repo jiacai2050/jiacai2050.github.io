@@ -3,7 +3,7 @@
   
   <url>
     <loc>https://liujiacai.net/categories/</loc>
-    <lastmod>2021-03-08T21:50:12+08:00</lastmod>
+    <lastmod>2021-03-12T23:05:05+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
@@ -17,21 +17,21 @@
   
   <url>
     <loc>https://liujiacai.net/</loc>
-    <lastmod>2021-03-08T21:50:12+08:00</lastmod>
+    <lastmod>2021-03-12T23:05:05+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   
   <url>
     <loc>https://liujiacai.net/post/</loc>
-    <lastmod>2021-03-08T21:50:12+08:00</lastmod>
+    <lastmod>2021-03-12T23:05:05+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   
   <url>
     <loc>https://liujiacai.net/tags/</loc>
-    <lastmod>2021-03-08T21:50:12+08:00</lastmod>
+    <lastmod>2021-03-12T23:05:05+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
@@ -87,7 +87,7 @@
   
   <url>
     <loc>https://liujiacai.net/categories/%E7%BC%96%E7%A8%8B%E8%AF%AD%E8%A8%80/</loc>
-    <lastmod>2021-01-17T11:40:18+08:00</lastmod>
+    <lastmod>2021-03-12T23:05:05+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
@@ -122,7 +122,7 @@
   
   <url>
     <loc>https://liujiacai.net/tags/go/</loc>
-    <lastmod>2020-12-04T22:35:59+08:00</lastmod>
+    <lastmod>2021-03-12T23:05:05+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
@@ -143,7 +143,7 @@
   
   <url>
     <loc>https://liujiacai.net/blog/2020/03/14/go-struct-interface/</loc>
-    <lastmod>2020-12-04T22:35:59+08:00</lastmod>
+    <lastmod>2021-03-12T23:05:05+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>

@@ -45,12 +45,12 @@
 <meta property="og:type" content="article" />
 <meta property="og:url" content="https://liujiacai.net/blog/2020/03/14/go-struct-interface/" />
 <meta property="article:published_time" content="2020-03-14T22:52:26+00:00" />
-<meta property="article:modified_time" content="2020-12-04T22:35:59+08:00" />
+<meta property="article:modified_time" content="2021-03-12T23:05:05+08:00" />
 <meta itemprop="name" content="Go struct/interface 最佳实践">
 <meta itemprop="description" content="使用 Go 已经一年，深深沉浸在其简洁的设计中，就像其官网描述的： Go is expressive, concise, clean, and efficient. It&rsquo;s a fast, statically typed, compiled language that feels like a dynamically typed, interpreted language. Rob Pike 在 Simplicity is Complicated 中也提到 Go 的简洁是其流行">
 <meta itemprop="datePublished" content="2020-03-14T22:52:26+00:00" />
-<meta itemprop="dateModified" content="2020-12-04T22:35:59+08:00" />
-<meta itemprop="wordCount" content="2841">
+<meta itemprop="dateModified" content="2021-03-12T23:05:05+08:00" />
+<meta itemprop="wordCount" content="2937">
 
 
 
@@ -139,7 +139,7 @@
         <div class="post-category">
             <a href="/categories/%E7%BC%96%E7%A8%8B%E8%AF%AD%E8%A8%80/"> 编程语言 </a>
             </div>
-          <span class="more-meta"> 约 2841 字 </span>
+          <span class="more-meta"> 约 2937 字 </span>
           <span class="more-meta"> 预计阅读 6 分钟 </span>
         
       </div>
@@ -152,14 +152,13 @@
   <ul>
     <li>
       <ul>
-        <li><a href="#值类型的-struct">值类型的 struct</a>
+        <li><a href="#struct">Struct</a>
           <ul>
             <li><a href="#逃逸分析">逃逸分析</a></li>
-            <li><a href="#value-vs-pointer">value vs pointer</a></li>
             <li><a href="#内存对齐">内存对齐</a></li>
           </ul>
         </li>
-        <li><a href="#基于组合的-interface">基于组合的 interface</a>
+        <li><a href="#interface">Interface</a>
           <ul>
             <li><a href="#embedded-struct">Embedded struct</a></li>
             <li><a href="#new-func-type">New func type</a></li>
@@ -179,16 +178,43 @@
 <p>Go is expressive, concise, clean, and efficient. It&rsquo;s a fast, statically typed, compiled language that feels like a dynamically typed, interpreted language.</p>
 </blockquote>
 <p>Rob Pike 在 <a href="https://talks.golang.org/2015/simplicity-is-complicated.slide">Simplicity is Complicated</a> 中也提到 Go 的简洁是其流行的重要原因。简洁并不意味着简单，Go 有着诸多设计确保了把复杂性隐藏在背后。本文就结合笔者自身经验，来讨论 Go 中 struct/interface 的设计理念与最佳实践，帮助读者写出健壮、高效的 Go 程序。</p>
-<h2 id="值类型的-struct">值类型的 struct</h2>
-<p>Go 的设计目标是取代 C/C++，所以 Go 里面的 struct 和 C 的类似，与 int/float 一样属于<strong>值类型</strong>，值类型最重要的特点是在进行赋值时，新变量会得到一份拷贝后的值，这和 Java 中以引用赋值的 Object 有着本质区别。</p>
-<p>
+<h2 id="struct">Struct</h2>
+<p>Go 的设计目标是取代 C/C++，所以 Go 里面的 struct 和 C 的类似，与 int/float 一样属于<strong>值类型</strong>，值类型的特点是内存紧凑，大小固定，对 GC 与内存访问来说都比较友好。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-go" data-lang="go"><span class="kd">type</span> <span class="nx">Point</span> <span class="kd">struct</span> <span class="p">{</span> <span class="nx">X</span><span class="p">,</span> <span class="nx">Y</span> <span class="kt">int</span> <span class="p">}</span>
+<span class="kd">type</span> <span class="nx">Rect1</span> <span class="kd">struct</span> <span class="p">{</span> <span class="nx">Min</span><span class="p">,</span> <span class="nx">Max</span> <span class="nx">Point</span> <span class="p">}</span>
+<span class="kd">type</span> <span class="nx">Rect2</span> <span class="kd">struct</span> <span class="p">{</span> <span class="nx">Min</span><span class="p">,</span> <span class="nx">Max</span> <span class="o">*</span><span class="nx">Point</span> <span class="p">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>
   <figure>
-    <img src="https://img.alicdn.com/imgextra/i4/581166664/O1CN01Dgr4Ek1z69yFADCwq_!!581166664.png" alt="Go_struct_vs_Java_object">
-    <figcaption><center>Go_struct_vs_Java_object</center></figcaption>
+    <img src="https://img.alicdn.com/imgextra/i2/581166664/O1CN01hqQKTd1z6A2qaMoar_!!581166664.png" alt="struct 内存分布示意图">
+    <figcaption><center>struct 内存分布示意图</center></figcaption>
+  </figure>
+
+
+从上面图可以看到， <code>Point</code> <code>Rect1</code> <code>Rect2</code> 在内存中都是连续的。值类型在使用时需要注意以下亮点：</p>
+<ol>
+<li>
+<p>在进行赋值时，会对其值进行一次拷贝，这和 Java 中以引用为主的 Object 有所不同：
+
+  <figure>
+    <img src="https://img.alicdn.com/imgextra/i4/581166664/O1CN01Dgr4Ek1z69yFADCwq_!!581166664.png" alt="Java 对象与 Go struct 赋值的区别">
+    <figcaption><center>Java 对象与 Go struct 赋值的区别</center></figcaption>
   </figure>
 
 </p>
-<p>这意味着，如果要改变 struct 的内部状态，需要将其定义为指针类型<code>*struct</code>。</p>
+</li>
+<li>
+<p>因为值类型的赋值会进行拷贝，所以当需要改变其值时，需要将其定义为指针类型。</p>
+</li>
+</ol>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
 <pre class="chroma"><code><span class="lnt"> 1
@@ -219,7 +245,8 @@
     <span class="nx">fmt</span><span class="p">.</span><span class="nf">Println</span><span class="p">(</span><span class="nx">foo</span><span class="p">.</span><span class="nx">name</span><span class="p">)</span>  <span class="c1">// 输出 bar
 </span></code></pre></td></tr></table>
 </div>
-</div><p>与之类似的，使用<code>for range</code> 遍历 <code>[]struct</code> <code>map[xx]struct</code> 时，得到的也是一份拷贝。</p>
+</div><p>上面的示例还比较简单，但是当把 struct 嵌套在其他结构中时，则容易忽视，比如在使用 for range 遍历 <code>[]struct</code>、<code>map[xx]struct</code> 时。for range 使用时还会有些坑，可参考 <a href="https://zhuanlan.zhihu.com/p/105435646">Dig101 - Go 之 for-range 排坑指南</a>，这里不再赘述。</p>
+<p>而且，在某些场景下，Go 直接在语言层面限制对 struct 的修改。这里举一例子：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
 <pre class="chroma"><code><span class="lnt">1
@@ -235,7 +262,7 @@
 </span></code></pre></td></tr></table>
 </div>
 </div><p>可以看到，无法直接对 map 中的 struct 进行赋值，这是由于<code>m[1]</code>得到的是原有 struct 的拷贝，即使编译器允许这里的赋值，map 中的 struct 值也不会改变，所以编译器直接不允许这种情况。其次，
-这里的赋值操作是个 <code>read-modify-write</code> 操作，无法保证原子性，更多讨论可参考 <a href="https://github.com/golang/go/issues/3117">#3117</a>。解决方式有两种：</p>
+这里的赋值操作是个 <code>read-modify-write</code> 操作，很难其保证原子性，更多讨论可参考 <a href="https://github.com/golang/go/issues/3117">#3117</a>。解决方式有两种：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
 <pre class="chroma"><code><span class="lnt">1
@@ -313,33 +340,20 @@ PASS
 ok      command-line-arguments  5.889s
 </code></pre></td></tr></table>
 </div>
-</div><p>可以看到，方法返回 pointer 时，会有一次 heap 分配，占 16 个字节，这正好是 name 字段（string 类型）的大小，8 个字节表示指向数据的指针，8 个字节表示长度（笔者为 64 位系统），类似下面的结构</p>
-<div class="highlight"><div class="chroma">
-<table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
-</span><span class="lnt">2
-</span><span class="lnt">3
-</span><span class="lnt">4
-</span></code></pre></td>
-<td class="lntd">
-<pre class="chroma"><code class="language-go" data-lang="go"><span class="kd">type</span> <span class="nx">StringHeader</span> <span class="kd">struct</span> <span class="p">{</span>
-    <span class="nx">Data</span> <span class="kt">uintptr</span>
-    <span class="nx">Len</span>  <span class="kt">int</span>
-<span class="p">}</span>
-</code></pre></td></tr></table>
-</div>
-</div><p>方法返回 value 时，则没有 heap 分配，说明所有变量都分配在 stack 上。
-对于 receiver 为 pointer 或 value 性能差别不大，这是因为 s 在两种情况下均无逃逸，并且拷贝 struct value 本身与拷贝指针（8 字节）的代价差不多；如果增加 struct 的大小，拷贝指针的代价就会小于 value 本身了。
-这个测试也说明变量分配在内存中的位置，与是否为指针无关。</p>
-<h3 id="value-vs-pointer">value vs pointer</h3>
-<p>结合上面的实验，可以按照下述流程确定选用 value/pointer：</p>
+</div><p>可以看到：</p>
+<ul>
+<li>方法返回 pointer 时，会有一次 heap 分配</li>
+<li>方法返回 value 时，则没有 heap 分配，说明所有变量都分配在 stack 上</li>
+<li>对于 receiver 为 pointer 或 value 性能差别不大，这是因为 s 在两种情况下均无逃逸，并且拷贝 struct 本身与拷贝指针（8 字节）的代价差不多</li>
+</ul>
+<p>这个测试也说明变量分配在内存中的位置，与是否为指针无关。结合上面的测试结果，可以按照下述流程确定是否采用指针：</p>
 <ol>
-<li>如果 struct 需要改变状态（比如包含 waitgroup/sync.Poll/sync.Mutex 等），则需要 pointer</li>
-<li>作为函数返回值，<code>unsafe.Sizeof(struct)</code> 大于一定阈值时，拷贝 value 的时间大于在 heap 上分配的时间，考虑用 pointer</li>
-<li>作为函数参数，可以把指针看成 8 字节的 value，如果 struct 大小远大于 8 字节，考虑用 pointer</li>
+<li>需要改变状态（比如包含 waitgroup/sync.Poll/sync.Mutex 等），选用指针</li>
+<li>作为函数返回值，<code>unsafe.Sizeof(struct)</code> 大于一定阈值时，拷贝的时间大于在 heap 上分配的时间，选用指针</li>
+<li>作为函数参数、for range 对象时（均会对值进行拷贝） ，如果对象比较大，选用指针</li>
 <li>除此之外，struct 即可</li>
 </ol>
-<p>为了确定出 2 中的阈值，可以在 struct 中添加一数组元素，之后再来跑上述测试即可，在笔者机器中，这个阈值大概为 72K。</p>
+<p>为了确定出 2 中的阈值，可以在 struct 中添加一数组（数组也是值类型），再来运行上述测试即可。在笔者机器中，这个阈值大概为 72K。</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
 <pre class="chroma"><code><span class="lnt">1
@@ -360,11 +374,33 @@ ok      command-line-arguments  5.889s
 <span class="nx">BenchmarkPointerVSStruct</span><span class="o">/</span><span class="nx">return__value</span><span class="o">-</span><span class="mi">8</span>                  <span class="mi">138591</span>              <span class="mi">8146</span> <span class="nx">ns</span><span class="o">/</span><span class="nx">op</span>               <span class="mi">0</span> <span class="nx">B</span><span class="o">/</span><span class="nx">op</span>          <span class="mi">0</span> <span class="nx">allocs</span><span class="o">/</span><span class="nx">op</span>
 </code></pre></td></tr></table>
 </div>
-</div><p>很少有 struct 会达到这个量级，这是由于 Go 中常用的 slice/map/string 均为复合类型（可认为由 header+data 两部分组成），类似上面的 StringHeader，header 部分是固定的，header 里面有指向数据的指针。</p>
+</div><p>很少有 struct 会达到这个量级，这是由于 Go 中常用的 slice/map/string 均为复合类型，复合类型的特点是大小固定，比如 string 类型只占 16 个字节（64 位系统而言），类似下面的结构</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-go" data-lang="go"><span class="kd">type</span> <span class="nx">StringHeader</span> <span class="kd">struct</span> <span class="p">{</span>
+    <span class="nx">Data</span> <span class="kt">uintptr</span>
+    <span class="nx">Len</span>  <span class="kt">int</span>
+<span class="p">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>
+  <figure>
+    <img src="https://img.alicdn.com/imgextra/i4/581166664/O1CN01HlYyok1z6A2qaO5bc_!!581166664.png" alt="Go 字符串的内存分配">
+    <figcaption><center>Go 字符串的内存分配</center></figcaption>
+  </figure>
+
+</p>
+<p>下图总结了 Go 中数据类型的分类：</p>
 <table>
 <thead>
 <tr>
-<th>简单类型</th>
+<th>值类型</th>
 <th>复合类型</th>
 </tr>
 </thead>
@@ -497,7 +533,7 @@ ok      command-line-arguments  5.889s
     <span class="p">)</span>
 </code></pre></td></tr></table>
 </div>
-</div><h2 id="基于组合的-interface">基于组合的 interface</h2>
+</div><h2 id="interface">Interface</h2>
 <p>如果说 struct 是对状态的封装，那么 interface 就是对行为的封装，是 Go 中构造抽象的基础。由于 Go 中没有 oop 的概念，主要是通过组合，而非继承来实现不同组件的整合，比如 io 包下的 Reader/Writer。
 但就组合来说，并没有什么优势，Java 中也可以实现，但 Go 中的隐式“继承” 让组合变得十分灵活。</p>
 <h3 id="embedded-struct">Embedded struct</h3>
@@ -652,6 +688,7 @@ ok      command-line-arguments  5.889s
 <li><a href="https://github.com/tyranron/golang-sizeof.tips/blob/master/internal/parser/types.go">https://github.com/tyranron/golang-sizeof.tips/blob/master/internal/parser/types.go</a></li>
 <li><a href="https://blog.golang.org/error-handling-and-go">https://blog.golang.org/error-handling-and-go</a></li>
 <li><a href="https://medium.com/a-journey-with-go/go-should-i-use-a-pointer-instead-of-a-copy-of-my-struct-44b43b104963">https://medium.com/a-journey-with-go/go-should-i-use-a-pointer-instead-of-a-copy-of-my-struct-44b43b104963</a></li>
+<li><a href="https://research.swtch.com/godata">https://research.swtch.com/godata</a></li>
 </ul>
 
     </div>
@@ -664,8 +701,8 @@ ok      command-line-arguments  5.889s
   <p class="copyright-item">
     <span class="item-title">上次更新</span>
     <span class="item-content">
-        2020-12-04
-        <a href="https://github.com/jiacai2050/jiacai2050.github.io/commit/8f8c30acc9eabc6498854bdbb13df6a4b744f17d" title="fix bad categories">(8f8c30a)</a>
+        2021-03-12
+        <a href="https://github.com/jiacai2050/jiacai2050.github.io/commit/b4ffe8c0c214af15e87f92bd2934377bbad32ecf" title="update go struct interface">(b4ffe8c)</a>
     </span>
   </p>
   
