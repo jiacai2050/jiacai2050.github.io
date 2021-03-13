@@ -9,15 +9,35 @@
 闲暇时间，习惯听 Podcast（播客）
 打发时间，开阔眼界，这里记录一些印象深的节目。
 
-使用的客户端包括：
-- iOS 自带的 [[https://support.apple.com/en-us/HT201859][Podcasts]]
+* 客户端
+** 泛用型
+- +iOS 自带的 [[https://support.apple.com/en-us/HT201859][Podcasts]]+
+- +[[https://overcast.fm/][Overcast]]+ ，从这个软件知道了 Smart Speed 功能，可以跳过音频中的空白部分
+- [[https://www.pocketcasts.com/][Pocket Casts]]，有与 Smart Speed 类似的 Trim Silence 功能；分类功能比 Overcast 强大，目前主力使用
+** 平台型
 - [[https://www.ximalaya.com/][喜马拉雅]]
 - [[https://fm.qq.com/][企鹅FM]]
 - [[https://www.qingting.fm/][蜻蜓 FM]]
-
-软件本身没有大的区别，主要是上面的资源不同，所以用了这么多。
+软件本身没有大的区别，主要是上面的资源不同。
 
 * 推荐节目
+** 2020
+| 名称                       | 主播                  | 关键字                       |
+|----------------------------+-----------------------+------------------------------|
+| [[https://anobody.im/][小人物]]                     | [[https://twitter.com/HoiAle][阿乐]]                  | 海外求职，思考与生活         |
+| [[https://since1989.org/][新闻酸菜馆]]                 | 王掌柜与[[https://www.zhihu.com/people/ding-ding-5-47][叮叮]]          | 社会百态，生活麻辣烫         |
+| [[https://talk.swift.gg/][ggtalk]]                     | [[https://www.weibo.com/numbbbbb][梁杰]]                  | 程序员闲聊，海外生活         |
+| [[https://pythonhunter.org/][捕蛇者说]]                   | [[https://laike9m.com/][Laike9m]] / [[https://www.kawabangga.com/][Laixintao]].. | 程序员闲聊，Python           |
+| [[https://pan.icu/][内核恐慌]]                   | [[https://twitter.com/RioJot][Rio]] / [[https://twitter.com/_vonAntares][吴涛]]            | 以计算机为主题的大型娱乐节目 |
+| [[https://www.ximalaya.com/waiyu/2801092/][和Emily一起练口语]]          | Emily                 | 英语口语，主播声音很标准     |
+| [[https://lmzdx.com/][软件那些事儿]]               | 刘延栋                | 程序员睡前故事，软件公司八卦 |
+| [[https://www.flagsmith.com/podcast][The Craft of Open Source]]   |                       | 以开源软件为主的创业公司访谈 |
+| [[https://www.se-radio.net/][Software Engineering Radio]] |                       | 国外专业程序员开发经历       |
+| [[https://softwareengineeringdaily.com/][Software Engineering Daily]] |                       | 国外专业程序员开发经历       |
+| [[https://changelog.com/podcast][Changelog]]                  |                       | 国外专业程序员开发经历       |
+
+英文播客主要练习听力为主，泛听为主，遇到感兴趣的话题再花精力细听。
+** 2019
 - [[https://itunes.apple.com/cn/podcast/%E6%9E%81%E5%AE%A2%E7%94%B5%E5%8F%B0/id914427651?mt=2][极客电台]] by [[https://geek.wasai.org/][王掌柜]]。到目前大概 190多期，基本全听完了，其中比较有价值的是「170期-比特币投资教会我的三件事」，「189期 点评 iOS11 和比特币交易所关闭事件」，他让我放心的知道，我不必去了解这些"时髦"的东西，下车容易上车难。而且教会了我一些生活的技巧。
 - [[https://fm.qq.com/album/rd004IyeGv3gH42A][三毛全集]]，三毛的想念汇成了撒哈拉。见证了一对佳人的离合悲欢。
 - [[https://m.qingting.fm/vchannels/78160/programs/1486568/][盗墓笔记]]，南派三叔成名作，共八部，故事跌宕起伏，很精彩，故事主角吴邪、王胖子、小哥铁三角。这个必须听周建龙的，声音配的太绝了，细节处理的很到位，有种"设身处地"的感觉。

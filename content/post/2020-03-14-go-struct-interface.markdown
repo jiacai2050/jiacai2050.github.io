@@ -25,7 +25,7 @@ type Rect2 struct { Min, Max *Point }
 ```
 
 ![struct 内存分布示意图](https://img.alicdn.com/imgextra/i2/581166664/O1CN01hqQKTd1z6A2qaMoar_!!581166664.png)
-从上面图可以看到， `Point` `Rect1` `Rect2` 在内存中都是连续的。值类型在使用时需要注意以下亮点：
+从上面图可以看到， `Point` `Rect1` `Rect2` 在内存中都是连续的。值类型在使用时需要注意以下两点：
 
 1. 在进行赋值时，会对其值进行一次拷贝，这和 Java 中以引用为主的 Object 有所不同：
 ![Java 对象与 Go struct 赋值的区别](https://img.alicdn.com/imgextra/i4/581166664/O1CN01Dgr4Ek1z69yFADCwq_!!581166664.png)
