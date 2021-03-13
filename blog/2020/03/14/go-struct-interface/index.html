@@ -45,11 +45,11 @@
 <meta property="og:type" content="article" />
 <meta property="og:url" content="https://liujiacai.net/blog/2020/03/14/go-struct-interface/" />
 <meta property="article:published_time" content="2020-03-14T22:52:26+00:00" />
-<meta property="article:modified_time" content="2021-03-12T23:05:05+08:00" />
+<meta property="article:modified_time" content="2021-03-13T10:00:18+08:00" />
 <meta itemprop="name" content="Go struct/interface 最佳实践">
 <meta itemprop="description" content="使用 Go 已经一年，深深沉浸在其简洁的设计中，就像其官网描述的： Go is expressive, concise, clean, and efficient. It&rsquo;s a fast, statically typed, compiled language that feels like a dynamically typed, interpreted language. Rob Pike 在 Simplicity is Complicated 中也提到 Go 的简洁是其流行">
 <meta itemprop="datePublished" content="2020-03-14T22:52:26+00:00" />
-<meta itemprop="dateModified" content="2021-03-12T23:05:05+08:00" />
+<meta itemprop="dateModified" content="2021-03-13T10:00:18+08:00" />
 <meta itemprop="wordCount" content="2937">
 
 
@@ -199,7 +199,7 @@
   </figure>
 
 
-从上面图可以看到， <code>Point</code> <code>Rect1</code> <code>Rect2</code> 在内存中都是连续的。值类型在使用时需要注意以下亮点：</p>
+从上面图可以看到， <code>Point</code> <code>Rect1</code> <code>Rect2</code> 在内存中都是连续的。值类型在使用时需要注意以下两点：</p>
 <ol>
 <li>
 <p>在进行赋值时，会对其值进行一次拷贝，这和 Java 中以引用为主的 Object 有所不同：
@@ -701,8 +701,8 @@ ok      command-line-arguments  5.889s
   <p class="copyright-item">
     <span class="item-title">上次更新</span>
     <span class="item-content">
-        2021-03-12
-        <a href="https://github.com/jiacai2050/jiacai2050.github.io/commit/b4ffe8c0c214af15e87f92bd2934377bbad32ecf" title="update go struct interface">(b4ffe8c)</a>
+        2021-03-13
+        <a href="https://github.com/jiacai2050/jiacai2050.github.io/commit/2fac7d63c8864aebd7099c2fad232c9493182079" title="update Podcast">(2fac7d6)</a>
     </span>
   </p>
   
@@ -757,6 +757,8 @@ ok      command-line-arguments  5.889s
       <a href="mailto:jiacai2050&#43;blog@gmail.com" class="iconfont icon-email" title="email"></a>
       <a href="https://stackoverflow.com/users/2163429/jiacai-liu" class="iconfont icon-stack-overflow" title="stack-overflow"></a>
       <a href="https://www.twitter.com/liujiacai" class="iconfont icon-twitter" title="twitter"></a>
+      <a href="https://www.facebook.com/liujiacai" class="iconfont icon-facebook" title="facebook"></a>
+      <a href="https://www.linkedin.com/in/liujiacai/" class="iconfont icon-linkedin" title="linkedin"></a>
       <a href="https://github.com/jiacai2050" class="iconfont icon-github" title="github"></a>
       <a href="http://weibo.com/liujiacai" class="iconfont icon-weibo" title="weibo"></a>
       <a href="https://www.zhihu.com/people/jiacai2050" class="iconfont icon-zhihu" title="zhihu"></a>
