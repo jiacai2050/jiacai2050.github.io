@@ -13,7 +13,583 @@
       <pubDate>Sun, 02 Apr 2017 00:00:00 +0000</pubDate>
       
       <guid>https://liujiacai.net/blog/2017/04/02/clojure-web-dev-ring-usage/</guid>
-      <description>在 Clojure 众多的 Web 框架中，Ring 以其简单统一的 HTTP 抽象模型脱颖而出。Ring 充分体现了函数式编程的思想——通过一系列函数的组合形成了一个易于理解、</description>
+      <description>&lt;p&gt;在 Clojure 众多的 Web 框架中，&lt;a href=&#34;https://github.com/ring-clojure/ring&#34;&gt;Ring&lt;/a&gt; 以其简单统一的 HTTP 抽象模型脱颖而出。Ring 充分体现了函数式编程的思想——通过一系列函数的组合形成了一个易于理解、扩展的 HTTP 处理链。&lt;/p&gt;
+&lt;p&gt;本篇文章首先介绍 Ring 核心概念及其实现原理，然后介绍如何基于 Ring + &lt;a href=&#34;https://github.com/weavejester/compojure&#34;&gt;Compojure&lt;/a&gt; 实现一 RESTful 服务。&lt;/p&gt;
+&lt;h2 id=&#34;ring-spechttpsgithubcomring-clojureringblobmasterspec&#34;&gt;&lt;a href=&#34;https://github.com/ring-clojure/ring/blob/master/SPEC&#34;&gt;Ring SPEC&lt;/a&gt;&lt;/h2&gt;
+&lt;p&gt;Ring 规范里面有如下5个核心概念：&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;handlers，应用逻辑处理的主要单元，由一个普通的 Clojure 函数实现&lt;/li&gt;
+&lt;li&gt;middleware，为 handler 增加额外功能&lt;/li&gt;
+&lt;li&gt;adapter，将 HTTP 请求转为 Clojure 里的 map，将 Clojure 里的 map 转为 HTTP 相应&lt;/li&gt;
+&lt;li&gt;request map，HTTP 请求的 map 表示&lt;/li&gt;
+&lt;li&gt;response map，HTTP 相应的 map 表示&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;这5个组件的关系可用下图表示（By &lt;a href=&#34;https://github.com/ring-clojure/ring-defaults/issues/20&#34;&gt;Ring 作者&lt;/a&gt;）：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;4
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;5
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;6
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;7
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;8
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt; +---------------+
+ |  Middleware   |
+ |  +---------+  |             +---------+      +--------+
+ |  |         |&amp;lt;-- request ----|         |      |        |
+ |  | Handler |  |             | Adapter |&amp;lt;----&amp;gt;| Client |
+ |  |         |--- response --&amp;gt;|         |      |        |
+ |  +---------+  |             +---------+      +--------+
+ +---------------+
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;h3 id=&#34;hello-world&#34;&gt;Hello World&lt;/h3&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt; 1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 4
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 5
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 6
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 7
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 8
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 9
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;10
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;11
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;12
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;13
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;14
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;15
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;16
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;17
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;18
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;19
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;20
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;(ns learn-ring.core
+  (:require [ring.adapter.jetty :refer [run-jetty]]))
+
+(defn handler [req]
+  {:headers {}
+   :status 200
+   :body &amp;#34;Hello World&amp;#34;})
+
+(defn middleware [handler]
+  &amp;#34;Audit a log per request&amp;#34;
+  (fn [req]
+    (println (:uri req))
+    (handler req)))
+
+(def app
+  (-&amp;gt; handler
+      middleware))
+
+(defn -main [&amp;amp; _]
+  (run-jetty app {:port 3000}))
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;运行上面的程序，就可以启动一 Web 应用，然后在浏览器访问就可以返回&lt;code&gt;Hello World&lt;/code&gt;，同时在控制台里面会打印出请求的 uri。&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;run-jetty&lt;/code&gt; 是 Ring 提供的基于 jetty 的 adapter，方便开发测试。其主要功能是两个转换：&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;code&gt;HttpServletRequest&lt;/code&gt; &amp;mdash;&amp;gt; &lt;code&gt;request map&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;response map&lt;/code&gt; &amp;mdash;&amp;gt; &lt;code&gt;HttpServletResponse&lt;/code&gt;&lt;/li&gt;
+&lt;/ol&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt; 1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 4
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 5
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 6
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 7
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 8
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 9
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;10
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;11
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;12
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;13
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;14
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;15
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;16
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;17
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;18
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;19
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;20
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;21
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;22
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;23
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;24
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;25
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;26
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;27
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;28
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;29
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;30
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;31
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;32
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;33
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;34
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;35
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;36
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;37
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;38
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;39
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;40
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;41
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;42
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;43
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;44
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;45
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;46
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;47
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;48
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;49
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;;; ring.adapter.jetty
+(defn- ^AbstractHandler proxy-handler [handler]
+  (proxy [AbstractHandler] []
+    (handle [_ ^Request base-request request response]
+      (let [request-map  (servlet/build-request-map request)
+            response-map (handler request-map)]
+        (servlet/update-servlet-response response response-map)
+        (.setHandled base-request true)))))
+
+;; ring.util.servlet
+
+;; HttpServletRequest --&amp;gt; request map
+
+(defn build-request-map
+  &amp;#34;Create the request map from the HttpServletRequest object.&amp;#34;
+  [^HttpServletRequest request]
+  {:server-port        (.getServerPort request)
+   :server-name        (.getServerName request)
+   :remote-addr        (.getRemoteAddr request)
+   :uri                (.getRequestURI request)
+   :query-string       (.getQueryString request)
+   :scheme             (keyword (.getScheme request))
+   :request-method     (keyword (.toLowerCase (.getMethod request) Locale/ENGLISH))
+   :protocol           (.getProtocol request)
+   :headers            (get-headers request)
+   :content-type       (.getContentType request)
+   :content-length     (get-content-length request)
+   :character-encoding (.getCharacterEncoding request)
+   :ssl-client-cert    (get-client-cert request)
+   :body               (.getInputStream request)})
+
+;; response map --&amp;gt; HttpServletResponse
+
+(defn update-servlet-response
+  &amp;#34;Update the HttpServletResponse using a response map. Takes an optional
+  AsyncContext.&amp;#34;
+  ([response response-map]
+   (update-servlet-response response nil response-map))
+  ([^HttpServletResponse response context response-map]
+   (let [{:keys [status headers body]} response-map]
+     (when (nil? response)
+       (throw (NullPointerException. &amp;#34;HttpServletResponse is nil&amp;#34;)))
+     (when (nil? response-map)
+       (throw (NullPointerException. &amp;#34;Response map is nil&amp;#34;)))
+     (when status
+       (.setStatus response status))
+     (set-headers response headers)
+     (let [output-stream (make-output-stream response context)]
+       (protocols/write-body-to-stream body response-map output-stream)))))
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;h2 id=&#34;middlewarehttpsgithubcomring-clojureringwikimiddleware-patterns&#34;&gt;&lt;a href=&#34;https://github.com/ring-clojure/ring/wiki/Middleware-Patterns&#34;&gt;Middleware&lt;/a&gt;&lt;/h2&gt;
+&lt;p&gt;Ring 里面采用 Middleware 模式去扩展 handler 的功能，这其实是函数式编程中常用的技巧，用高阶函数去组合函数，实现更复杂的功能。在 Clojure 里面，函数组合更常见的是用 &lt;code&gt;comp&lt;/code&gt;，比如&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;((comp #(* % 2) inc) 1)
+;; 4
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;这对一些简单的函数非常合适，但是如果逻辑比较复杂，Middleware 模式就比较合适了。例如可以进行一些逻辑判断决定是否需要调用某函数：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt; 1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 4
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 5
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 6
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 7
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 8
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 9
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;10
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;11
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;12
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;(defn middleware-comp [handler]
+  (fn [x]
+    (if (zero? 0)
+      (handler (inc x))
+      (handler x))))
+
+((-&amp;gt; #(* 2 %)
+      middleware-comp) 1)
+;; 4
+((-&amp;gt; #(* 2 %)
+      middleware-comp) 0)
+;; 2
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;虽然 Middleware 使用非常方便，但是有一点需要注意：多个 middleware 组合的顺序。后面在讲解 RESTful 示例时会演示不同顺序的 middleware 对请求的影响。&lt;/p&gt;
+&lt;p&gt;Middleware 这一模式在函数式编程中非常常见，Clojure 生态里面新的构建工具 &lt;a href=&#34;https://github.com/boot-clj/boot&#34;&gt;boot-clj&lt;/a&gt; 里面的 task 也是通过这种模式组合的。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt; 1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 4
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 5
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 6
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 7
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 8
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 9
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;10
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;11
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;12
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;13
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;14
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;15
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;16
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;17
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;18
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;19
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;20
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;$ cat build.boot
+(deftask inc-if-zero-else-dec
+  [n number NUM int &amp;#34;number to test&amp;#34;]
+  (fn [handler]
+    (fn [fileset]
+      (if (zero? number)
+        (handler (merge fileset {:number (inc number)}))
+        (handler (merge fileset {:number (dec number)}))))))
+
+(deftask printer
+  []
+  (fn [handler]
+    (fn [fileset]
+      (println (str &amp;#34;number is &amp;#34; (:number fileset)))
+      fileset)))
+
+$ boot inc-if-zero-else-dec -n 0    printer
+number is 1
+$ boot inc-if-zero-else-dec -n 1    printer
+number is 0
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;h2 id=&#34;restful-实战&#34;&gt;RESTful 实战&lt;/h2&gt;
+&lt;p&gt;由于 Ring 只是提供了一个 Web 服务最基本的抽象功能，很多其他功能，像 url 路由规则，参数解析等均需通过其他模块实现。&lt;a href=&#34;https://github.com/weavejester/compojure&#34;&gt;Compojure&lt;/a&gt; 是 Ring 生态里面默认的路由器，同样短小精悍，功能强大。基本用法如下：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;4
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;5
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;6
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;(def handlers
+  (routes
+   (GET &amp;#34;/&amp;#34; [] &amp;#34;Hello World&amp;#34;)
+   (GET &amp;#34;/about&amp;#34; [] &amp;#34;about page&amp;#34;)
+   (route/not-found &amp;#34;Page not found!&amp;#34;)))
+
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;使用这里的 handlers 代替上面 Hello World 的示例中的 handler 即可得到一个具有2条路由规则的 Web 应用，同时针对其他路由返回 &lt;code&gt;Page not found!&lt;/code&gt;。&lt;/p&gt;
+&lt;p&gt;Compojure 里面使用了大量宏来简化路由的定义，像上面例子中的&lt;code&gt;GET&lt;/code&gt;、&lt;code&gt;not-found&lt;/code&gt;等。Compojure 底层使用 &lt;a href=&#34;https://github.com/weavejester/clout&#34;&gt;clout&lt;/a&gt; 这个库实现，而 clout 本身是基于一个 parser generator（&lt;a href=&#34;https://github.com/Engelberg/instaparse&#34;&gt;instaparse&lt;/a&gt;） 定义的“路由”领域特定语言。&lt;a href=&#34;https://github.com/weavejester/clout/blob/master/src/clout/core.clj#L56&#34;&gt;核心规则&lt;/a&gt;如下：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt; 1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 4
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 5
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 6
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 7
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 8
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 9
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;10
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;11
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;12
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;(def ^:private route-parser
+  (insta/parser
+   &amp;#34;route    = (scheme / part) part*
+    scheme   = #&amp;#39;(https?:)?//&amp;#39;
+    &amp;lt;part&amp;gt;   = literal | escaped | wildcard | param
+    literal  = #&amp;#39;(:[^\\p{L}_*{}\\\\]|[^:*{}\\\\])+&amp;#39;
+    escaped  = #&amp;#39;\\\\.&amp;#39;
+    wildcard = &amp;#39;*&amp;#39;
+    param    = key pattern?
+    key      = &amp;lt;&amp;#39;:&amp;#39;&amp;gt; #&amp;#39;([\\p{L}_][\\p{L}_0-9-]*)&amp;#39;
+    pattern  = &amp;#39;{&amp;#39; (#&amp;#39;(?:[^{}\\\\]|\\\\.)+&amp;#39; | pattern)* &amp;#39;}&amp;#39;&amp;#34;
+   :no-slurp true))
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;Compojure 中路由匹配的方式也非常巧妙，这里详细介绍一下。&lt;/p&gt;
+&lt;h3 id=&#34;compojure-路由分发&#34;&gt;Compojure 路由分发&lt;/h3&gt;
+&lt;p&gt;Compojure 通过 routes 把一系列 handler 封装起来，其内部调用 routing 方法找到正确的 handler。这两个方法代码非常简洁：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;4
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;5
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;6
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;7
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;8
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;9
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;(defn routing
+  &amp;#34;Apply a list of routes to a Ring request map.&amp;#34;
+  [request &amp;amp; handlers]
+  (some #(% request) handlers))
+
+(defn routes
+  &amp;#34;Create a Ring handler by combining several handlers into one.&amp;#34;
+  [&amp;amp; handlers]
+  #(apply routing % handlers))
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;routing 里面通过调用 &lt;code&gt;some&lt;/code&gt; 函数返回第一个非 nil 调用，这样就解决了路由匹配的问题。由这个例子可以看出 Clojure 语言的表达力。&lt;/p&gt;
+&lt;p&gt;在使用 &lt;code&gt;GET&lt;/code&gt; 等这类宏定义 handler 时，会调用&lt;code&gt;wrap-route-matches&lt;/code&gt; 来包装真正的处理逻辑，逻辑如下：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;4
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;5
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;6
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;(defn- wrap-route-matches [handler method path]
+  (fn [request]
+     (if (method-matches? request method)
+       (if-let [request (route-request request path)]
+         (-&amp;gt; (handler request)
+             (head-response request method))))))
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;这里看到只有在 url 与 http method 均匹配时，才会去调用 handler 处理 http 请求，其他情况直接返回 nil，这与前面讲的 some 联合起来就形成了完整的路由功能。&lt;/p&gt;
+&lt;p&gt;由于 &lt;code&gt;routes&lt;/code&gt; 的返回值与 handler 一样，是一个接受 request map 返回 response map 的函数，所以可以像堆积木一样进行任意组合，实现类似于 &lt;a href=&#34;http://flask.pocoo.org/docs/0.12/blueprints/&#34;&gt;Flask 中 blueprints&lt;/a&gt; 的模块化功能。例如：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt; 1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 4
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 5
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 6
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 7
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 8
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 9
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;10
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;11
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;12
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;13
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;14
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;15
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;16
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;17
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;18
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;19
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;20
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;21
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;22
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;23
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;24
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;25
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;26
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;27
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;;; cat student.clj
+(ns demo.student
+  (:require [compojure.core :refer [GET POST defroutes context]])
+
+(defroutes handlers
+  (context &amp;#34;/student&amp;#34; []
+    (GET &amp;#34;/&amp;#34; [] &amp;#34;student index&amp;#34;)))
+
+;;cat demo.teacher
+(ns demo.teacher
+  (:require [compojure.core :refer [GET POST defroutes context]])
+
+(defroutes handlers
+  (context &amp;#34;/teacher&amp;#34; []
+    (GET &amp;#34;/&amp;#34; [] &amp;#34;teacher index&amp;#34;)))
+
+;; cat demo.core.clj
+(ns demo.core
+  (:require [demo.student :as stu]
+            [demo.teacher :as tea])
+
+
+;; core 里面进行 handler 的组合
+(defroutes handlers
+  (GET &amp;#34;/&amp;#34; [] &amp;#34;index&amp;#34;)
+  (stu/handlers)
+  (tea/handlers))
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;h3 id=&#34;middleware-功能扩展&#34;&gt;Middleware 功能扩展&lt;/h3&gt;
+&lt;h4 id=&#34;参数解析&#34;&gt;参数解析&lt;/h4&gt;
+&lt;p&gt;Compojure 解决了路由问题，参数获取是通过定制不能的 middleware 实现的，&lt;code&gt;compojure.handler&lt;/code&gt; 命名空间提供了常用的 middleware 的组合，针对 RESTful 可以使用 &lt;a href=&#34;https://github.com/weavejester/compojure/blob/master/src/compojure/handler.clj#L22&#34;&gt;api&lt;/a&gt; 这个组合函数，它会把 QueryString 中的参数解析到 request map 中的&lt;code&gt;:query-params&lt;/code&gt; key 中，表单中的参数解析到 request map 中的 &lt;code&gt;:form-params&lt;/code&gt;。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;(def app
+  (-&amp;gt; handlers
+      handler/api))
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;h4 id=&#34;json-序列化&#34;&gt;JSON 序列化&lt;/h4&gt;
+&lt;p&gt;由于 RESTful 服务中，请求的数据与返回的数据通常都是 JSON 格式，所以需要增加两个额外的功能来实现 JSON 的序列化。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;4
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;5
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;6
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;7
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;;; 首先引用 ring.middleware.json
+
+(def app
+  (-&amp;gt; handlers
+      wrap-json-response
+      wrap-json-body
+      handler/api))
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;h4 id=&#34;纪录请求时间&#34;&gt;纪录请求时间&lt;/h4&gt;
+&lt;p&gt;通常，我们需要纪录每个请求的处理时间，这很简单，实现个 &lt;code&gt;record-response-time&lt;/code&gt; 即可：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt; 1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 4
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 5
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 6
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 7
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 8
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 9
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;10
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;11
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;12
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;13
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;(defn record-response-time [handler]
+  (fn [req]
+    (let [start-date (System/currentTimeMillis)]
+      (handler req)
+      (let [res-time (- (System/currentTimeMillis) start-date)]
+        (println (format  &amp;#34;%s took %d ms&amp;#34; (:uri req) res-time))))))
+
+(def app
+  (-&amp;gt; handlers
+      wrap-json-response
+      wrap-json-body
+      handler/api
+      record-response-time))
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;需要注意的是 &lt;code&gt;record-response-time&lt;/code&gt; 需要放在 middleware 最外层，这样它才能纪录一个请求经过所有 middleware + handler 处理的时间。&lt;/p&gt;
+&lt;h4 id=&#34;封装异常&#34;&gt;封装异常&lt;/h4&gt;
+&lt;p&gt;其次，另一个很常见的需求就是封装异常，当服务端出现错误时返回给客户端友好的错误信息，而不是服务端的错误堆栈。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt; 1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 4
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 5
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 6
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 7
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 8
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 9
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;10
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;11
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;12
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;13
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;14
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;15
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;16
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;(defn wrap-exception
+  [handler]
+  (fn [request]
+    (try
+      (handler request)
+      (catch Throwable e
+        (response {:code 20001
+                   :msg  &amp;#34;inner error})))))
+
+(def app
+  (-&amp;gt; handlers
+      wrap-json-response
+      wrap-json-body
+      handler/api
+      wrap-exception
+      record-response-time))
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;h4 id=&#34;顺序顺序顺序&#34;&gt;顺序！顺序！顺序！&lt;/h4&gt;
+&lt;p&gt;一个 App 中的 middleware 调用顺序非常重要，因为不同的 middleware 之间 request map 与 response map 是相互依赖的，所以在定义 middleware 时一定要注意顺序。一图胜千言：&lt;/p&gt;
+&lt;p&gt;
+  &lt;figure&gt;
+    &lt;img src=&#34;https://img.alicdn.com/imgextra/i4/581166664/TB2BkmmmohnpuFjSZFEXXX0PFXa_!!581166664.png&#34; alt=&#34;middleware 应用顺序图&#34;&gt;
+    &lt;figcaption&gt;&lt;center&gt;middleware 应用顺序图&lt;/center&gt;&lt;/figcaption&gt;
+  &lt;/figure&gt;
+
+&lt;/p&gt;
+&lt;h2 id=&#34;总结&#34;&gt;总结&lt;/h2&gt;
+&lt;p&gt;在 Java EE 中，编写 Web 项目通常是配置各种 XML 文件，代码还没开始写就配置了一大堆jar包依赖，这些 jar 包很有可能会冲突，然后需要花大量时间处理这些依赖冲突，真心麻烦。&lt;/p&gt;
+&lt;p&gt;Ring 与其说是一个框架，不如说是由各个短小精悍的函数组成的 lib，充分展示了 Clojure 语言的威力，通过函数的组合定义出一套完整的 HTTP 抽象机制，通过宏来实现“路由”特定领域语言，极大简化了路由的定义，方便了模块的分解。&lt;/p&gt;
+&lt;p&gt;除了上面的介绍，Ring 生态里面还有 &lt;a href=&#34;https://github.com/weavejester/lein-ring&#34;&gt;lein-ring&lt;/a&gt; ，它可以在不重启服务的情况下重新加载有修改的命名空间（以及其影响的），开发从未如何顺畅。&lt;/p&gt;
+&lt;p&gt;Ring + Compojure + lein-ring 你值得拥有。&lt;/p&gt;
+&lt;h2 id=&#34;扩展阅读&#34;&gt;扩展阅读&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;http://www.braveclojure.com/appendix-b/&#34;&gt;Boot, the Fancy Clojure Build Framework&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;http://www.lispcast.com/what-web-framework-should-i-use&#34;&gt;http://www.lispcast.com/what-web-framework-should-i-use&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://github.com/luminus-framework/luminus/blob/master/resources/md/html_templating.md&#34;&gt;https://github.com/luminus-framework/luminus/blob/master/resources/md/html_templating.md&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://stackoverflow.com/questions/3488353/whats-the-big-idea-behind-compojure-routes&#34;&gt;https://stackoverflow.com/questions/3488353/whats-the-big-idea-behind-compojure-routes&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+</description>
     </item>
     
   </channel>

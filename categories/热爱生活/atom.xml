@@ -13,7 +13,559 @@
       <pubDate>Sat, 05 Dec 2020 00:00:00 +0000</pubDate>
       
       <guid>https://liujiacai.net/blog/2020/12/05/hexo-to-hugo/</guid>
-      <description>上一篇文章介绍了 Emacs 的理念以及其强大的扩展功能，基本上能在 Emacs 里面做到事，我都在 Emacs 里面做。之前的博客一直都是用的 markdown 来书写，虽然 Emacs 也有 markdown 插件，但是</description>
+      <description>
+&lt;p&gt;
+上一篇文章介绍了 Emacs 的理念以及其强大的扩展功能，基本上能在 Emacs 里面做到事，我都在 Emacs 里面做。之前的博客一直都是用的 markdown 来书写，虽然 Emacs 也有 markdown 插件，但是总感觉体验不如 org-mode。这周末就趁着手热，把博客系统进行了升级，完美支持 org-mode，这篇文章就是用 org-mode 完成的，下面就来讲一下迁移过程。&lt;/p&gt;
+&lt;div id=&#34;outline-container-headline-1&#34; class=&#34;outline-2&#34;&gt;
+&lt;h2 id=&#34;headline-1&#34;&gt;
+Hexo vs Hugo
+&lt;/h2&gt;
+&lt;div id=&#34;outline-text-headline-1&#34; class=&#34;outline-text-2&#34;&gt;
+&lt;p&gt;最近两年一直在用 &lt;a href=&#34;https://hexo.io/&#34;&gt;hexo&lt;/a&gt; 来写博客，记得静态托管类网站刚兴起时，hexo 是比较流行的，整个生态也比较完整。这次迁移博客系统时，决定不再用 hexo，原因主要有下面几个：&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;
+&lt;p&gt;安装烦。作为一个 Node.js 写的系统，安装时需要下载大量的 &lt;code class=&#34;verbatim&#34;&gt;node_modules&lt;/code&gt; 。这一点不是很核心，毕竟安装只是一次性工作&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;升级难。记得当初在 hexo 2 升级到 3 时，遇到过不少坑，对 Node 的版本也有要求，如果部分依赖用了 C 代码（比如 &lt;a href=&#34;https://www.npmjs.com/package/node-sass&#34;&gt;node-sass&lt;/a&gt;），安装起来也比较费劲；现在 hexo 大版本已经到了 &lt;a href=&#34;https://hexo.io/news/2020/09/17/hexo-5-2_wordpress-2-1-2_marked-3-2_stylus-2_less-2/&#34;&gt;5.2.0&lt;/a&gt;，不想再去折腾&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;原生不支持 org-mode，使用了下 &lt;a href=&#34;https://github.com/coldnew/hexo-renderer-org/issues/69&#34;&gt;hexo-renderer-org&lt;/a&gt; 插件，&lt;a href=&#34;https://github.com/coldnew/hexo-renderer-org/issues/69&#34;&gt;也没成功&lt;/a&gt;，而且其作者现在也没精力来维护了&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;基于以上几点，hexo 于我而言，不再是最佳的选择，当然并不是说它不优秀，Hugo 也很有可能有类似问题。我之所以选择 Hugo 主要有两个原因：&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;
+&lt;p&gt;基于 Golang 的 Hugo 实现，安装方便，只需一个二进制文件；而且最近两年我个人也一直在用 Golang 开发，比较熟悉&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;a href=&#34;https://gohugo.io/content-management/formats/&#34;&gt;原生支持 org-mode&lt;/a&gt;&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;Hugo 使用方式比较简单，这里不再赘述，新手可参考官方 &lt;a href=&#34;https://gohugo.io/getting-started/quick-start/&#34;&gt;Quick Start&lt;/a&gt;。&lt;/p&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;div id=&#34;outline-container-headline-2&#34; class=&#34;outline-2&#34;&gt;
+&lt;h2 id=&#34;headline-2&#34;&gt;
+迁移过程
+&lt;/h2&gt;
+&lt;div id=&#34;outline-text-headline-2&#34; class=&#34;outline-text-2&#34;&gt;
+&lt;div id=&#34;outline-container-headline-3&#34; class=&#34;outline-3&#34;&gt;
+&lt;h3 id=&#34;headline-3&#34;&gt;
+旧博客备份
+&lt;/h3&gt;
+&lt;div id=&#34;outline-text-headline-3&#34; class=&#34;outline-text-3&#34;&gt;
+&lt;p&gt;虽然旧博客的源文件不会删除，但是其主题、布局等还是具有怀念意义的，因此采用之前自己写的&lt;a href=&#34;https://github.com/jiacai2050/blog-backup&#34;&gt;工具&lt;/a&gt;对其备份，然后利用 &lt;a href=&#34;https://github.com/Yanpas/PdfMerger&#34;&gt;PdfMerger&lt;/a&gt; 将所有文章打成一个文件。&lt;/p&gt;
+&lt;div class=&#34;src src-bash&#34;&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;blog-backup -w ljc -o /tmp/blog -v
+java -jar target/pdfmerger-1.2.2-jar-with-dependencies.jar  /tmp/blog/*pdf ljc-backup.pdf&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;figure&gt;
+&lt;img src=&#34;https://img.alicdn.com/imgextra/i3/581166664/O1CN017uZ3vH1z6A1cbCE4F_!!581166664.png&#34; alt=&#34;https://img.alicdn.com/imgextra/i3/581166664/O1CN017uZ3vH1z6A1cbCE4F_!!581166664.png&#34; title=&#34;https://img.alicdn.com/imgextra/i3/581166664/O1CN017uZ3vH1z6A1cbCE4F_!!581166664.png&#34; /&gt;&lt;figcaption&gt;
+博客备份截图
+&lt;/figcaption&gt;
+&lt;/figure&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;div id=&#34;outline-container-headline-4&#34; class=&#34;outline-3&#34;&gt;
+&lt;h3 id=&#34;headline-4&#34;&gt;
+文章链接
+&lt;/h3&gt;
+&lt;div id=&#34;outline-text-headline-4&#34; class=&#34;outline-text-3&#34;&gt;
+&lt;p&gt;对于个人博客的迁移而言，保证文章链接不变是最重要的。在 hexo 中，文件名与链接的对应关系如下：&lt;/p&gt;
+&lt;div class=&#34;src src-yaml&#34;&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span class=&#34;nt&#34;&gt;permalink&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;blog/:year/:month/:day/:title/&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;p&gt;
+对应的 markdown 文件是&lt;/p&gt;
+&lt;div class=&#34;src src-text&#34;&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-text&#34; data-lang=&#34;text&#34;&gt;source/_posts/:year-:month-:day-:title.markdown&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;p&gt;这样的好处是文件按照时间排列，管理方便。&lt;/p&gt;
+&lt;p&gt;
+Hugo 则不同，它默认会用文件中 frontmatter 的 date，而非文件名中的。我已经习惯了 hexo 的组织方式，不想去改变，经过一番探索，最终在 hugo 添加下面的配置完美解决：&lt;/p&gt;
+&lt;div class=&#34;src src-toml&#34;&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;4
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;5
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-toml&#34; data-lang=&#34;toml&#34;&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;frontmatter&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;
+  &lt;span class=&#34;nx&#34;&gt;date&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;:filename&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;:default&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;:fileModTime&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;
+
+&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;permalinks&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;
+  &lt;span class=&#34;nx&#34;&gt;post&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;/blog/:year/:month/:day/:slug/&amp;#34;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;p&gt;
+这样 Hugo 就会首先从文件名中解析日期，同时也会解析 slug；失败时再从 frontmatter 中解析，更多用法可参考&lt;a href=&#34;https://gohugo.io/getting-started/configuration/#configure-dates&#34;&gt;官方文档 Configure Dates&lt;/a&gt;。&lt;/p&gt;
+&lt;p&gt;
+同时，为了避免 &lt;code class=&#34;verbatim&#34;&gt;hugo new post/year-month-day-slug.org&lt;/code&gt; 时标题中带日期，修改&lt;a href=&#34;https://gohugo.io/content-management/archetypes/&#34;&gt;默认模板&lt;/a&gt;如下：&lt;/p&gt;
+&lt;div class=&#34;src src-yaml&#34;&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span class=&#34;nt&#34;&gt;title&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;{{&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;replace  .Name &amp;#34;-&amp;#34; &amp;#34; &amp;#34; | replaceRE &amp;#34;^\\d{4} \\d{2} \\d{2} (.*)&amp;#34; &amp;#34;$1&amp;#34; | title }}&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;div id=&#34;outline-container-headline-5&#34; class=&#34;outline-3&#34;&gt;
+&lt;h3 id=&#34;headline-5&#34;&gt;
+RSS 链接
+&lt;/h3&gt;
+&lt;div id=&#34;outline-text-headline-5&#34; class=&#34;outline-text-3&#34;&gt;
+&lt;p&gt;默认 Hugo 生成的 RSS 链接为 &lt;code class=&#34;verbatim&#34;&gt;/index.xml&lt;/code&gt; ，而我之前用的是 &lt;a href=&#34;https://liujiacai.net/atom.xml&#34;&gt;/atom.xml&lt;/a&gt;，可以通过如下配置修改：&lt;/p&gt;
+&lt;div class=&#34;src src-toml&#34;&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;4
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-toml&#34; data-lang=&#34;toml&#34;&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;outputFormats&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;
+&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;outputFormats&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;RSS&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;
+&lt;span class=&#34;nx&#34;&gt;mediatype&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;application/rss&amp;#34;&lt;/span&gt;
+&lt;span class=&#34;nx&#34;&gt;baseName&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;atom&amp;#34;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;div id=&#34;outline-container-headline-6&#34; class=&#34;outline-3&#34;&gt;
+&lt;h3 id=&#34;headline-6&#34;&gt;
+Tags 链接
+&lt;/h3&gt;
+&lt;div id=&#34;outline-text-headline-6&#34; class=&#34;outline-text-3&#34;&gt;
+&lt;p&gt;Hugo 中默认会把链接中的字母变成小写，比如标签 &lt;code class=&#34;verbatim&#34;&gt;Go&lt;/code&gt; ，在之前对应地址 &lt;code class=&#34;verbatim&#34;&gt;/tags/Go&lt;/code&gt; ，换成 Hugo 后则是 &lt;code class=&#34;verbatim&#34;&gt;/tags/go&lt;/code&gt; ，可以通过下面的配置关闭这个转化。&lt;/p&gt;
+&lt;div class=&#34;src src-toml&#34;&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-toml&#34; data-lang=&#34;toml&#34;&gt;&lt;span class=&#34;nx&#34;&gt;disablePathToLower&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;kc&#34;&gt;true&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;p&gt;如果想保留这个功能，可以进行下面的操作：&lt;/p&gt;
+&lt;div class=&#34;src src-bash&#34;&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;4
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;5
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;6
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;7
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;8
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;c1&#34;&gt;# 让 git 区分文件名大小写&lt;/span&gt;
+git config --global core.ignorecase &lt;span class=&#34;nb&#34;&gt;true&lt;/span&gt;
+&lt;span class=&#34;c1&#34;&gt;# 删掉仓库中已有的大写目录&lt;/span&gt;
+git rm -rf &lt;span class=&#34;s1&#34;&gt;&amp;#39;tags/Go&amp;#39;&lt;/span&gt;
+&lt;span class=&#34;c1&#34;&gt;# 重新生成网站&lt;/span&gt;
+hugo
+&lt;span class=&#34;c1&#34;&gt;# 重新添加&lt;/span&gt;
+git add .&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;p&gt;这时 &lt;code class=&#34;verbatim&#34;&gt;git status&lt;/code&gt; 会显示&lt;/p&gt;
+&lt;div class=&#34;src src-bash&#34;&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;renamed:    tags/Go/index.html -&amp;gt; tags/go/index.html&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;p&gt;然后提交就可以了。&lt;/p&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;div id=&#34;outline-container-headline-7&#34; class=&#34;outline-3&#34;&gt;
+&lt;h3 id=&#34;headline-7&#34;&gt;
+Frontmatter
+&lt;/h3&gt;
+&lt;div id=&#34;outline-text-headline-7&#34; class=&#34;outline-text-3&#34;&gt;
+&lt;p&gt;&lt;a href=&#34;https://gohugo.io/content-management/front-matter&#34;&gt;Frontmatter&lt;/a&gt; 定义了每篇文章的属性，比如标题、分类等。这也是在 hexo 迁移到 hugo 时问题最多的地方，根本原因在于 hexo 对 frontmatter 格式较宽松，而 hugo 则比较严格。&lt;/p&gt;
+&lt;p&gt;
+下面一个 hugo 中标准的 frontmatter（除 yaml 外，还可以是 toml/json）：&lt;/p&gt;
+&lt;div class=&#34;src src-yaml&#34;&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt; 1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 4
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 5
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 6
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 7
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 8
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 9
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;10
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;11
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;12
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;13
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span class=&#34;nt&#34;&gt;categories&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;- &lt;span class=&#34;l&#34;&gt;Development&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;- &lt;span class=&#34;l&#34;&gt;VIM&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;date&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;2012-04-06&amp;#34;&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;description&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;spf13-vim is a cross platform distribution of vim plugins and resources&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;for Vim.&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;slug&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;spf13-vim-3-0-release-and-new-website&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;tags&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;- &lt;span class=&#34;l&#34;&gt;.vimrc&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;- &lt;span class=&#34;l&#34;&gt;plugins&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;- &lt;span class=&#34;l&#34;&gt;spf13-vim&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;- &lt;span class=&#34;l&#34;&gt;vim&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;title&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;spf13-vim 3.0 release and new website&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;p&gt;
+主要有两点需要注意：&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;
+&lt;p&gt;categories/tags 这两个属性必须是数组&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;frontmatter 前后需要用 &lt;code class=&#34;verbatim&#34;&gt;---&lt;/code&gt; 包起来，与正文区分&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;而在 hexo 中，&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;
+&lt;p&gt;categories/tags 可以是数组，也可以是字符串，表示一个元素的数组&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;只需要 frontmatter 末尾强制用 &lt;code class=&#34;verbatim&#34;&gt;---&lt;/code&gt; 与正文区分，前面的不做要求&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;由于我文章较多（72篇需要迁移），且格式也都不一样（可能是 hexo 2/3 的区别），因此写了&lt;a href=&#34;https://github.com/jiacai2050/jiacai2050.github.io/tree/hugo/hexo-2-hugo&#34;&gt;两个脚本&lt;/a&gt;来辅助，最终生成符合 hugo 要求的 frontmatter。如果 frontmatter 格式不对，可能会遇到下面的错误：&lt;/p&gt;
+&lt;div class=&#34;src src-shell&#34;&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;4
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;5
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;6
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-shell&#34; data-lang=&#34;shell&#34;&gt;Start building sites …
+ERROR 2020/12/04 20:33:38 render of &lt;span class=&#34;s2&#34;&gt;&amp;#34;home&amp;#34;&lt;/span&gt; failed:
+execute of template failed: template: index.html:6:9:
+executing &lt;span class=&#34;s2&#34;&gt;&amp;#34;content&amp;#34;&lt;/span&gt; at &amp;lt;.Render&amp;gt;: error calling Render: &lt;span class=&#34;s2&#34;&gt;&amp;#34;~/quickstart/content/post/2016-04-23-sicp-chapter4-summary.markdown:8:19&amp;#34;&lt;/span&gt;:
+failed to execute template &lt;span class=&#34;o&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;summary&amp;#34;&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;]&lt;/span&gt; v: &lt;span class=&#34;s2&#34;&gt;&amp;#34;~/quickstart/themes/even/layouts/post/summary.html:8:19&amp;#34;&lt;/span&gt;: execute of template failed:
+template: post/summary.html:8:19: executing &lt;span class=&#34;s2&#34;&gt;&amp;#34;post/summary.html&amp;#34;&lt;/span&gt; at &amp;lt;.&amp;gt;: range can&lt;span class=&#34;err&#34;&gt;&amp;#39;&lt;/span&gt;t iterate over 研习经典&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;p&gt;说明 categories 或 tags 有不是数组的，需要改成数组&lt;/p&gt;
+&lt;div class=&#34;src src-text&#34;&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-text&#34; data-lang=&#34;text&#34;&gt;EOF looking for end YAML front matter delimiter&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;p&gt;说明缺少了 frontmatter 结尾的分隔符，如果缺少开头的分隔符，编译文章没有错误，但是最终生成的文章页面会没有标题。&lt;/p&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;div id=&#34;outline-container-headline-8&#34; class=&#34;outline-3&#34;&gt;
+&lt;h3 id=&#34;headline-8&#34;&gt;
+Categories
+&lt;/h3&gt;
+&lt;div id=&#34;outline-text-headline-8&#34; class=&#34;outline-text-3&#34;&gt;
+&lt;p&gt;在 hexo 中分类（category） 和标签（tags） 用法是不一样的，分类可以&lt;a href=&#34;https://hexo.io/docs/front-matter.html#Categories-amp-Tags&#34;&gt;有层次&lt;/a&gt;，比如：&lt;/p&gt;
+&lt;div class=&#34;src src-yaml&#34;&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;4
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;5
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span class=&#34;nt&#34;&gt;categories&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;- &lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;l&#34;&gt;Sports, Baseball]&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;- &lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;l&#34;&gt;MLB, American League, Boston Red Sox]&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;- &lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;l&#34;&gt;MLB, American League, New York Yankees]&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;- &lt;span class=&#34;l&#34;&gt;Rivalries&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;p&gt;标签则没有；在 hugo 中分类与标签用法一样，都只有一层。由于我之前博客就没有用到多层分类的情况，所以也就不需要额外处理了。&lt;/p&gt;
+&lt;p&gt;
+其次，在 hexo 可以通过 &lt;a href=&#34;https://hexo.io/docs/configuration.html#Category-amp-Tag&#34;&gt;category_map/tag_map&lt;/a&gt; 来定义 category/tags 的固定链接地址（即 slug），虽然我之前也了这个特性，但是这次并没有去适配，采用 hugo 默认的即可。有修改需求的读者可参考：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;a href=&#34;https://discourse.gohugo.io/t/is-it-possible-to-customize-the-categories-tages-url/9704&#34;&gt;Is it possible to customize the categories/tages url?&lt;/a&gt;&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;div id=&#34;outline-container-headline-9&#34; class=&#34;outline-3&#34;&gt;
+&lt;h3 id=&#34;headline-9&#34;&gt;
+Render hook
+&lt;/h3&gt;
+&lt;div id=&#34;outline-text-headline-9&#34; class=&#34;outline-text-3&#34;&gt;
+&lt;p&gt;markdown 中引用图片的标准做法是&lt;/p&gt;
+&lt;div class=&#34;src src-md&#34;&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-md&#34; data-lang=&#34;md&#34;&gt;![&lt;span class=&#34;nt&#34;&gt;Alt text here&lt;/span&gt;](&lt;span class=&#34;na&#34;&gt;/images/image.jpg &amp;#34;Title here&amp;#34;&lt;/span&gt;)&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;p&gt;
+但是我一般只写 alt，title 基本没写过，之前使用的主题 &lt;a href=&#34;https://github.com/tufu9441/maupassant-hexo&#34;&gt;maupassant&lt;/a&gt; 默认会把图片的 alt 显式在图片下面，而 hugo 只认 title，搜索发现可以通过 hugo 提供的 &lt;a href=&#34;https://gohugo.io/getting-started/configuration-markup#markdown-render-hooks&#34;&gt;markdown render hook&lt;/a&gt; 来实现。方式如下：&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;
+&lt;p&gt;创建 &lt;code class=&#34;verbatim&#34;&gt;layouts/_default/_markup/render-image.html&lt;/code&gt; 文件&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;添加内容&lt;/p&gt;
+&lt;div class=&#34;src src-html&#34;&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;4
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;5
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;6
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;7
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;8
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-html&#34; data-lang=&#34;html&#34;&gt;{{ if .Text }}
+&lt;span class=&#34;p&#34;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;figure&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;&amp;gt;&lt;/span&gt;
+&lt;span class=&#34;p&#34;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;img&lt;/span&gt; &lt;span class=&#34;na&#34;&gt;src&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s&#34;&gt;&amp;#34;{{ .Destination | safeURL }}&amp;#34;&lt;/span&gt; &lt;span class=&#34;na&#34;&gt;alt&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s&#34;&gt;&amp;#34;{{ .Text }}&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;&amp;gt;&lt;/span&gt;
+&lt;span class=&#34;p&#34;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;figcaption&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;&amp;gt;&lt;/span&gt;{{ .Text }}&lt;span class=&#34;p&#34;&gt;&amp;lt;/&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;figcaption&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;&amp;gt;&lt;/span&gt;
+&lt;span class=&#34;p&#34;&gt;&amp;lt;/&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;figure&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;&amp;gt;&lt;/span&gt;
+{{ else }}
+&lt;span class=&#34;p&#34;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;img&lt;/span&gt; &lt;span class=&#34;na&#34;&gt;src&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s&#34;&gt;&amp;#34;{{ .Destination | safeURL }}&amp;#34;&lt;/span&gt; &lt;span class=&#34;na&#34;&gt;alt&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s&#34;&gt;&amp;#34;{{ .Text }}&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;&amp;gt;&lt;/span&gt;
+{{ end }}&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;对于 org-mode 而言，直接采用下面的方式即可：&lt;/p&gt;
+&lt;div class=&#34;src src-org&#34;&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-org&#34; data-lang=&#34;org&#34;&gt;&lt;span class=&#34;cs&#34;&gt;#+CAPTION&lt;/span&gt;&lt;span class=&#34;c&#34;&gt;: some-title&lt;/span&gt;
+[[&lt;span class=&#34;na&#34;&gt;&amp;lt;img-src&amp;gt;&lt;/span&gt;]]&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;div id=&#34;outline-container-headline-10&#34; class=&#34;outline-3&#34;&gt;
+&lt;h3 id=&#34;headline-10&#34;&gt;
+修改记录
+&lt;/h3&gt;
+&lt;div id=&#34;outline-text-headline-10&#34; class=&#34;outline-text-3&#34;&gt;
+&lt;p&gt;本次迁移的所有修改可以在 &lt;a href=&#34;https://github.com/jiacai2050/jiacai2050.github.io/compare/f2ec7ca...ac415a24&#34;&gt;Github&lt;/a&gt; 中查看，供有相同迁移需求的读者参考。&lt;/p&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;div id=&#34;outline-container-headline-11&#34; class=&#34;outline-2&#34;&gt;
+&lt;h2 id=&#34;headline-11&#34;&gt;
+Easy-hugo
+&lt;/h2&gt;
+&lt;div id=&#34;outline-text-headline-11&#34; class=&#34;outline-text-2&#34;&gt;
+&lt;p&gt;经过上面的步骤，已经可以很好的把 hexo 迁移到 hugo，下一个要解决的问题就是如何用 Emacs 管理 Hugo。&lt;a href=&#34;https://gohugo.io/tools/editors/&#34;&gt;Hugo 官网&lt;/a&gt;上列举了一些与常用编辑整合的插件，这里介绍 &lt;a href=&#34;https://github.com/masasam/emacs-easy-hugo&#34;&gt;easy hugo&lt;/a&gt; 的使用方式。&lt;/p&gt;
+&lt;div id=&#34;outline-container-headline-12&#34; class=&#34;outline-3&#34;&gt;
+&lt;h3 id=&#34;headline-12&#34;&gt;
+配置
+&lt;/h3&gt;
+&lt;div id=&#34;outline-text-headline-12&#34; class=&#34;outline-text-3&#34;&gt;
+&lt;p&gt;由于目前我又两个博客（中文和&lt;a href=&#34;https://en.liujiacai.net/&#34;&gt;英文&lt;/a&gt;），因此需要做些配置让 easy hugo 识别这两个。&lt;/p&gt;
+&lt;div class=&#34;src src-elisp&#34;&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;4
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;5
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;6
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;7
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-elisp&#34; data-lang=&#34;elisp&#34;&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nb&#34;&gt;use-package&lt;/span&gt; &lt;span class=&#34;nv&#34;&gt;easy-hugo&lt;/span&gt;
+  &lt;span class=&#34;nb&#34;&gt;:custom&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;((&lt;/span&gt;&lt;span class=&#34;nv&#34;&gt;easy-hugo-basedir&lt;/span&gt;  &lt;span class=&#34;s&#34;&gt;&amp;#34;~/gh/jiacai2050.github.io/&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+		   &lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nv&#34;&gt;easy-hugo-url&lt;/span&gt;  &lt;span class=&#34;s&#34;&gt;&amp;#34;https://liujiacai.net&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+           &lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nv&#34;&gt;easy-hugo-default-ext&lt;/span&gt; &lt;span class=&#34;s&#34;&gt;&amp;#34;.org&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+           &lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nv&#34;&gt;easy-hugo-bloglist&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(((&lt;/span&gt;&lt;span class=&#34;nv&#34;&gt;easy-hugo-basedir&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;.&lt;/span&gt; &lt;span class=&#34;s&#34;&gt;&amp;#34;~/gh/en-blog/&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+                                  &lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nv&#34;&gt;easy-hugo-default-ext&lt;/span&gt; &lt;span class=&#34;s&#34;&gt;&amp;#34;.org&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+		                          &lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nv&#34;&gt;easy-hugo-url&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;.&lt;/span&gt; &lt;span class=&#34;s&#34;&gt;&amp;#34;https://en.liujiacai.net&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;))))))&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;div id=&#34;outline-container-headline-13&#34; class=&#34;outline-3&#34;&gt;
+&lt;h3 id=&#34;headline-13&#34;&gt;
+创建新文章
+&lt;/h3&gt;
+&lt;div id=&#34;outline-text-headline-13&#34; class=&#34;outline-text-3&#34;&gt;
+&lt;p&gt;虽然可以用 &lt;code&gt;hugo new post/xxx.org&lt;/code&gt; 的方式来创建新文件，但是由于文件名中需要有固定格式的日期，每次手动输入很繁琐，因此基于 easy hugo 的多博客管理，自己实现了 &lt;code&gt;hugo-newpost&lt;/code&gt; 函数，实现如下：&lt;/p&gt;
+&lt;div class=&#34;src src-elisp&#34;&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt; 1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 4
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 5
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 6
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 7
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 8
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 9
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;10
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;11
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;12
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;13
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;14
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;15
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;16
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;17
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;18
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;19
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;20
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;21
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;22
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;23
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-elisp&#34; data-lang=&#34;elisp&#34;&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nb&#34;&gt;defun&lt;/span&gt; &lt;span class=&#34;nv&#34;&gt;my/hugo-newpost&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nv&#34;&gt;slug&lt;/span&gt; &lt;span class=&#34;nv&#34;&gt;title&lt;/span&gt; &lt;span class=&#34;nv&#34;&gt;tags&lt;/span&gt; &lt;span class=&#34;nv&#34;&gt;categories&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+  &lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nb&#34;&gt;interactive&lt;/span&gt; &lt;span class=&#34;s&#34;&gt;&amp;#34;sSlug:
+&lt;/span&gt;&lt;span class=&#34;s&#34;&gt;sTitle:
+&lt;/span&gt;&lt;span class=&#34;s&#34;&gt;sTags:
+&lt;/span&gt;&lt;span class=&#34;s&#34;&gt;sCategories: &amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+  &lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nv&#34;&gt;easy-hugo-with-env&lt;/span&gt;
+   &lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nb&#34;&gt;let*&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;((&lt;/span&gt;&lt;span class=&#34;nv&#34;&gt;now&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nf&#34;&gt;current-time&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;))&lt;/span&gt;
+		  &lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nv&#34;&gt;basename&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nf&#34;&gt;concat&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nf&#34;&gt;format-time-string&lt;/span&gt; &lt;span class=&#34;s&#34;&gt;&amp;#34;%Y-%m-%d-&amp;#34;&lt;/span&gt; &lt;span class=&#34;nv&#34;&gt;now&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+							&lt;span class=&#34;nv&#34;&gt;slug&lt;/span&gt; &lt;span class=&#34;nv&#34;&gt;easy-hugo-default-ext&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;))&lt;/span&gt;
+		  &lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nv&#34;&gt;postdir&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nf&#34;&gt;expand-file-name&lt;/span&gt; &lt;span class=&#34;nv&#34;&gt;easy-hugo-postdir&lt;/span&gt; &lt;span class=&#34;nv&#34;&gt;easy-hugo-basedir&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;))&lt;/span&gt;
+		  &lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nv&#34;&gt;filename&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nf&#34;&gt;expand-file-name&lt;/span&gt; &lt;span class=&#34;nv&#34;&gt;basename&lt;/span&gt; &lt;span class=&#34;nv&#34;&gt;postdir&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)))&lt;/span&gt;
+	 &lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nb&#34;&gt;when&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nf&#34;&gt;file-exists-p&lt;/span&gt; &lt;span class=&#34;nv&#34;&gt;filename&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+       &lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;ne&#34;&gt;error&lt;/span&gt; &lt;span class=&#34;s&#34;&gt;&amp;#34;%s already exists!&amp;#34;&lt;/span&gt; &lt;span class=&#34;nv&#34;&gt;filename&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;))&lt;/span&gt;
+	 &lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nv&#34;&gt;find-file&lt;/span&gt; &lt;span class=&#34;nv&#34;&gt;filename&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+	 &lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nf&#34;&gt;insert&lt;/span&gt;
+	  &lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nf&#34;&gt;format&lt;/span&gt; &lt;span class=&#34;s&#34;&gt;&amp;#34;#+TITLE: %s
+&lt;/span&gt;&lt;span class=&#34;s&#34;&gt;#+DATE: %s
+&lt;/span&gt;&lt;span class=&#34;s&#34;&gt;#+TAGS[]: %s
+&lt;/span&gt;&lt;span class=&#34;s&#34;&gt;#+CATEGORIES[]: %s
+&lt;/span&gt;&lt;span class=&#34;s&#34;&gt;
+&lt;/span&gt;&lt;span class=&#34;s&#34;&gt;&amp;#34;&lt;/span&gt; &lt;span class=&#34;nv&#34;&gt;title&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nv&#34;&gt;my/iso-8601-date-string&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt; &lt;span class=&#34;nv&#34;&gt;tags&lt;/span&gt; &lt;span class=&#34;nv&#34;&gt;categories&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;))&lt;/span&gt;
+	 &lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nf&#34;&gt;goto-char&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nf&#34;&gt;point-max&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;))&lt;/span&gt;
+	 &lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nv&#34;&gt;save-buffer&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;))))&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;p&gt;
+这样就可以通过调用 &lt;code&gt;my/hugo-newpost&lt;/code&gt; 自动生成带日期的文件名，并且根据输入生成指定的 slug/title/tag/category。&lt;/p&gt;
+&lt;figure&gt;
+&lt;img src=&#34;https://img.alicdn.com/imgextra/i4/581166664/O1CN01919NEK1z6A1ZyLbC8_!!581166664.gif&#34; alt=&#34;https://img.alicdn.com/imgextra/i4/581166664/O1CN01919NEK1z6A1ZyLbC8_!!581166664.gif&#34; title=&#34;https://img.alicdn.com/imgextra/i4/581166664/O1CN01919NEK1z6A1ZyLbC8_!!581166664.gif&#34; /&gt;&lt;figcaption&gt;
+使用 my/hugo-newpost 创建新文章
+&lt;/figcaption&gt;
+&lt;/figure&gt;
+&lt;p&gt;
+由于目前我全局开启了 evil mode，需要把 easy-hugo-mode 添加到 evil-emacs-state-modes 里面去才能使用 easy-hugo 的快捷键，顺道解决了 &lt;a href=&#34;https://github.com/masasam/emacs-easy-hugo/pull/56&#34;&gt;easy hugo 的一个 bug&lt;/a&gt;。完整配置可参考这次的&lt;a href=&#34;https://github.com/jiacai2050/dotfiles/commit/94070a624b626c91e3c1fd5aa85f89bb7a51a924&#34;&gt; Git 提交&lt;/a&gt;。&lt;/p&gt;
+&lt;p&gt;
+easy-hugo 还提供了预览、发布（默认调用 deploy.sh）等命令，比较简单，这里不再赘述。&lt;/p&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;div id=&#34;outline-container-headline-14&#34; class=&#34;outline-2&#34;&gt;
+&lt;h2 id=&#34;headline-14&#34;&gt;
+总结
+&lt;/h2&gt;
+&lt;div id=&#34;outline-text-headline-14&#34; class=&#34;outline-text-2&#34;&gt;
+&lt;p&gt;
+屠龙刀已经磨好了，下面就需要多去动“刀”写出更多文章了。&lt;/p&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;div id=&#34;outline-container-headline-15&#34; class=&#34;outline-2&#34;&gt;
+&lt;h2 id=&#34;headline-15&#34;&gt;
+参考
+&lt;/h2&gt;
+&lt;div id=&#34;outline-text-headline-15&#34; class=&#34;outline-text-2&#34;&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;a href=&#34;https://sebastiandedeyne.com/captioned-images-with-markdown-render-hooks-in-hugo/&#34;&gt;Caption images with markdown render hooks in Hugo&lt;/a&gt;&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;a href=&#34;https://scarletsky.github.io/2019/05/02/migrate-hexo-to-hugo/&#34;&gt;从 Hexo 迁移到 Hugo&lt;/a&gt;&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;a href=&#34;https://jdhao.github.io/2018/10/10/hexo_to_hugo/&#34;&gt;把博客从 Hexo 迁移到 Hugo&lt;/a&gt;&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;a href=&#34;https://discourse.gohugo.io/t/how-can-i-change-the-rss-url/118/16&#34;&gt;https://discourse.gohugo.io/t/how-can-i-change-the-rss-url/118/16&lt;/a&gt;&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+</description>
     </item>
     
     <item>
@@ -22,7 +574,73 @@
       <pubDate>Sun, 02 Feb 2020 00:00:00 +0000</pubDate>
       
       <guid>https://liujiacai.net/blog/2020/02/02/review-2019/</guid>
-      <description>因起源于武汉的新型冠状病毒（2019 novel Coronavirus，2019-nCoV），让 2020 开年之初就与众不同，全国人民纷纷戴上了口罩，这也是我</description>
+      <description>&lt;p&gt;因起源于武汉的&lt;a href=&#34;https://baike.baidu.com/medicine/disease/%E6%96%B0%E5%9E%8B%E5%86%A0%E7%8A%B6%E7%97%85%E6%AF%92%E6%84%9F%E6%9F%93%E7%9A%84%E8%82%BA%E7%82%8E/24282048?tab=%E6%A6%82%E8%BF%B0&#34;&gt;新型冠状病毒&lt;/a&gt;（2019 novel Coronavirus，2019-nCoV），让 2020 开年之初就与众不同，全国人民纷纷戴上了口罩，这也是我记事以来第一次在大年初一没去村里长辈家拜年。是时候回顾下 19 年了，其实 18 年的总结也迟迟没能写出来，这里一并总结下。&lt;/p&gt;
+&lt;h2 id=&#34;2018&#34;&gt;2018&lt;/h2&gt;
+&lt;p&gt;18 年与我个人而言最重要的就是认识了现在的女朋友，生活、心态上变化了不少，把重心从工作转移到生活上，周末有空都会坐动车去苏州找她聚聚，苏州大大小小的景点都转遍了。昆山的工作没有现在所谓的 996，每天下班有空都能去健身房打打乒乓球，周末也能去周边的南京、黄山，度过了着实悠闲的一段时间。&lt;/p&gt;
+&lt;img src=&#34;https://img.alicdn.com/imgextra/i1/581166664/O1CN01LlMsPx1z69xoy9ZXk_!!581166664.jpg&#34; alt=&#34;健身一角.jpg&#34;/&gt;
+&lt;img src=&#34;https://img.alicdn.com/imgextra/i1/581166664/O1CN011EsFek1z69xysMBCE_!!581166664.jpg&#34; alt=&#34;有轨电车.jpg&#34;/&gt;
+&lt;img src=&#34;https://img.alicdn.com/imgextra/i1/581166664/O1CN01m8Cp9b1z69xzfRv5B_!!581166664.jpg&#34; alt=&#34;遇见你.jpg&#34;/&gt;
+&lt;img src=&#34;https://img.alicdn.com/imgextra/i2/581166664/O1CN01zMqMGm1z69xyger1k_!!581166664.jpg&#34; alt=&#34;昆山南站.jpg&#34;/&gt;
+&lt;img src=&#34;https://img.alicdn.com/imgextra/i2/581166664/O1CN01pVmO9P1z69xub8NkJ_!!581166664.jpg&#34; alt=&#34;夜泊秦淮.jpg&#34;/&gt;
+&lt;img src=&#34;https://img.alicdn.com/imgextra/i3/581166664/O1CN01MGmwWg1z69xxCCho0_!!581166664.jpg&#34; alt=&#34;朱元璋.jpg&#34;/&gt;
+&lt;img src=&#34;https://img.alicdn.com/imgextra/i2/581166664/O1CN01XQF9ZM1z69y0rC2uL_!!581166664.jpg&#34; alt=&#34;黄山脚下.jpg&#34;/&gt;
+&lt;img src=&#34;https://img.alicdn.com/imgextra/i4/581166664/O1CN01A3YHPB1z69xwrPmUi_!!581166664.jpg&#34; alt=&#34;迎客松.jpg&#34;/&gt;
+&lt;p&gt;在 18 年底就有些厌烦这样“无所事事”的状态，考虑再回杭州去发展。于是乎在 19 年春节前后开始复习基础知识，并在 19 年四月入职了现在公司。
+在 LeanCloud “服役”两年左右，从之前的数据开发转到了后台开发，并且过了一把 Clojure 的瘾，除了工作中重度使用外，还录制了一套&lt;a href=&#34;https://github.com/jiacai2050/learn_clojure.mp4&#34;&gt;教学视频&lt;/a&gt;。&lt;/p&gt;
+&lt;img src=&#34;https://img.alicdn.com/imgextra/i4/581166664/O1CN01iPSaRY1z69xtdlGfp_!!581166664.png&#34; alt=&#34;2018_github.png&#34;/&gt;
+&lt;p&gt;由于工作中使用 Github 似有仓库，所以上面的&lt;a href=&#34;https://github.com/jiacai2050?tab=overview&amp;amp;from=2018-01-01&amp;amp;to=2018-12-31&#34;&gt;提交记录&lt;/a&gt;比较多。去掉 Private contributions 后的提交记录如下：&lt;/p&gt;
+&lt;img src=&#34;https://img.alicdn.com/imgextra/i1/581166664/O1CN01X4Y7gk1z69xygxvD7_!!581166664.png&#34; alt=&#34;2018_github_public.png&#34;/&gt;
+&lt;img src=&#34;https://img.alicdn.com/imgextra/i1/581166664/O1CN01aYIYG81z69xwNdnHC_!!581166664.png&#34; alt=&#34;2018_blog.png&#34;/&gt;
+18 年共写了 6 篇文章，GC 相关占 4 篇，这是个大坑，后面还需要继续添。[《Java 线程同步原理探析》](/blog/2018/12/29/how-java-synchronizer-work/) 着重从操作系统层面讲述同步原理。
+&lt;h2 id=&#34;2019&#34;&gt;2019&lt;/h2&gt;
+&lt;h3 id=&#34;bye-leancloud-hello-alibaba&#34;&gt;Bye LeanCloud, Hello Alibaba&lt;/h3&gt;
+&lt;p&gt;在 19 年 3 月底正式离开 LeanCloud，4 月 1 入职杭州蚂蚁金服。凑巧的是工作地点还是在黄龙万科中心，离有赞很近。&lt;/p&gt;
+&lt;img src=&#34;https://img.alicdn.com/imgextra/i1/581166664/O1CN018mF0mj1z69xzltdZa_!!581166664.jpg&#34; alt=&#34;leancloud_cup.jpg&#34;/&gt;
+&lt;img src=&#34;https://img.alicdn.com/imgextra/i3/581166664/O1CN01gfBFmL1z69y1OIt97_!!581166664.jpg&#34; alt=&#34;LeanCloud_nearby.jpg&#34;/&gt;
+&lt;img src=&#34;https://img.alicdn.com/imgextra/i2/581166664/O1CN01RCZz2D1z69xp4LiKy_!!581166664.jpg&#34; alt=&#34;科技广场.jpg&#34;/&gt;
+&lt;p&gt;杭州的工作强度相比昆山不是一个量级，竞争也更激烈。阿里有“一年香三年醇五年陈”的说法，我目前还不到一年，还不敢说对这家公司有多深的认识，只能说好的坏的都有，没有完美的公司。杭州这个城市也是，之前想的是来杭州后打听打听房价，看看能否尽快“安居乐业”，没想到政府要求“外地户口须缴满近两年社保才有购房资格”，我 2 年前在有赞缴的不算，先不说买不买得起，这下连资格都没有了。&lt;/p&gt;
+&lt;h3 id=&#34;天天向上&#34;&gt;天天向上&lt;/h3&gt;
+&lt;p&gt;新的工作接触了 Golang/Rust，方向是时序数据库，产品是 CeresDB，整体架构和 &lt;a href=&#34;https://github.com/pingcap/tidb&#34;&gt;tidb&lt;/a&gt; 类型，底层的存储层用 Rust，上层的交互层用 Golang。这大半年我主要负责 Golang 这部分，把 prometheus 协议加了进来。对于监控，从使用者变为了开发者，考虑的东西自然多了，比如 push/pull 收集方式的区别；不同机器的同一指标在聚合时，如何对齐；如何展示收集的 metrics。&lt;/p&gt;
+&lt;h4 id=&#34;读书&#34;&gt;读书&lt;/h4&gt;
+&lt;p&gt;这里列举 18/19 两年内看完的书，一些还在看的这里就先不列出来了。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://book.douban.com/subject/6039359/&#34;&gt;Programming Concurrency on the JVM&lt;/a&gt;，介绍了 JVM 语言中并发的模式与利弊，这对开拓眼界是非常有用的，书中给出的算文件夹大小的例子也不错，由浅入深，逐步完善。&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://book.douban.com/subject/21866396/&#34;&gt;High Performance Browser Networking&lt;/a&gt;，网络开发必备书籍，让我进一步清楚 &lt;a href=&#34;https://book.douban.com/review/9653382/&#34;&gt;tcp/udp 的区别&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://book.douban.com/subject/4163938/&#34;&gt;软件随想录&lt;/a&gt;，Joel on Software 的文集，涉及软件开发的方方面面，包括不限于如何管理项目周期、如何与程序员相处、如何写出好代码。&lt;a href=&#34;https://www.joelonsoftware.com/2005/05/11/making-wrong-code-look-wrong/&#34;&gt;Making Wrong Code Look Wrong&lt;/a&gt;，让我意识到之前一直&lt;a href=&#34;https://www.zhihu.com/question/34526639/answer/59135532&#34;&gt;误解了匈牙利命名法&lt;/a&gt;。&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://book.douban.com/subject/25854634/&#34;&gt;公共问题经济学&lt;/a&gt;，大略看了下，只能说很多问题没有表面上那么简单，可能会有意想不到的连锁反应。&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://book.douban.com/subject/26197294/&#34;&gt;Designing Data-Intensive Applications&lt;/a&gt;，涵盖后端开发的方方面面，了解现有基础软件的优劣势，不同数据库的一致性实现，分布式公式算法的来龙去脉。兼具实用性与学术性，不可多得的一本好书。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h4 id=&#34;博客&#34;&gt;博客&lt;/h4&gt;
+&lt;img src=&#34;https://img.alicdn.com/imgextra/i4/581166664/O1CN01EsIWdY1z69xtjtuyq_!!581166664.png&#34; alt=&#34;2019_blog.png&#34;/&gt;
+&lt;p&gt;19 年产出也比较少，博客一共写了 4 篇。现在来看，是非常失败的，不管工作多么繁重，抽出时间来总结还是有必要的，2020 年要多去总结。&lt;/p&gt;
+&lt;h4 id=&#34;github&#34;&gt;Github&lt;/h4&gt;
+&lt;img src=&#34;https://img.alicdn.com/imgextra/i3/581166664/O1CN01WaQSHM1z69xwU2QJA_!!581166664.png&#34; alt=&#34;2019_github.png&#34;/&gt;
+&lt;p&gt;&lt;a href=&#34;https://github.com/jiacai2050?tab=overview&amp;amp;from=2019-01-01&amp;amp;to=2019-12-31&#34;&gt;提交记录&lt;/a&gt; 更少了，证明周末时间都出去玩了 :-)&lt;/p&gt;
+&lt;h3 id=&#34;生活&#34;&gt;生活&lt;/h3&gt;
+&lt;p&gt;仿佛每换一个地方，我的身材都会发福一次，囧，到现在体重又回到锻炼之前的基数了！果断办了个卡开始练起来。&lt;/p&gt;
+&lt;img src=&#34;https://img.alicdn.com/imgextra/i4/581166664/O1CN01jNE8av1z69xymp35m_!!581166664.jpg&#34; alt=&#34;健身房.jpg&#34;/&gt;
+&lt;img src=&#34;https://img.alicdn.com/imgextra/i1/581166664/O1CN01UyMgCB1z69xtjmGRB_!!581166664.jpg&#34; alt=&#34;浙大乒乓球.jpg&#34;/&gt;
+&lt;p&gt;身边的朋友有 2 个出国工作，到了年底也开始考虑自己是否有必要出去看看，这可能也是每个在大城市奋斗的同学都会面临的问题，与其在国内 996 的环境下生活，为何不选择 Work Life Balance 的国外？！当然每个人都会有不同的羁绊，出去不一定好，还要慎重考虑。&lt;/p&gt;
+&lt;h4 id=&#34;旅行&#34;&gt;旅行&lt;/h4&gt;
+&lt;p&gt;3 月底在换工作之际，去&lt;a href=&#34;https://www.jianshu.com/p/d078714d358b&#34;&gt;泰国玩了一圈&lt;/a&gt;，算是领略了一番异国风光，中秋节去千岛湖溜了一圈，其他时间就都在杭州市内溜达了。&lt;/p&gt;
+&lt;img src=&#34;https://img.alicdn.com/imgextra/i4/581166664/O1CN01fLMIs91z69xv28ql9_!!581166664.jpg&#34; alt=&#34;西湖一角.jpg&#34;/&gt;
+&lt;img src=&#34;https://img.alicdn.com/imgextra/i4/581166664/O1CN01ceQUTB1z69xxK6rSJ_!!581166664.jpg&#34; alt=&#34;千岛湖.jpg&#34;/&gt;
+&lt;img src=&#34;https://img.alicdn.com/imgextra/i2/581166664/O1CN01FyLI8z1z69xymsbem_!!581166664.jpg&#34; alt=&#34;IMG_1652.jpg&#34;/&gt;
+&lt;h4 id=&#34;播客&#34;&gt;播客&lt;/h4&gt;
+&lt;p&gt;这两年有听了不少好播客，这里给大家推荐一下：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://talk.swift.gg/&#34;&gt;ggtalk&lt;/a&gt;，程序员的闲聊节目，还挺喜欢主播梁杰的采访风格，出国那几期听了收获颇多；&lt;a href=&#34;https://talk.swift.gg/22&#34;&gt;《23. 区块链到底能干嘛？》&lt;/a&gt; 这一期让我了解到区块链的本质&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://www.ximalaya.com/zhubo/46905980/&#34;&gt;软件那些事儿&lt;/a&gt;，喜欢栋哥的八卦能力&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://podcasts.apple.com/cn/podcast/%E6%96%B0%E9%97%BB%E9%85%B8%E8%8F%9C%E9%A6%86/id473501583&#34;&gt;新闻酸菜馆&lt;/a&gt;，生活中已经不能没有王掌柜和叮叮，已经听了 2 年多，2020 年是不是要买会员了呢？新听众可参考知乎&lt;a href=&#34;https://www.zhihu.com/question/22412028/answer/435223672&#34;&gt;如何评价《新闻酸菜馆》？&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://www.ximalaya.com/toutiao/5218657/&#34;&gt;俊玮谈新-新加坡&lt;/a&gt;，作者移居新加坡十多年，每一期内容都干货满满，对于了解新加坡非常有帮助&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://www.ximalaya.com/youshengshu/19606439/&#34;&gt;藏海花&lt;/a&gt; 盗墓笔记五年之后，吴邪在雪山寻找张起灵的印记。主播九月声音细腻，不同于周建龙，但也是我喜欢但风格。找一个阳光明媚的中午，闭目收听盗墓或鬼吹灯，惬意的很。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id=&#34;总结&#34;&gt;总结&lt;/h2&gt;
+&lt;p&gt;通过上面的总结，感觉这两年过的还是有些自我了，技术的积累也不够深，如果后面两个人生活在一起了，自己的时间必定更少，所以后面还是要“集中精力”，不要过多分散精力，首先做好本职工作，再有找一两个可以长久从事的方向、项目。&lt;/p&gt;
+&lt;p&gt;最近也一直在思考，编程到底难在哪里？对于如今的开发，各种组件都已经很齐全了，对于有界面的前端，有 Vue/React；对于后端技术，更是层出不穷，各式各样的数据库、消息队列、RPC 框架，仿佛如今的开发者需要的技能是组装，而非创造。是否能有一种系统/框架，来统一掉这些组件呢？serverless 要解决的问题正是组装（主要包括：分配 cpu/memory 资源，调度 http/rpc 流量），所以 k8s 会是软件开发的终极嘛？&lt;/p&gt;
+&lt;p&gt;春节期间宅在家中，开始刷 leetcode/hackerrank，一方面锻炼自己的编程能力，另一方面为今后可能的出国做好准备。算法也是很多同学的痛，基本原理（空间/时间互补）都了解，但是遇到一个题目就是无法想到最优解，有种高三疯狂做试卷的感觉，基本定理都知道，但是题目就是解不出来。刘未鹏的&lt;a href=&#34;http://mindhacks.cn/2008/07/07/the-importance-of-knowing-why/&#34;&gt;《知其所以然（以算法学习为例）》&lt;/a&gt;阐述了其原因，就编程来说，知道算法的流程是远远不够的，因为编程相比其他技能，更注重细节，一个循环的中止条件到底是 &lt;code&gt;i&amp;lt;n&lt;/code&gt; 还是 &lt;code&gt;i&amp;lt;n-1&lt;/code&gt;，其差别是非常大的，而人的记忆是不可能记住这么细微的差别的，所以必须具备推导能力。今年希望能在这方面多写些总结。&lt;/p&gt;
+&lt;p&gt;病毒还在蔓延，希望大家都能平稳度过。2020，加油。&lt;/p&gt;
+</description>
     </item>
     
     <item>
@@ -31,7 +649,177 @@
       <pubDate>Sun, 21 Jan 2018 00:00:00 +0000</pubDate>
       
       <guid>https://liujiacai.net/blog/2018/01/21/review-2017/</guid>
-      <description>2018 年不知不觉已经过了 20 天，从元旦开始就一直在重写之前的 History Master，其实这个插件一开始就是为了写年终总结，但功能相对较简单，经过这十几天的</description>
+      <description>&lt;p&gt;2018 年不知不觉已经过了 20 天，从元旦开始就一直在重写之前的 &lt;a href=&#34;https://github.com/jiacai2050/history-master&#34;&gt;History Master&lt;/a&gt;，其实这个插件一开始就是为了写年终总结，但功能相对较简单，经过这十几天的不断开发，算是脱胎换骨了，现在也可以好好写年终总结了。
+一个词来形容 2017 的话，应该会是：变化。由于换了工作， 那就从工作开始谈起吧。&lt;/p&gt;
+&lt;h2 id=&#34;工作&#34;&gt;工作&lt;/h2&gt;
+&lt;h3 id=&#34;再见有赞&#34;&gt;再见，有赞&lt;/h3&gt;
+&lt;p&gt;大概是在 17 年 4 月份从有赞毕业的，当时就想写一下在有赞两年的收获，但觉得时机不是很对，就一直到了现在。因为有赞，我来到了杭州，第一年可能去的地方比较少，第二年基本上把西湖周边的山爬遍了，不得不说杭州是我呆过最宜居的城市，互联网氛围也好，我走的时候几个北漂的同学都来杭州买房了。&lt;/p&gt;
+&lt;p&gt;在有赞一直做的是数据开发，属于后后端的岗位，真正做过数据开发的就会知道，这里的事情会比较杂，从最基础的手动报表，到数据仓库，从日志 ETL 到 mysql 数据同步，最后由于跑的任务比较多了一般还需要个调度平台，为了让其他组使用整理好的数据，还需要提供一个开发平台。用到的技术架构网上也很容易找到，类似下图：&lt;a href=&#34;https://tech.youzan.com/you-zan-big-data-practice/&#34;&gt;图片来源&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;
+  &lt;figure&gt;
+    &lt;img src=&#34;https://img.alicdn.com/imgextra/i1/581166664/TB2pD.6nRDH8KJjSspnXXbNAVXa_!!581166664.png&#34; alt=&#34;大数据架构&#34;&gt;
+    &lt;figcaption&gt;&lt;center&gt;大数据架构&lt;/center&gt;&lt;/figcaption&gt;
+  &lt;/figure&gt;
+
+&lt;/p&gt;
+&lt;p&gt;现在回想来看，那两年工作的成果差强人意，浑浑噩噩，虽然学到了很多，但你就是感觉不对，于是从其他方面找满足感，这包括写一些科普型文章，刷 SICP，健身，这两天看到 &lt;a href=&#34;http://lucida.me/blog/2018-being-honest/&#34;&gt;《2018，从对自己诚实开始》&lt;/a&gt; 这位 exGoogler 的总结，深有感触。&lt;/p&gt;
+&lt;p&gt;很幸运我从大学开始就接触了 SICP，在有赞期间完完整整的把它看完了，一直想找一份与 Lisp 相关的工作，碰巧现在的公司在招聘，我就想试试看吧，然后就来到了 LeanCloud。我至今也还记得我初入职场时一前辈对我说过：&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;不要轻易换工作，不管什么事情，真正坚持的人不多，但是你坚持下来就是赢家。&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;其实从实习开始一直做的是 Hadoop 相关工作，差不多 3 年。换后端开发，是个挑战，很大的挑战。之所以这次还是这么坚定的换了，一方面是之前的工作有些疲劳了，另一方面确实是想体验真正的后端开发，而且能用 Clojure！我觉得这会是我下一个爆发点！&lt;/p&gt;
+&lt;p&gt;不过对于离开杭州，我真是非常不舍。离开的前一天，我骑着 ofo 沿着平时上班的路线去西湖转了一圈。对于杭州的小伙伴，我只能说有缘再见 :-)&lt;/p&gt;
+&lt;p&gt;
+  &lt;figure&gt;
+    &lt;img src=&#34;https://img.alicdn.com/imgextra/i3/581166664/TB2UrQsnJzJ8KJjSspkXXbF7VXa_!!581166664.jpg&#34; alt=&#34;有赞 18 楼前台&#34;&gt;
+    &lt;figcaption&gt;&lt;center&gt;有赞 18 楼前台&lt;/center&gt;&lt;/figcaption&gt;
+  &lt;/figure&gt;
+
+
+
+  &lt;figure&gt;
+    &lt;img src=&#34;https://img.alicdn.com/imgextra/i3/581166664/TB2uAZQnJrJ8KJjSspaXXXuKpXa_!!581166664.jpg&#34; alt=&#34;公司附近健身房&#34;&gt;
+    &lt;figcaption&gt;&lt;center&gt;公司附近健身房&lt;/center&gt;&lt;/figcaption&gt;
+  &lt;/figure&gt;
+
+
+
+  &lt;figure&gt;
+    &lt;img src=&#34;https://img.alicdn.com/imgextra/i4/581166664/TB2UiIsnTTI8KJjSsphXXcFppXa_!!581166664.jpg&#34; alt=&#34;数据组聚餐胜地&#34;&gt;
+    &lt;figcaption&gt;&lt;center&gt;数据组聚餐胜地&lt;/center&gt;&lt;/figcaption&gt;
+  &lt;/figure&gt;
+
+
+
+  &lt;figure&gt;
+    &lt;img src=&#34;https://img.alicdn.com/imgextra/i3/581166664/TB2JFk2nIjI8KJjSsppXXXbyVXa_!!581166664.jpg&#34; alt=&#34;文一路物美超市&#34;&gt;
+    &lt;figcaption&gt;&lt;center&gt;文一路物美超市&lt;/center&gt;&lt;/figcaption&gt;
+  &lt;/figure&gt;
+
+
+
+  &lt;figure&gt;
+    &lt;img src=&#34;https://img.alicdn.com/imgextra/i4/581166664/TB2av8Nn22H8KJjy1zkXXXr7pXa_!!581166664.jpg&#34; alt=&#34;西湖风光1&#34;&gt;
+    &lt;figcaption&gt;&lt;center&gt;西湖风光1&lt;/center&gt;&lt;/figcaption&gt;
+  &lt;/figure&gt;
+
+
+
+  &lt;figure&gt;
+    &lt;img src=&#34;https://img.alicdn.com/imgextra/i4/581166664/TB2LzFnnZbI8KJjy1zdXXbe1VXa_!!581166664.jpg&#34; alt=&#34;西湖风光2&#34;&gt;
+    &lt;figcaption&gt;&lt;center&gt;西湖风光2&lt;/center&gt;&lt;/figcaption&gt;
+  &lt;/figure&gt;
+
+&lt;/p&gt;
+&lt;h3 id=&#34;hello-leancloud&#34;&gt;Hello LeanCloud&lt;/h3&gt;
+&lt;p&gt;我之前看 &lt;a href=&#34;http://blog.fnil.net/&#34;&gt;dennis&lt;/a&gt; 博客时就对 &lt;a href=&#34;https://leancloud.cn/&#34;&gt;LeanCloud&lt;/a&gt; 就有所耳闻，是一家重度使用 Clojure 的公司，光这一点我就觉得就足够酷了。对我来说这一切充满挑战，我十分期待这一段新的历程。&lt;/p&gt;
+&lt;img src=&#34;https://img.alicdn.com/imgextra/i2/581166664/O1CN01UYKgNF1z69y0poBMj_!!581166664.jpg&#34; alt=&#34;leancloud-logo.jpg&#34;/&gt;
+&lt;h2 id=&#34;天天向上&#34;&gt;天天向上&lt;/h2&gt;
+&lt;h3 id=&#34;读书&#34;&gt;读书&lt;/h3&gt;
+&lt;p&gt;17 年制定的&lt;a href=&#34;https://liujiacai.net/blog/2017/01/08/review-2016/#%E8%AF%BB%E4%B9%A6&#34;&gt;读书计划&lt;/a&gt;只完成不到了 50%，从客观上说是 LeanCloud 的工作更充实，以至于没有之前刷 SICP 那么多时间，更重要的是技术栈的改变，当初凭借兴趣想读的书都没进行，当然自己的惰性也是很大一原因。究其原因，应该是反馈不够及时，任何事情都是这样。一个事情一味的去做，没有反馈，大家一般就不想做了，比较典型的例子就是减肥与看书。指定 18 年计划时一定要避免这点。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;http://book.douban.com/subject/25854634/&#34;&gt;公共问题经济学&lt;/a&gt;，计划内完成。这本书比较精悍，里面讲到了很多案例都很具启发性。一些关键词：边际效益；供需关系是影响市场的第一准则，政府的干预只会让市场变糟；没有绝对的安全，安全是需要付出代价的。&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;http://book.douban.com/subject/1888733/&#34;&gt;Java Concurrency in Practice&lt;/a&gt;，计划内完成。&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;http://book.douban.com/subject/1230413/&#34;&gt;Computer Systems: A Programmer’s Perspective&lt;/a&gt;，计划内，但是只完成前3章。这本书非常符合我说的反馈不够及时导致没法继续。首先这本书非常基础，基础到它会告诉你计算浮点数的误差范围的数学公式，另一方面是工作中没有直接应用的场景，所以导致这本经典书一直在我书桌上吃灰。18年要想办法把它啃完，顺带复习 C 语言。&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://book.douban.com/subject/1432683/&#34;&gt;On Lisp&lt;/a&gt;、&lt;a href=&#34;http://book.douban.com/subject/1726083/&#34;&gt;The Seasoned Schemer&lt;/a&gt; 这两本计划内的书基本没进行，18 年是否要重新读还要看情况，由于工作上技术栈的改变，加上还要运动，可能没精力去看。暂定。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;计划外读的书有：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://book.douban.com/subject/11554138/&#34;&gt;HBase in Action&lt;/a&gt;，挑有兴趣的章节看完了。&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://book.douban.com/subject/24700704/&#34;&gt;Netty in Action&lt;/a&gt;，工作需要，粗略浏览一遍。&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://book.douban.com/subject/26665230/&#34;&gt;硅谷之谜&lt;/a&gt;，主要讲述硅谷的成因。关键词：信息论、指控论、系统论是信息时代的三大路标。&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://book.douban.com/subject/5988772/&#34;&gt;刘心武续红楼梦&lt;/a&gt;，今年听了不少播客，红楼梦听了几个版本，包括 刘心武 老师百家讲堂的红楼梦，觉得“草蛇灰线，伏延千里”分析方法比较另辟蹊径，于是找来这本书。&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://book.douban.com/subject/26248211/&#34;&gt;编程人生（上卷）&lt;/a&gt;，编程大家的采访，目前看到第六章。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3 id=&#34;github&#34;&gt;Github&lt;/h3&gt;
+&lt;p&gt;由于 LeanCloud 使用 GitHub 做代码管理，所以 commit 数较去年有了较大变化，但是其实并没有什么较大的贡献，只是把之前的两个插件用 cljs 改写了。&lt;/p&gt;
+&lt;p&gt;
+  &lt;figure&gt;
+    &lt;img src=&#34;https://img.alicdn.com/imgextra/i4/581166664/TB2t6ZHnJfJ8KJjy0FeXXXKEXXa_!!581166664.png&#34; alt=&#34;Github commit&#34;&gt;
+    &lt;figcaption&gt;&lt;center&gt;Github commit&lt;/center&gt;&lt;/figcaption&gt;
+  &lt;/figure&gt;
+
+
+
+  &lt;figure&gt;
+    &lt;img src=&#34;https://img.alicdn.com/imgextra/i3/581166664/TB2qUkZnIrI8KJjy0FhXXbfnpXa_!!581166664.png&#34; alt=&#34;Github profile&#34;&gt;
+    &lt;figcaption&gt;&lt;center&gt;Github profile&lt;/center&gt;&lt;/figcaption&gt;
+  &lt;/figure&gt;
+
+&lt;/p&gt;
+&lt;p&gt;followers 从 147 增加到 224，star 数从 224 增加到 367，repo 数从 42 增加到 59。&lt;/p&gt;
+&lt;p&gt;再重写插件期间，深入了解使用了 clojurescript，像是发现了“新大陆”一样惊喜。借助于 React，终于可以让我写出实用且不适美感的页面，React 可以让我们用纯函数的方式来写；reframe 又进一步抽象出一般 SPA 的模式，使用起来非常顺畅。&lt;/p&gt;
+&lt;h3 id=&#34;博客&#34;&gt;博客&lt;/h3&gt;
+&lt;p&gt;
+  &lt;figure&gt;
+    &lt;img src=&#34;https://img.alicdn.com/imgextra/i4/581166664/TB2GPvln0bJ8KJjy1zjXXaqapXa_!!581166664.png&#34; alt=&#34;17 年博客总览&#34;&gt;
+    &lt;figcaption&gt;&lt;center&gt;17 年博客总览&lt;/center&gt;&lt;/figcaption&gt;
+  &lt;/figure&gt;
+
+&lt;/p&gt;
+&lt;p&gt;17 年博客发了 9 篇文章，其中 &lt;a href=&#34;https://liujiacai.net/blog/2017/03/22/ace-technical-interview/&#34;&gt;“玩转” 技术面试——链表的函数表示法&lt;/a&gt; 是翻译的，&lt;a href=&#34;https://liujiacai.net/blog/2017/05/11/review-of-secret-of-silicon-valley/&#34;&gt;《硅谷之谜》读后感&lt;/a&gt; 是读后感，其他都是介绍 Clojure 的，最满意的应该是介绍 Clojure 宏写法的那两篇，然后是运行原理那两篇，以及最近的 &lt;a href=&#34;https://liujiacai.net/blog/2017/11/22/create-firefox-chrome-extensions-in-clojurescript/&#34;&gt;使用 ClojureScript 开发浏览器插件的过程与收获&lt;/a&gt;，这里面详细介绍了 ClojureScript 的使用经历。&lt;/p&gt;
+&lt;p&gt;博客这一块我还是比较满意的，18 年我想更多的写一些经验性的文章，一方面更加深入思考工作中遇到的问题，另一方面锻炼自己架构的能力，对于一些科普性质的文章最好也要附带上一两个实际案例。
+为了积累工作中一些繁琐的事情，特地开了 &lt;a href=&#34;http://wiki.liujiacai.net/&#34;&gt;个人 wiki&lt;/a&gt;，这里主要会记录一些环境的配置，可以 copy paste 的代码段。&lt;/p&gt;
+&lt;p&gt;
+  &lt;figure&gt;
+    &lt;img src=&#34;https://img.alicdn.com/imgextra/i4/581166664/TB27ZEPnL2H8KJjy0FcXXaDlFXa_!!581166664.png&#34; alt=&#34;百度统计 2017 年博客访问情况&#34;&gt;
+    &lt;figcaption&gt;&lt;center&gt;百度统计 2017 年博客访问情况&lt;/center&gt;&lt;/figcaption&gt;
+  &lt;/figure&gt;
+
+&lt;/p&gt;
+&lt;h3 id=&#34;学洋文&#34;&gt;学洋文&lt;/h3&gt;
+&lt;p&gt;17 年在扇贝&lt;a href=&#34;https://www.shanbay.com/web/annual-plan/award/74548&#34;&gt;打卡 299 天&lt;/a&gt;，差一天就完成了 300 天的计划😭，而且其中有些天打的比较水，文章没怎么看就标为已读了。不管怎么说，这个习惯算是养成了，而且扇贝上的新闻也很及时，更新比较快，可以很方便的了解时事。&lt;/p&gt;
+&lt;p&gt;
+  &lt;img src=&#34;https://img.alicdn.com/imgextra/i3/581166664/TB2KOlan22H8KJjy0FcXXaDlFXa_!!581166664.png&#34; alt=&#34;&#34;&gt;
+
+
+
+  &lt;img src=&#34;https://img.alicdn.com/imgextra/i4/581166664/TB23SBhn8HH8KJjy0FbXXcqlpXa_!!581166664.png&#34; alt=&#34;&#34;&gt;
+
+
+
+  &lt;img src=&#34;https://img.alicdn.com/imgextra/i3/581166664/TB2wlOkn_vI8KJjSspjXXcgjXXa_!!581166664.png&#34; alt=&#34;&#34;&gt;
+
+
+
+  &lt;figure&gt;
+    &lt;img src=&#34;https://img.alicdn.com/imgextra/i2/581166664/TB2mNXYn6nD8KJjSspbXXbbEXXa_!!581166664.jpg&#34; alt=&#34;扇贝新年计划徽章&amp;amp;ndash;Feel the change&#34;&gt;
+    &lt;figcaption&gt;&lt;center&gt;扇贝新年计划徽章&amp;amp;ndash;Feel the change&lt;/center&gt;&lt;/figcaption&gt;
+  &lt;/figure&gt;
+
+&lt;/p&gt;
+&lt;h3 id=&#34;视频课程&#34;&gt;视频课程&lt;/h3&gt;
+&lt;p&gt;17 年还录制了一套 &lt;a href=&#34;https://github.com/jiacai2050/learn_clojure.mp4&#34;&gt;Clojure 学习视频&lt;/a&gt;，一共7讲，算是一个意外的收获。希望能为国内 Clojure 初学者提供另一个选择。&lt;/p&gt;
+&lt;p&gt;
+  &lt;figure&gt;
+    &lt;img src=&#34;https://img.alicdn.com/imgextra/i3/581166664/TB2phveekfb_uJkHFqDXXXVIVXa_!!581166664.png&#34; alt=&#34;Learn Clojure 视频课程&#34;&gt;
+    &lt;figcaption&gt;&lt;center&gt;Learn Clojure 视频课程&lt;/center&gt;&lt;/figcaption&gt;
+  &lt;/figure&gt;
+
+&lt;/p&gt;
+&lt;p&gt;通过制作这一套视频，我结识了一些志同道合的朋友，我觉得这比单纯获取知识更有意义。互联网就是这么神奇，让素未见面的一群人因共同的爱好聚集起来，感谢你们的支持，希望你们新的一年一切顺利。&lt;/p&gt;
+&lt;h2 id=&#34;生活&#34;&gt;生活&lt;/h2&gt;
+&lt;h3 id=&#34;健身&#34;&gt;健身&lt;/h3&gt;
+&lt;p&gt;由于换了工作，所以生活也发生了较大改变。首先惭愧的说一点，之前花了将近一年的时间去减肥，最近 8 个月全部还了回来，而且有过之无不及。面对镜子里面的自己，真是觉得羞愧至极。&lt;/p&gt;
+&lt;p&gt;首先，新办公室人员较少，没有一起去健身的，这是一个很重要的客观因素，而且昆山本身比较安逸，安逸到你怎么样都行的状态。虽然也办了公司附近的健身卡，但是我告诉自己新工作需要去多熟悉代码，也就逐渐减低了去的频率，这应该是 17 年最大的败笔。&lt;/p&gt;
+&lt;p&gt;不过，我的心态还比较好，科学减肥的方式我非常清楚，只是在实施上了问题，18 年一定会再锻炼起来，重新“做人”。和读书计划一样，这里一定要做到即使反馈，每天做好记录，健身房的每滴汗水都不能白流。&lt;/p&gt;
+&lt;h3 id=&#34;播客&#34;&gt;播客&lt;/h3&gt;
+&lt;p&gt;17 年听了不少播客，一方面写程序时解闷，另一方面开了不少眼界。主要有下面几个（按收听时间）：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://itunes.apple.com/cn/podcast/%E6%9E%81%E5%AE%A2%E7%94%B5%E5%8F%B0/id914427651?mt=2&#34;&gt;极客电台&lt;/a&gt; by &lt;a href=&#34;https://geek.wasai.org/&#34;&gt;王掌柜&lt;/a&gt;。到目前大概 190 多期，基本全听完了，其中比较有价值的是 「170期-比特币投资教会我的三件事」，「189期 点评 iOS11 和比特币交易所关闭事件」，他让我放心的知道，我不必去了解这些“时髦”的东西，下车容易上车难。而且教会了我一些生活的技巧。&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;http://www.ximalaya.com/9316189/album/5609461/&#34;&gt;猫哥详说红楼梦&lt;/a&gt;，是猫哥陪女儿读书时录制的，有自己的理解。&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;http://www.ximalaya.com/32674504/album/3836293/&#34;&gt;《白话红楼梦-完》韦岽著&lt;/a&gt;，播主精致女王读的韦岽的书，如其名曰，白话讲解。&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;http://www.ximalaya.com/32674504/album/11064027/&#34;&gt;《红楼梦》女王读原著&lt;/a&gt;，播主同精致女王，对原著的阅读。&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://fm.qq.com/album/rd004IyeGv3gH42A&#34;&gt;三毛全集&lt;/a&gt;，三毛的想念汇成了撒哈拉。见证了一对佳人的离合悲欢。&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;http://blog.cognitect.com/cognicast/&#34;&gt;Cognicast&lt;/a&gt;，cognitect 官方的播客，主要谈使用 Clojure 以及软件开发的经验，练习听力。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;听了各种版本的红楼梦，发现确实是一本奇书，而且由于后四十回遗失，高鹗续写的不尽人意，更是让后人“浮想联翩”，增加了探索书中原型的乐趣。&lt;/p&gt;
+&lt;h3 id=&#34;其他&#34;&gt;其他&lt;/h3&gt;
+&lt;p&gt;在 6 月最后一天终于拿到了驾照，真是一段&lt;a href=&#34;https://www.jianshu.com/p/469f63ffd263&#34;&gt;痛快的回忆&lt;/a&gt;；离开了有赞，乒乓球打的也少了；同学介绍了几个朋友，也无疾而终，今年回去估计要相亲了 😴&lt;/p&gt;
+&lt;h2 id=&#34;总结&#34;&gt;总结&lt;/h2&gt;
+&lt;p&gt;17年是毕业后工作的第三个年头，可能有些同学已经深耕在某一领域，但是我却选择了重新开辟一条人迹罕至的道路，我不知道这是对还是错，也许并没有对错之说，有得必有失，尽我所能就好。&lt;/p&gt;
+&lt;p&gt;希望 18 年能有所突破，遇见不一样的自己。&lt;/p&gt;
+</description>
     </item>
     
     <item>
@@ -40,7 +828,100 @@
       <pubDate>Thu, 11 May 2017 00:00:00 +0000</pubDate>
       
       <guid>https://liujiacai.net/blog/2017/05/11/review-of-secret-of-silicon-valley/</guid>
-      <description>吴军博士的《硅谷之谜》 在年前就买了，可是一直迟迟没翻开。最近在一次出差的动车上把它看完了，可以说是一气呵成，根本停不下来，里面介绍的很多观点</description>
+      <description>&lt;p&gt;吴军博士的&lt;a href=&#34;https://book.douban.com/subject/26665230/&#34;&gt;《硅谷之谜》&lt;/a&gt; 在年前就买了，可是一直迟迟没翻开。最近在一次出差的动车上把它看完了，可以说是一气呵成，根本停不下来，里面介绍的很多观点都比较深刻，而不仅仅是简单的罗列事实，更像是科学探究，试图找出每一个事情背后的原理。&lt;/p&gt;
+&lt;p&gt;
+  &lt;figure&gt;
+    &lt;img src=&#34;http://ww1.sinaimg.cn/large/5fee18eegy1ffh87lqu9uj20930bct92.jpg&#34; alt=&#34;硅谷之谜&#34;&gt;
+    &lt;figcaption&gt;&lt;center&gt;硅谷之谜&lt;/center&gt;&lt;/figcaption&gt;
+  &lt;/figure&gt;
+
+&lt;/p&gt;
+&lt;p&gt;下面内容来自书中的一些摘抄与笔记，不仅仅是解释硅谷之谜，更多的是对事物一般性的总结与归纳，发现背后的奥秘。&lt;/p&gt;
+&lt;h2 id=&#34;伪论点&#34;&gt;伪论点&lt;/h2&gt;
+&lt;p&gt;本书一开始探讨过去媒体对硅谷成因的分析，并指出这些基本都是事后解释，其他很多地方都具有这些特点但却没有形成另一个奇迹，可以说是必要不充分条件。&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;气候说，即硅谷拥有良好的气候条件&lt;/li&gt;
+&lt;li&gt;斯坦福之说，即硅谷是靠斯坦福大学不断孵化新的公司而维持繁荣的&lt;/li&gt;
+&lt;li&gt;风险投资&lt;/li&gt;
+&lt;li&gt;政府扶持&lt;/li&gt;
+&lt;li&gt;知识产权&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h2 id=&#34;叛逆精神&#34;&gt;叛逆精神&lt;/h2&gt;
+&lt;p&gt;在19世纪中叶时期，美国东海岸的淘金热催生了一个新的城市，后来为区别于澳大利亚墨尔本，改称为“旧金山”（又称三藩）。在行政区域划分上隶属加州，是加州仅次于洛杉矶的第二大城市。旧金山湾区（简称湾区）。是北加州围绕旧金山湾和圣巴勃罗湾河口的一片都会区。加州有三个主要城市都坐落在这里：旧金山、圣荷西和奥克兰。湾区聚集着大量的华人和墨西哥人，这里是中国富人移民的首选之地。硅谷主要分布在南湾附近。&lt;/p&gt;
+&lt;p&gt;
+  &lt;figure&gt;
+    &lt;img src=&#34;http://ww1.sinaimg.cn/large/5fee18eegy1ffh86rw9s5j20go0ca0yp.jpg&#34; alt=&#34;硅谷坐标&#34;&gt;
+    &lt;figcaption&gt;&lt;center&gt;硅谷坐标&lt;/center&gt;&lt;/figcaption&gt;
+  &lt;/figure&gt;
+
+
+
+  &lt;figure&gt;
+    &lt;img src=&#34;http://ww1.sinaimg.cn/large/5fee18eegy1ffh4j95w0tj20go0ci78x.jpg&#34; alt=&#34;硅谷公司&#34;&gt;
+    &lt;figcaption&gt;&lt;center&gt;硅谷公司&lt;/center&gt;&lt;/figcaption&gt;
+  &lt;/figure&gt;
+
+&lt;/p&gt;
+&lt;p&gt;从淘金开始，硅谷人血液里面就充满了叛逆、冒险。吴军更是把硅谷成功的奥秘首先归结为叛逆精神和对叛逆的宽容与支持。硅谷从很大程度上是从仙童半导体（Fairchild Semiconductor）开始的，从它“叛变”出了很多公司，英特尔就是其中之一，用今天的话说就是仙童系。&lt;/p&gt;
+&lt;p&gt;
+  &lt;figure&gt;
+    &lt;img src=&#34;http://ww1.sinaimg.cn/large/5fee18eegy1ffh4m4fhxhj20yw190ajb.jpg&#34; alt=&#34;仙童系公司&#34;&gt;
+    &lt;figcaption&gt;&lt;center&gt;仙童系公司&lt;/center&gt;&lt;/figcaption&gt;
+  &lt;/figure&gt;
+
+&lt;/p&gt;
+&lt;p&gt;
+  &lt;figure&gt;
+    &lt;img src=&#34;http://ww1.sinaimg.cn/large/5fee18eegy1ffh4nthd5vj22io1w0kjl.jpg&#34; alt=&#34;思科系公司&#34;&gt;
+    &lt;figcaption&gt;&lt;center&gt;思科系公司&lt;/center&gt;&lt;/figcaption&gt;
+  &lt;/figure&gt;
+
+&lt;/p&gt;
+&lt;h2 id=&#34;信息时代&#34;&gt;信息时代&lt;/h2&gt;
+&lt;p&gt;如果说叛逆精神是外因，那么什么是硅谷成功的内因呢？吴军博士这里从工业时代的企业开始谈起。&lt;/p&gt;
+&lt;p&gt;从瓦特的蒸汽机开始，标志着人类进入了工业时代，可以用物理动力代替人工。虽然在瓦特之前已经有了很简陋的蒸汽机，而且在他之后西门子等人利用电力能够提供能方便的动力，但是瓦特所发明的万用蒸汽机则使得人类第一次让一种工业品（瓷器）出现了供大于求的现象。当然瓦特也是站在巨人的肩膀之上，引领瓦特开启工业革命大门的是牛顿的巨作《自然哲学的数学原理》。&lt;/p&gt;
+&lt;h3 id=&#34;机械思维&#34;&gt;机械思维&lt;/h3&gt;
+&lt;p&gt;在牛顿之后，人类开始学会用理性的眼光对待一切的已知和未知。在整个工业革命时期，一直到20世纪初，人们都习惯用机械的方法来实现所需要的一切产品。在瓦特之后，英国技师史蒂芬森利用机械发明了火车，英国发明家瑟伯（Charles Thurber）第一次用机械的方式实现了替代手写的转轮打字机，甚至连巴贝奇发明的能够进行复杂差分计算的计算机，也是通过机械实现的。&lt;/p&gt;
+&lt;p&gt;虽然现在一提到机械思维可能有些贬义，但是在工业时代却是相当时髦、先进。再次在机械思维的指导下，人们认为&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;任何一个复杂的问题都可以分解成若干个简单的问题，解决这些简单问题之后，原先的复杂问题就必定有解。&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;这一思想算是现在的&lt;a href=&#34;https://en.wikipedia.org/wiki/Divide_and_conquer_algorithm&#34;&gt;分治法&lt;/a&gt;的起源。&lt;/p&gt;
+&lt;p&gt;机械开始代替大量人工之后，产品的标准化代替了个性化，而追求效率也成为工业企业提高竞争力几乎唯一的选择。在诸多企业管理理论中，最具代表性的是泰勒的理论。&lt;/p&gt;
+&lt;h3 id=&#34;泰勒管理理论&#34;&gt;泰勒管理理论&lt;/h3&gt;
+&lt;p&gt;&lt;a href=&#34;https://en.wikipedia.org/wiki/Frederick_Winslow_Taylor&#34;&gt;弗雷德里克·泰勒&lt;/a&gt;（Frederick Taylor, 1856&amp;ndash;1915）是美国科学管理的创始人，被誉为科学管理之父。其理论可以包括下述四个方面：&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;效率优先。怎么提高生产效率呢？泰勒最看重的是&lt;strong&gt;优化流程&lt;/strong&gt;和&lt;strong&gt;标准化管理&lt;/strong&gt;。流水线生产是机械思维在生产和管理上最具有代表性的产物。在整个工厂里，除了工厂主和主要工程师知道产品全貌，生产线的工人只知道自己所做的那一点东西。福特汽车就是在这种标准化的流水线中壮大起来的。在软件工程里面，“码农”对应了流水线工人，架构师对应于工厂主或工程师。&lt;/li&gt;
+&lt;li&gt;同构的树状组织架构。&lt;/li&gt;
+&lt;li&gt;人性化管理。二战后的日本，把这点发挥到了极致。员工一旦进入一家公司，一直干到退休，公司包管员工生活的方方面面。&lt;/li&gt;
+&lt;li&gt;可预测性&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;上述四个特点是机械思维的典型产物，泰勒理论在工业革命时期极大的提高了全球生产率。但是到了信息社会，它在企业管理和协调劳资关系上的局限性越来越突出。&lt;/p&gt;
+&lt;h3 id=&#34;信息时代的科学基础&#34;&gt;信息时代的科学基础&lt;/h3&gt;
+&lt;p&gt;本书最后一章介绍三论与管理，主要是克服泰勒理论固有的弊端，适应信息时代的要求。&lt;/p&gt;
+&lt;p&gt;三论具体是指控制论、信息论和系统论。三论与以往那些单一的学科不同，一方面它既是交叉学科也是边缘学科，另一方面是她们不仅被用于解决自身学科内的各种问题，而且它们还代表着一种新的思维方式和做事方法，成为一种全新的世界观与方法论。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;控制论的思维方式主要强调&lt;strong&gt;根据变化进行不断挑战&lt;/strong&gt;。这与机械思维（做一种尽可能确定的预测）完全不同，适用于做复杂的产品。在软件开发过程中这一点尤为重要，因为产品会随着时间不断演化，必须做到顺势而变。&lt;/li&gt;
+&lt;li&gt;信息论的思维方式建立在&lt;strong&gt;不确定性的基础上&lt;/strong&gt;。香农用热力学中熵的概念来描述不确定性。在我们生活中到处都充满了不确定性，要想消除这种不确定性，就需要引入信息。这个观点其实正好对应了现在的大数据时代，谁掌握了信息，谁就能够发大财，这就如同在工业时代，谁掌握了资本谁就能发大财一样。&lt;/li&gt;
+&lt;li&gt;系统论的思维方式主要强调&lt;strong&gt;局部最优不代表全局最优&lt;/strong&gt;。书中举的智能手机的例子再合适不过。很多 Android 厂商一味追求各个部件的参数，甚至以跑分出高分为荣，相比之下 iPhone 从不鼓吹这些，但是却是现在最好用的智能手机。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;在解释信息论时，还提香农两大定律。&lt;/p&gt;
+&lt;p&gt;第一定律大致含义是：有 N 种可能性的信息源，对它发出的信息进行（不损失）编码，编码长度一定大于该信源的信息熵。一个实际例子：编码汉字，常用字可以编码短些，生僻字编码长些，但是无论怎么做，&lt;strong&gt;编码的平均长度一定会超过汉子的不确定性（即它们的信息熵）&lt;/strong&gt;。
+霍夫曼编码可以给出一种最优的编码方案，达到平均编码长度可以非常接近它的不确定性（熵）——比如对汉字进行编码只要把最短的编码分配给最常见汉字即可。吴军博士这里更是给出了霍夫曼编码原理的本质：&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;把最好的资源分配给最有可能成功的事情。&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;香农第二定律说的是，信息的传播速率不可能超过信道的容量。这两大定律在信息时代所起的作用堪比牛顿力学定律之于工业时代。&lt;/p&gt;
+&lt;h2 id=&#34;总结&#34;&gt;总结&lt;/h2&gt;
+&lt;p&gt;通读本书，觉得硅谷的成功真是来之不易，除了风险投资、汇聚于此的全世界的精英、对工程师的尊重等因素，更重要的是掌握了开启信息时代的大门的钥匙。
+·
+在大工业时代，效率来自于事先的规划和不断重复的操作；而在信息时代，效率来自沟通的带宽，以及共同遵守的协议。一个时代的来临，需要有相应的指导理论，三论作为信息时代的路标，其实已经在潜移默化中融入我们的生活，我们总是想获取更多信息以便将来更好的就业就是信息论的体现。&lt;/p&gt;
+&lt;p&gt;其次，本书纠正了我对专利的理解：&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;专利真正保护的是一个过程（包括一种实现方法）和一个结果。比如：牛顿三个定律是不能申请专利的，而利用这些原理发明某一种工作方式下的蒸汽机就可以申请。&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;最后希望身处信息时代的我们都能够阅读原作，相信一定会获益匪浅。给吴军老师点个赞。👍&lt;/p&gt;
+</description>
     </item>
     
     <item>
@@ -49,7 +930,104 @@
       <pubDate>Sun, 08 Jan 2017 00:00:00 +0000</pubDate>
       
       <guid>https://liujiacai.net/blog/2017/01/08/review-2016/</guid>
-      <description>又到一年总结时，本来想着在农历年前考完科目三拿到驾照后再写的，目前来看希望不大了，这个目标只能留在17年去实现了，有种书到用时方恨晚的感觉。</description>
+      <description>&lt;p&gt;又到一年总结时，本来想着在农历年前考完科目三拿到驾照后再写的，目前来看希望不大了，这个目标只能留在17年去实现了，有种书到用时方恨晚的感觉。
+一个词来总结 16 年——“运动元年”，算是完成了 &lt;a href=&#34;https://liujiacai.net/blog/2016/01/08/review-2015/#%E5%87%8F%E8%82%A5&#34;&gt;15 年一小目标&lt;/a&gt;。OK，下面简单回顾下 16 年那些“重大事件”吧。&lt;/p&gt;
+&lt;h2 id=&#34;强身健体&#34;&gt;强身健体&lt;/h2&gt;
+&lt;h3 id=&#34;减肥大计&#34;&gt;减肥大计&lt;/h3&gt;
+&lt;p&gt;从 4 月初开始到现在，体重大概从100KG减到现在的85KG，最轻的时候到了80KG，冬天又反弹了5KG左右。单看数字其实并没有什么，网上很多人在半年内都能做到，但是对我来说意义要更深远。从去健身房开始，发现了另一种生活方式，生活不在只有代码，生活可以更丰富多彩，在此期间我也跑了&lt;a href=&#34;https://liujiacai.net/blog/2016/11/07/run-2-marathon-in-a-week/&#34;&gt;两次马拉松&lt;/a&gt;，爬了好多山。对自己的身体也有了更多的了解，之前认为减肥就是体重下降，其实这时非常肤浅的，如果健身能够让你改变之前懒散的生活方式，周末走出房门，拥抱大自然，认识更多的朋友，那么体重对你来说还那么重要嘛。&lt;/p&gt;
+&lt;center&gt;
+![健身打卡1](https://img.alicdn.com/imgextra/i1/581166664/TB28ADTc5RnpuFjSZFCXXX2DXXa_!!581166664.png)
+![健身打卡2](https://img.alicdn.com/imgextra/i3/581166664/TB2.342cCtkpuFjy0FhXXXQzFXa_!!581166664.png)
+![我与教练](https://img.alicdn.com/imgextra/i4/581166664/TB2YmZacY4npuFjSZFmXXXl4FXa_!!581166664.jpg)
+![晨跑](https://img.alicdn.com/imgextra/i2/581166664/TB2H6nZcZtnpuFjSZFKXXalFFXa_!!581166664.jpg)
+![运动日记](https://img.alicdn.com/imgextra/i1/581166664/TB2URzWcYJmpuFjSZFBXXXaZXXa_!!581166664.png_620x10000.jpg)
+![杭州全马终点](https://img.alicdn.com/imgextra/i4/581166664/TB2b68KcU5O.eBjSZFxXXaaJFXa_!!581166664.jpg_620x10000.jpg)
+&lt;/center&gt;
+&lt;h3 id=&#34;乒乓球&#34;&gt;乒乓球&lt;/h3&gt;
+&lt;p&gt;在我运动细胞高涨期间，组织了公司的乒乓球协会，并在年底的比赛中获得第二名。乒乓球从小就喜欢玩，可以是之前体重的缘故，只能玩这种小球😂，大二体育课还选修了一年。在协会里认识了各类高手，每天下班后去打两局也成了常态，心里的满足感极高。&lt;/p&gt;
+&lt;center&gt;
+![选手风采](https://img.alicdn.com/imgextra/i4/581166664/TB2Y54QcuJ8puFjy1XbXXagqVXa_!!581166664.png_620x10000.jpg)
+![前三名](https://img.alicdn.com/imgextra/i3/581166664/TB2w6J4cB0kpuFjy1zdXXXuUVXa_!!581166664.jpg_620x10000.jpg)
+![开局前三板](https://img.alicdn.com/imgextra/i1/581166664/TB2jhh8crplpuFjSspiXXcdfFXa_!!581166664.gif)
+&lt;/center&gt;
+&lt;h2 id=&#34;天天向上&#34;&gt;天天向上&lt;/h2&gt;
+&lt;h3 id=&#34;读书&#34;&gt;读书&lt;/h3&gt;
+&lt;p&gt;16 年读的书不多，15 年终总结时&lt;a href=&#34;https://liujiacai.net/blog/2016/01/08/review-2015/#%E8%AF%BB%E4%B9%A6-1&#34;&gt;列出的书&lt;/a&gt;只完成了两本。&lt;/p&gt;
+&lt;p&gt;上半年终于完成《SICP》的阅读，&lt;a href=&#34;https://github.com/jiacai2050/sicp&#34;&gt;Github 上的笔记&lt;/a&gt; 有了 248 个 star、37 个 fork、33 个 watch，读完这本书，不仅仅是对编程语言有了新的认识，更重要的是挑战自己，看看是否能坚持做好一件事。&lt;/p&gt;
+&lt;p&gt;另一本看完的书是&lt;a href=&#34;http://book.douban.com/subject/1494026/&#34;&gt;《CODE》&lt;/a&gt;，这本书相对来说偏硬件，科普类型，但是对理解计算机内部构造还是非常有帮助的，从简单的门电路，到二八译码器，锁存器，二极管，一步步深入，建议每一位同学都读读。&lt;/p&gt;
+&lt;p&gt;上面两本是计划内的，此外还完成了&lt;a href=&#34;https://book.douban.com/subject/4743790/&#34;&gt;《The Joy of Clojure》&lt;/a&gt;、&lt;a href=&#34;https://book.douban.com/subject/25783324/&#34;&gt;《 Clojure Cookbook 》&lt;/a&gt;。
+&lt;a href=&#34;https://book.douban.com/subject/3273420/&#34;&gt;《Python Essential Reference》&lt;/a&gt; 看到了第13章，占全书的37%左右。&lt;/p&gt;
+&lt;p&gt;前几天看到一篇文章&lt;a href=&#34;http://www.jianshu.com/p/0e22c900809b&#34;&gt;《买个书，你还凑什么运费？》&lt;/a&gt;，是的，就像该文说的，我也有囤书“病”，其实这个道理大家都懂，就是做起来比较难而已，这里再把 16 年年初定的目标拿过来，17 年继续：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;http://book.douban.com/subject/1230413/&#34;&gt;Computer Systems: A Programmer&amp;rsquo;s Perspective&lt;/a&gt;，这本书主要是让我能够更好的理解操作系统。&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;http://book.douban.com/subject/25854634/&#34;&gt;公共问题经济学&lt;/a&gt;，主要是一些经济学知识，在现代社会，每个人都需要懂一些经济学，不是嘛&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;http://book.douban.com/subject/1888733/&#34;&gt;Java Concurrency in Practice&lt;/a&gt;，主要讲授多线程方面的知识。&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;http://book.douban.com/subject/1632977/&#34;&gt;The Little Schemer - 4th Edition&lt;/a&gt;，这是一本小巧精炼的书，主要讲解 Scheme 方面的东西，对理解一些概念，像递归、lambda 很有帮助，是 SICP 很好的辅助书籍。&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;http://book.douban.com/subject/1726083/&#34;&gt;The Seasoned Schemer&lt;/a&gt;，TLS 的晋级篇&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://book.douban.com/subject/1432683/&#34;&gt;On Lisp&lt;/a&gt;，Advanced Techniques for Common LISP，主要是学习 Lisp 中宏的强大&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;&lt;del&gt;为了不重蹈覆辙，之后会做个详细的读书计划&lt;/del&gt;，目标太大不容易实现，切分成小目标就好多了，和减肥一个道理。目标是在 17 年把上面几本书全部消灭。&lt;/p&gt;
+&lt;p&gt;
+  &lt;figure&gt;
+    &lt;img src=&#34;https://img.alicdn.com/imgextra/i4/581166664/TB2mf.BancCL1FjSZFPXXXZgpXa_!!581166664.png&#34; alt=&#34;17 年读书计划时间表，From 日事清APP&#34;&gt;
+    &lt;figcaption&gt;&lt;center&gt;17 年读书计划时间表，From 日事清APP&lt;/center&gt;&lt;/figcaption&gt;
+  &lt;/figure&gt;
+
+&lt;/p&gt;
+&lt;h3 id=&#34;github&#34;&gt;Github&lt;/h3&gt;
+&lt;p&gt;
+  &lt;figure&gt;
+    &lt;img src=&#34;https://img.alicdn.com/imgextra/i2/581166664/TB2F20LcwJlpuFjSspjXXcT.pXa_!!581166664.png&#34; alt=&#34;16 年的 Github Contributions&#34;&gt;
+    &lt;figcaption&gt;&lt;center&gt;16 年的 Github Contributions&lt;/center&gt;&lt;/figcaption&gt;
+  &lt;/figure&gt;
+
+&lt;/p&gt;
+&lt;p&gt;从数字来看，370 次比去年的 459 次少了些，提交也基本上是在上半年，应该也是在看 SICP 的阶段，7 月份后业余时间都用在了健身上，看书与写代码的时间确实少了不少。&lt;/p&gt;
+&lt;p&gt;
+  &lt;img src=&#34;https://img.alicdn.com/imgextra/i2/581166664/TB2kFyjcrRkpuFjSspmXXc.9XXa_!!581166664.png&#34; alt=&#34;&#34;&gt;
+
+&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;15年十一期间写了 &lt;a href=&#34;https://github.com/jiacai2050/JCScheme&#34;&gt;Java 版 Scheme&lt;/a&gt;，16 年用 Clojure &lt;a href=&#34;https://github.com/jiacai2050/scheme.clj&#34;&gt;重新实现&lt;/a&gt;了次，目前有 3 个 watch，11 个 star；&lt;/li&gt;
+&lt;li&gt;还写了一个浏览器插件 &lt;a href=&#34;https://github.com/jiacai2050/better-history&#34;&gt;Advance History&lt;/a&gt;，用于统计分析流量纪录，目前有 83 个 star，6 个 watch，11 个 fork&lt;/li&gt;
+&lt;li&gt;看 Python Essential 期间，写了个 &lt;a href=&#34;https://github.com/jiacai2050/pysh/&#34;&gt;Python 版的 Shell&lt;/a&gt;，主要是用generator 来实现不同命令间的 pipeline，可惜目前没有持续开发，17 年应该会再在这个项目上发力。目前 3 个 watch，19 个 star。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3 id=&#34;博客&#34;&gt;博客&lt;/h3&gt;
+&lt;p&gt;现在来看看 16 年的博客，产量明显低于预期，没能做到每月都有产出。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;质量最高的应该算&lt;a href=&#34;https://liujiacai.net/blog/2016/10/31/socket-programming/&#34;&gt;《Socket 编程实战》&lt;/a&gt;，现在的开发离不开网络，但是对于网络通信，很多人不是非常了解，这篇文章算是给出了较为详细的解释；&lt;/li&gt;
+&lt;li&gt;最装 X 的文章应该是&lt;a href=&#34;https://liujiacai.net/blog/2016/11/07/run-2-marathon-in-a-week/&#34;&gt;《我为什么一周内连跑 2 个马拉松》&lt;/a&gt;，用了“洪荒之力”才完成的，主要纪录自己从一个小胖子，怎么一步步完成全马（42.195KM）的心理历程；&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://liujiacai.net/blog/2016/02/22/recursion-without-name/&#34;&gt;《如何实现一个没有名字的递归函数》&lt;/a&gt; 主要写的是 Y 算子，算是&lt;a href=&#34;https://liujiacai.net/blog/2014/10/12/lambda-calculus-introduction/&#34;&gt;《 编程语言的基石——Lambda calculus 》&lt;/a&gt;的继承篇，但是感觉这两篇文章写的都不是很好，17 年理解加深后需要再完善这两个函数式编程中的基本概念；&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://liujiacai.net/blog/2016/05/28/scope-closure/&#34;&gt;《编程语言中的变量作用域与闭包》&lt;/a&gt;算是在 SICP 第四章环境模型的基础上，重点介绍了 JS 与 Python 中的变量作用域，之后一句话解释什么是闭包：&lt;code&gt;一个闭包对象包含：一个函数与声明函数时的环境&lt;/code&gt;，闭包是为了解决自由变量作用域的问题而提出的概念；&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://liujiacai.net/blog/2016/03/26/python-ruby-javascript/&#34;&gt;《python, ruby, javascript 浅析》 &lt;/a&gt; 这篇文章第一次涉及到了 Ruby 语言，相比 Python，Ruby 更灵活，更适合元编程；&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://liujiacai.net/blog/2016/04/23/sicp-chapter4-summary/&#34;&gt;《SICP 第四章总结》&lt;/a&gt;、&lt;a href=&#34;https://liujiacai.net/blog/2016/05/21/sicp-chapter5-summary/&#34;&gt;《SICP 第五章总结》&lt;/a&gt; 是 SICP 一书最后两章，第五章偏重编译器实现的细节，看到不是很详细，以后可能会有 Clojure 把 SICP 上的重要习题再做一遍，温故知新；&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://liujiacai.net/blog/2016/12/07/hello-jeju/&#34;&gt;《韩国济州岛4日游》&lt;/a&gt;、&lt;a href=&#34;https://liujiacai.net/blog/2016/12/18/zoo-hupao-of-hangzhou/&#34;&gt;《夜爬初体验》&lt;/a&gt; 是两次非常愉快的经历，第一次走出国门，第一次黑夜爬山，都非常难忘；&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://liujiacai.net/blog/2016/12/31/dev-in-clojure/&#34;&gt;《Clojure 开发那些事》&lt;/a&gt; 16 年最后一篇文章，看完 SICP 以后就觉得要找一门 Lisp 方言作为主力语言，这篇文章算是开个头，预计接下来的几年内都会重点使用 Lisp。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;技术文章除了发在个人博客，今年依次开通了&lt;a href=&#34;http://weixin.sogou.com/weixin?query=keepwritingcodes&#34;&gt;微信公众号&lt;/a&gt;，&lt;a href=&#34;https://gold.xitu.io/user/57c2431b165abd00665ee39f&#34;&gt;掘金专栏&lt;/a&gt;，一方面是提升自己文章曝光率，建立自己的品牌；另一方面是找到志同道合的小伙伴，个人博客文章难免会有遗漏、错误的地方，需要志同道合者指出，共同进步。为了区分生活类文章，开通&lt;a href=&#34;http://www.jianshu.com/u/8a5466e37198&#34;&gt;简书&lt;/a&gt;，以后生活感悟的文章主要会放在这里。&lt;/p&gt;
+&lt;h3 id=&#34;学洋文&#34;&gt;学洋文&lt;/h3&gt;
+&lt;p&gt;16 年初决定用扇贝打卡，到今天为止打卡 167 天，不到半年。而且有些天水分也比较大，基本上 2 分钟就打卡了。&lt;/p&gt;
+&lt;center&gt;
+![扇贝打卡纪录](https://img.alicdn.com/imgextra/i1/581166664/TB2TpGdcB8kpuFjSspeXXc7IpXa_!!581166664.jpg_620x10000.jpg)
+&lt;/center&gt;
+&lt;p&gt;期间也买过 iPhone 上的&lt;a href=&#34;https://itunes.apple.com/ec/app/voa-ying-yu-ting-li-xin-wen/id1010195720?l=en&amp;amp;mt=8&#34;&gt;VOA集合&lt;/a&gt;，听了两天也没坚持下来，虽然计算机方面的书能看英文我尽量看英文，但是英文阅读能力还是每提高多少，就其原因，觉得还是大多数时候我都不求甚解，很多复杂句式自己也懒得去分析，久而久之可能就丧失了这种能力，加上手机上阅读本身就能难集中注意力，所以一年下来英语水平还是那么样。&lt;/p&gt;
+&lt;p&gt;前两天看到一篇文章&lt;a href=&#34;http://www.jianshu.com/p/74ec33aa2038&#34;&gt;《没人会等你优秀，遇到别人时你必须已经很优秀》&lt;/a&gt;，自己想出国但是语言又一直原地打转怎么可以呢？机会是留给有准备的人。17 年的英语学习计划要多去动笔动脑，学习英语时直接开飞行模式，把干扰降到最低，正好扇贝有个&lt;a href=&#34;https://www.shanbay.com/web/annual-plan/intro&#34;&gt;新年计划&lt;/a&gt;，交费20.17元，定个300天打卡的小目标，等到 18 年再见证效果。&lt;/p&gt;
+&lt;h2 id=&#34;总结与展望&#34;&gt;总结与展望&lt;/h2&gt;
+&lt;p&gt;16 年是正式工作的第二年，这一年的工作平淡无奇，没什么特别突出的地方，代码风格相对来说还是比较满意，总结出了 &lt;a href=&#34;http://python-best-practice.liujiacai.net/#/&#34;&gt;Python 最佳实践&lt;/a&gt;，并在实际项目中应用；用 Node.js 完成了一内部工具，供 BI 的同学使用，这个项目陆陆续续做了一年半，事实证明 Node.js 的回调确实挺坑，维护起来成本略高；年底时，把 Clojure 正式应用到工作中，算是跨出 Lisp 大门的第一步，后面打算在公司内部做几次分享，来推广 Clojure，平时也会多去学习 Github 上的开源项目，Clojure 第三方库一般都比较短小精悍，由于其语言本身的扩展性非常好，所以可以用较少的代码来实现同样的功能，17 年会写几篇文章来总结这方面的经验。&lt;/p&gt;
+&lt;p&gt;如果说 16 年是运动元年，那么 17 年将会是运动翌年，健身应该是一件很享受的事情，跑步机上挥汗如雨之后，练练肩，练练腿，最后冲个澡，回去大睡一觉，生活还能更美好嘛？！17 年还应该会去爬黄山、庐山、华山。&lt;/p&gt;
+&lt;p&gt;16 年高质量文章较少，17 年会在阅读经典书籍的同时，多去总结，发散思维，最少做到每月一篇高质量博客，现在有了&lt;a href=&#34;http://weixin.sogou.com/weixin?query=keepwritingcodes&#34;&gt;公众号&lt;/a&gt;后，更要勤奋，把自己的品牌（KeepWritingCodes）建立起来。&lt;/p&gt;
+&lt;p&gt;好了，总结的差不多了，最后放几张有意义的照片告别2016，迎接崭新的2017。&lt;code&gt;&amp;lt;/2016&amp;gt;Hello World&amp;lt;2017&amp;gt;&lt;/code&gt;&lt;/p&gt;
+&lt;center&gt;
+![韩国济州岛，清晨](https://img.alicdn.com/imgextra/i4/581166664/TB24FskXS0mpuFjSZPiXXbssVXa_!!581166664.jpg)
+![韩国济州岛，汉拿山](https://img.alicdn.com/imgextra/i3/581166664/TB2y9z6c.lnpuFjSZFjXXXTaVXa_!!581166664.jpg)
+![杭州，曲院风荷](https://img.alicdn.com/imgextra/i3/581166664/TB2z2kdc9FmpuFjSZFrXXayOXXa_!!581166664.jpg_620x10000.jpg)
+![杭州，北高峰](https://img.alicdn.com/imgextra/i4/581166664/TB2faKbcB0kpuFjSsziXXa.oVXa_!!581166664.jpg)
+![北京，鸟巢](https://img.alicdn.com/imgextra/i1/581166664/TB2yBr6c.lnpuFjSZFjXXXTaVXa_!!581166664.jpg_620x10000.jpg)
+![临沂，天蒙，家辉](https://img.alicdn.com/imgextra/i2/581166664/TB29fMfcYBmpuFjSZFAXXaQ0pXa_!!581166664.jpg)
+![临沂，天蒙，家钰](https://img.alicdn.com/imgextra/i1/581166664/TB2zP.bc5pnpuFjSZFkXXc4ZpXa_!!581166664.jpg_620x10000.jpg)
+![家辉写的天蒙一日游](https://img.alicdn.com/imgextra/i1/581166664/TB23mv2cYJmpuFjSZFwXXaE4VXa_!!581166664.jpg)
+&lt;/center&gt;
+</description>
     </item>
     
     <item>
@@ -58,7 +1036,359 @@
       <pubDate>Wed, 07 Dec 2016 00:00:00 +0000</pubDate>
       
       <guid>https://liujiacai.net/blog/2016/12/07/hello-jeju/</guid>
-      <description>公司年底 outing，济州岛 4 日游（12/2-12/5）。济州岛对国人不需要签证，从杭州坐飞机去不到2个小时，绝对是旅游胜地。济州岛在韩国算</description>
+      <description>&lt;p&gt;公司年底 outing，济州岛 4 日游（12/2-12/5）。济州岛对国人不需要签证，从杭州坐飞机去不到2个小时，绝对是旅游胜地。济州岛在韩国算乡下，但其依靠旅游业，硬生生的把 GDP 带上去了，听导游说一洗碗工月工资都能达到一万二，加个班一万八没问题。没去过的同学有机会一定要去体验一次，这里不仅仅有欧巴、化妆品，自然风景更是让人流连忘返，PM 2.5 基本都在 20 以内，你还等什么呢。&lt;/p&gt;
+&lt;p&gt;本篇文章首先依次介绍我这次行程中去过的景点，晒一晒照片；然后根据我自身经历，总结一份攻略，共今后去的同学参考。&lt;/p&gt;
+&lt;h2 id=&#34;第一天&#34;&gt;第一天&lt;/h2&gt;
+&lt;p&gt;我们是9点的飞机，到济州岛是11：40，济州岛时区是东九区，所以比北京时间快一个小时。飞机到济州岛后没有立刻着陆，而是围着岛转了一圈，估计是航空管制的缘故，我正好也趁这个机会窥视她的全貌：&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;济州岛是由火山喷发而形成，是典型的火山岛。最高的山是汉拿山，海拔1950米，也是韩国最高峰。&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;在机场上看到一个大大的凹坑，没错那就是之前的火山口。语文学的不好，除了美不知道怎么形容这里的风景了。大家自己看图吧。&lt;/p&gt;
+&lt;p&gt;
+  &lt;img src=&#34;https://img.alicdn.com/imgextra/i1/581166664/TB2NV3hXJBopuFjSZPcXXc9EpXa_!!581166664.jpg_620x10000.jpg&#34; alt=&#34;&#34;&gt;
+
+
+
+  &lt;img src=&#34;https://img.alicdn.com/imgextra/i3/581166664/TB2RCskXH4npuFjSZFmXXXl4FXa_!!581166664.jpg_620x10000.jpg&#34; alt=&#34;&#34;&gt;
+
+
+
+  &lt;img src=&#34;https://img.alicdn.com/imgextra/i3/581166664/TB2UUAjXSFmpuFjSZFrXXayOXXa_!!581166664.jpg_620x10000.jpg&#34; alt=&#34;&#34;&gt;
+
+
+
+  &lt;img src=&#34;https://img.alicdn.com/imgextra/i3/581166664/TB2h9GDXHFkpuFjy1XcXXclapXa_!!581166664.png_620x10000.jpg&#34; alt=&#34;&#34;&gt;
+
+&lt;/p&gt;
+&lt;p&gt;下了飞机后，坐上大巴车，去吃午饭，没错，是泡菜。长相和自家的酸白菜差不多，貌似口感好一点点（可能是我们预算偏少，才4000韩元，所以大家普遍都喊没吃饱😳）。&lt;/p&gt;
+&lt;p&gt;
+  &lt;figure&gt;
+    &lt;img src=&#34;https://img.alicdn.com/imgextra/i4/581166664/TB2M69AXR0lpuFjSszdXXcdxFXa_!!581166664.jpg_620x10000.jpg&#34; alt=&#34;韩国泡菜&#34;&gt;
+    &lt;figcaption&gt;&lt;center&gt;韩国泡菜&lt;/center&gt;&lt;/figcaption&gt;
+  &lt;/figure&gt;
+
+&lt;/p&gt;
+&lt;h3 id=&#34;小人国主题公园&#34;&gt;小人国主题公园&lt;/h3&gt;
+&lt;p&gt;吃完就开始我们第一个景点——小人国主题公园，其实就是把全世界的有名景点缩小集合到一起，后来和同事聊，应该和深圳的世界之窗差不多。&lt;/p&gt;
+&lt;p&gt;
+  &lt;img src=&#34;https://img.alicdn.com/imgextra/i2/581166664/TB2JL.jXOlnpuFjSZFgXXbi7FXa_!!581166664.jpg_620x10000.jpg&#34; alt=&#34;&#34;&gt;
+
+
+
+  &lt;img src=&#34;https://img.alicdn.com/imgextra/i2/581166664/TB2UAZjXNhmpuFjSZFyXXcLdFXa_!!581166664.jpg_620x10000.jpg&#34; alt=&#34;&#34;&gt;
+
+
+
+  &lt;img src=&#34;https://img.alicdn.com/imgextra/i1/581166664/TB2NrghXJBopuFjSZPcXXc9EpXa_!!581166664.jpg_620x10000.jpg&#34; alt=&#34;&#34;&gt;
+
+
+
+  &lt;img src=&#34;https://img.alicdn.com/imgextra/i1/581166664/TB2eaoiXNtmpuFjSZFqXXbHFpXa_!!581166664.jpg&#34; alt=&#34;&#34;&gt;
+
+&lt;/p&gt;
+&lt;h3 id=&#34;泰迪熊博物馆&#34;&gt;泰迪熊博物馆&lt;/h3&gt;
+&lt;p&gt;第二个景点是泰迪熊博物馆，小孩子应该挺喜欢的，可惜我已经没童心了，觉得一般般。&lt;/p&gt;
+&lt;p&gt;
+  &lt;img src=&#34;https://img.alicdn.com/imgextra/i2/581166664/TB2QAOCXG8lpuFjy0FpXXaGrpXa_!!581166664.jpg_620x10000.jpg&#34; alt=&#34;&#34;&gt;
+
+
+
+  &lt;figure&gt;
+    &lt;img src=&#34;https://img.alicdn.com/imgextra/i4/581166664/TB2KgBxX9VmpuFjSZFFXXcZApXa_!!581166664.jpg_620x10000.jpg&#34; alt=&#34;奥巴马&#34;&gt;
+    &lt;figcaption&gt;&lt;center&gt;奥巴马&lt;/center&gt;&lt;/figcaption&gt;
+  &lt;/figure&gt;
+
+&lt;/p&gt;
+&lt;h3 id=&#34;乱打秀&#34;&gt;乱打秀&lt;/h3&gt;
+&lt;p&gt;这个真是不错，一个多小时的时间，那五个人凭借自己的肢体动作，让大家都看的很尽兴，貌似这个表演还上过&lt;a href=&#34;http://www.mgtv.com/b/18/2951177.html&#34;&gt;天天向上&lt;/a&gt;，强烈推荐大家去看，现场不让拍照，我偷拍了几张，供大家欣赏。&lt;/p&gt;
+&lt;p&gt;
+  &lt;img src=&#34;https://img.alicdn.com/imgextra/i3/581166664/TB2GoQkXHxmpuFjSZJiXXXauVXa_!!581166664.jpg_620x10000.jpg&#34; alt=&#34;&#34;&gt;
+
+
+
+  &lt;img src=&#34;https://img.alicdn.com/imgextra/i2/581166664/TB2eeKCXHRkpuFjSspmXXc.9XXa_!!581166664.jpg_620x10000.jpg&#34; alt=&#34;&#34;&gt;
+
+&lt;/p&gt;
+&lt;h3 id=&#34;炸鸡与啤酒&#34;&gt;炸鸡与啤酒&lt;/h3&gt;
+&lt;p&gt;看完乱打秀，就直接回酒店了，我们入住的是离海不远的太平洋酒店，总体还是不错的。由于当天大家普遍没吃饱，所以当天晚上大家就出来觅食，一大群中国人拿着地图导航，找了半天最后找了一家炸鸡店，开吃！&lt;/p&gt;
+&lt;p&gt;
+  &lt;img src=&#34;https://img.alicdn.com/imgextra/i1/581166664/TB2Dh.kXOBnpuFjSZFzXXaSrpXa_!!581166664.jpg_620x10000.jpg&#34; alt=&#34;&#34;&gt;
+
+&lt;/p&gt;
+&lt;h2 id=&#34;第二天&#34;&gt;第二天&lt;/h2&gt;
+&lt;h3 id=&#34;早安&#34;&gt;早安&lt;/h3&gt;
+&lt;p&gt;酒店离海边比较近，大清早打开窗帘就可以看到晨曦映在海面上，惬意的很。&lt;/p&gt;
+&lt;p&gt;
+  &lt;img src=&#34;https://img.alicdn.com/imgextra/i4/581166664/TB27yokXHxmpuFjSZJiXXXauVXa_!!581166664.jpg_620x10000.jpg&#34; alt=&#34;&#34;&gt;
+
+
+
+  &lt;img src=&#34;https://img.alicdn.com/imgextra/i4/581166664/TB24FskXS0mpuFjSZPiXXbssVXa_!!581166664.jpg&#34; alt=&#34;&#34;&gt;
+
+
+
+  &lt;img src=&#34;https://img.alicdn.com/imgextra/i4/581166664/TB2VUcjXOBnpuFjSZFzXXaSrpXa_!!581166664.png_620x10000.jpg&#34; alt=&#34;&#34;&gt;
+
+&lt;/p&gt;
+&lt;h3 id=&#34;涉地可支&#34;&gt;涉地可支&lt;/h3&gt;
+&lt;p&gt;酒店吃完早餐，我们就出发去今天的第一站了——涉地可支。&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;“涉地”是这一地区古代时的名称，“可支”是济州岛方言，意思是向外突出的地形。涉地可支所在的海岸悬崖上是一片宽阔的草地，这里一棵树也看不到，海岸上耸立着一块叫仙石的岩石。&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;这里确实风景旖旎，但是导游不知道怎么想的，就给了我们半个小时，灯塔都没走的就要离开了，可惜，下次再来这里一定好好欣赏。&lt;/p&gt;
+&lt;p&gt;
+  &lt;img src=&#34;https://img.alicdn.com/imgextra/i3/581166664/TB2c.5DXMxlpuFjy0FoXXa.lXXa_!!581166664.jpg_620x10000.jpg&#34; alt=&#34;&#34;&gt;
+
+
+
+  &lt;img src=&#34;https://img.alicdn.com/imgextra/i3/581166664/TB2dpwjXHJmpuFjSZFwXXaE4VXa_!!581166664.jpg&#34; alt=&#34;&#34;&gt;
+
+&lt;/p&gt;
+&lt;h3 id=&#34;城山日出峰&#34;&gt;城山日出峰&lt;/h3&gt;
+&lt;p&gt;行程中第一座山，虽然海拔只有182米，但在山顶依然可以俯瞰大地，在这里可以遇到海女潜水表演，可惜我们时间有限，所以也擦肩而过。&lt;/p&gt;
+&lt;p&gt;
+  &lt;img src=&#34;https://img.alicdn.com/imgextra/i4/581166664/TB2AaolXNlmpuFjSZPfXXc9iXXa_!!581166664.jpg_620x10000.jpg&#34; alt=&#34;&#34;&gt;
+
+
+
+  &lt;img src=&#34;https://img.alicdn.com/imgextra/i3/581166664/TB2ZkKBXS0jpuFjy0FlXXc0bpXa_!!581166664.jpg_620x10000.jpg&#34; alt=&#34;&#34;&gt;
+
+
+
+  &lt;img src=&#34;https://img.alicdn.com/imgextra/i2/581166664/TB2lfoiXItnpuFjSZFvXXbcTpXa_!!581166664.jpg_620x10000.jpg&#34; alt=&#34;&#34;&gt;
+
+
+
+  &lt;img src=&#34;https://img.alicdn.com/imgextra/i1/581166664/TB2NV8xX0FopuFjSZFHXXbSlXXa_!!581166664.jpg_620x10000.jpg&#34; alt=&#34;&#34;&gt;
+
+
+
+  &lt;img src=&#34;https://img.alicdn.com/imgextra/i3/581166664/TB2N31BXHplpuFjSspiXXcdfFXa_!!581166664.jpg&#34; alt=&#34;&#34;&gt;
+
+&lt;/p&gt;
+&lt;h4 id=&#34;海女来历&#34;&gt;海女来历&lt;/h4&gt;
+&lt;blockquote&gt;
+&lt;p&gt;济州岛是一个远离陆地的孤岛，很久以前，下海捕捞是当地生活的主要来源。历史上，济州岛的海女可追溯到6世纪。当时岛上的习俗是男主内，女主外，于是潜水就成了女人们代代相传的一项重要的生存本领，“海女”这个称呼也由此而生。&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;
+  &lt;img src=&#34;https://img.alicdn.com/imgextra/i3/581166664/TB2qGUjXNhmpuFjSZFyXXcLdFXa_!!581166664.jpg_620x10000.jpg&#34; alt=&#34;&#34;&gt;
+
+&lt;/p&gt;
+&lt;h3 id=&#34;山君不离&#34;&gt;山君不离&lt;/h3&gt;
+&lt;p&gt;好浪漫的名字，虽然只是个火山口，但我觉得大多人提到这个名字应该是情侣相拥殉情的画面，类似中国的梁山伯与祝英台的故事。济州岛上分布着360多处火山，山君不离是其中最特别的一处。因为其余火山在爆发后都被岩浆覆盖，唯独山君不离在喷发时，没有被覆盖，形成了现在的洞口，称为“地平火山口”。&lt;/p&gt;
+&lt;p&gt;这里让人印象最深的怕是那一望无际的金色芦苇，情侣们一定不要放过这个地方。我们在这里拍了唯一的合影，不容易，冥冥之中正好映衬了山君不离😊。&lt;/p&gt;
+&lt;p&gt;
+  &lt;img src=&#34;https://img.alicdn.com/imgextra/i2/581166664/TB2BMWBXMRkpuFjy1zeXXc.6FXa_!!581166664.jpg_620x10000.jpg&#34; alt=&#34;&#34;&gt;
+
+
+
+  &lt;figure&gt;
+    &lt;img src=&#34;https://img.alicdn.com/imgextra/i3/581166664/TB27jezXRNkpuFjy0FaXXbRCVXa_!!581166664.jpg_620x10000.jpg&#34; alt=&#34;选景没选好，有些逆光&#34;&gt;
+    &lt;figcaption&gt;&lt;center&gt;选景没选好，有些逆光&lt;/center&gt;&lt;/figcaption&gt;
+  &lt;/figure&gt;
+
+
+
+  &lt;figure&gt;
+    &lt;img src=&#34;https://img.alicdn.com/imgextra/i3/581166664/TB2R8JvX9VmpuFjSZFFXXcZApXa_!!581166664.jpg&#34; alt=&#34;自己拍的实在不行，从网上找一个&#34;&gt;
+    &lt;figcaption&gt;&lt;center&gt;自己拍的实在不行，从网上找一个&lt;/center&gt;&lt;/figcaption&gt;
+  &lt;/figure&gt;
+
+&lt;/p&gt;
+&lt;h3 id=&#34;免税店&#34;&gt;免税店&lt;/h3&gt;
+&lt;p&gt;来济州岛不买几片面膜真不好意思说来过，我们依次去了乐天与新罗。整个免税店都是买买买的中国人，好恐怖的，相信同行的大多数女生们都非常期待这个地方，我实在是不感冒，给即将结婚的同学买了两件化妆品后，和两个小伙伴去周边找了个店喝茶去了。&lt;/p&gt;
+&lt;h3 id=&#34;ice冰雕馆3d视觉摄影区&#34;&gt;ICE冰雕馆+3D视觉摄影区&lt;/h3&gt;
+&lt;p&gt;冰雕馆在一楼，是真的很冷，我受不了很快的就出来了，看到同行的小伙伴玩的还挺开心的。顾名思义，3D视觉摄影区就是让大家拍照的地方，还是挺有意思的。&lt;/p&gt;
+&lt;p&gt;
+  &lt;img src=&#34;https://img.alicdn.com/imgextra/i3/581166664/TB2k34xX5lnpuFjSZFgXXbi7FXa_!!581166664.jpg_620x10000.jpg&#34; alt=&#34;&#34;&gt;
+
+
+
+  &lt;img src=&#34;https://img.alicdn.com/imgextra/i1/581166664/TB2Vs2CXM0kpuFjSspdXXX4YXXa_!!581166664.jpg_620x10000.jpg&#34; alt=&#34;&#34;&gt;
+
+
+
+  &lt;img src=&#34;https://img.alicdn.com/imgextra/i1/581166664/TB2RF8yX00opuFjSZFxXXaDNVXa_!!581166664.jpg_620x10000.jpg&#34; alt=&#34;&#34;&gt;
+
+&lt;/p&gt;
+&lt;h3 id=&#34;汗蒸幕&#34;&gt;汗蒸幕&lt;/h3&gt;
+&lt;p&gt;今天最后一个项目——汗蒸幕。其实和洗温泉差不多，洗完蒸。最高的好像70多度，没敢去。这里本地人不少，大多都慵懒的躺着，喝着饮料，看着韩剧，扯着家常。美中不足的是这里停留时间太多，没蒸够就又走了。这里就没照片了。&lt;/p&gt;
+&lt;h2 id=&#34;第三天&#34;&gt;第三天&lt;/h2&gt;
+&lt;h3 id=&#34;晨跑&#34;&gt;晨跑&lt;/h3&gt;
+&lt;p&gt;由于昨天早上看到那么美的晨曦，就决定今天要早起晨跑，可惜的是除了第一天是晴天，在济州岛的其他天都是阴天，没能看到日出。但清晨的风景，没因阴天而丝毫减半，而是另一种神韵。&lt;/p&gt;
+&lt;p&gt;
+  &lt;img src=&#34;https://img.alicdn.com/imgextra/i4/581166664/TB2gjIjXSFmpuFjSZFrXXayOXXa_!!581166664.jpg_620x10000.jpg&#34; alt=&#34;&#34;&gt;
+
+
+
+  &lt;img src=&#34;https://img.alicdn.com/imgextra/i1/581166664/TB2R5kiXUhnpuFjSZFPXXb_4XXa_!!581166664.jpg_620x10000.jpg&#34; alt=&#34;&#34;&gt;
+
+
+
+  &lt;img src=&#34;https://img.alicdn.com/imgextra/i1/581166664/TB2hCJzX5pnpuFjSZFkXXc4ZpXa_!!581166664.jpg_620x10000.jpg&#34; alt=&#34;&#34;&gt;
+
+&lt;/p&gt;
+&lt;p&gt;
+  &lt;img src=&#34;https://img.alicdn.com/imgextra/i4/581166664/TB2AV_GXSBjpuFjSsplXXa5MVXa_!!581166664.jpg&#34; alt=&#34;&#34;&gt;
+
+
+
+  &lt;img src=&#34;https://img.alicdn.com/imgextra/i4/581166664/TB24XaBXHtlpuFjSspfXXXLUpXa_!!581166664.png_620x10000.jpg&#34; alt=&#34;&#34;&gt;
+
+&lt;/p&gt;
+&lt;h3 id=&#34;汉拿山&#34;&gt;汉拿山&lt;/h3&gt;
+&lt;p&gt;今天是自由行，终于到我最期待的项目了——横穿汉拿山。前一天晚上就查好了路线，怕找不到地方，我还专门找酒店一楼的服务员大哥用韩语写了御里牧登登山口，虽然他汉语一般般，但勉强知道我的意思，非常感谢他。&lt;/p&gt;
+&lt;p&gt;
+  &lt;img src=&#34;https://img.alicdn.com/imgextra/i3/581166664/TB2rVSCXMJlpuFjSspjXXcT.pXa_!!581166664.jpg_620x10000.jpg&#34; alt=&#34;&#34;&gt;
+
+&lt;/p&gt;
+&lt;p&gt;爬山的小伙伴有四个，我们打车去的御里牧登登山口，原计划沿着观音寺路线下山，没想到最后迷路从最不推荐的顿乃克路线下去了，都是泪。&lt;/p&gt;
+&lt;p&gt;之前就听说爬汉拿山的中国人没几个，我们一路上也没遇到个同胞，基本都是济州岛本地人。由于汉拿山是火山喷发而形成，道路十分不好走，一大半路都是火山石铺出来了，我们也没准备登山棍，真是苦了膝盖。爬的过程中不时有乌鸦“哇哇”叫两声，回来才知道乌鸦在韩国是吉祥的鸟，汉拿山的乌鸦更是以嘴大著称，早知道就给它拍几张照片了。&lt;/p&gt;
+&lt;p&gt;我们这条登山路线有两处泉水，同行的女生一开始爬山就是吃不消，喝了这个泉水后，生龙活虎起来，我们戏称这真是神仙水。&lt;/p&gt;
+&lt;p&gt;
+  &lt;figure&gt;
+    &lt;img src=&#34;https://img.alicdn.com/imgextra/i4/581166664/TB2L3AlXS8mpuFjSZFMXXaxpVXa_!!581166664.jpg_620x10000.jpg&#34; alt=&#34;神仙水&#34;&gt;
+    &lt;figcaption&gt;&lt;center&gt;神仙水&lt;/center&gt;&lt;/figcaption&gt;
+  &lt;/figure&gt;
+
+&lt;/p&gt;
+&lt;p&gt;爬山途中还有一景点也挺让人难忘的——鸟接岳。这里比较荒凉，四处都是枯枝败叶，看了景点牌才知道这里是由于登山者随意丢弃烟头而造成火灾，千年树木葬身火海，只剩下如今萧条景象。真的很让人伤心。&lt;/p&gt;
+&lt;p&gt;
+  &lt;figure&gt;
+    &lt;img src=&#34;https://img.alicdn.com/imgextra/i1/581166664/TB2TuBBX00opuFjSZFxXXaDNVXa_!!581166664.jpg_620x10000.jpg&#34; alt=&#34;鸟接岳1&#34;&gt;
+    &lt;figcaption&gt;&lt;center&gt;鸟接岳1&lt;/center&gt;&lt;/figcaption&gt;
+  &lt;/figure&gt;
+
+
+
+  &lt;figure&gt;
+    &lt;img src=&#34;https://img.alicdn.com/imgextra/i1/581166664/TB2EZEmXJXnpuFjSZFoXXXLcpXa_!!581166664.jpg_620x10000.jpg&#34; alt=&#34;鸟接岳2&#34;&gt;
+    &lt;figcaption&gt;&lt;center&gt;鸟接岳2&lt;/center&gt;&lt;/figcaption&gt;
+  &lt;/figure&gt;
+
+&lt;/p&gt;
+&lt;p&gt;由于偏离了之前的下山路线，我们之后做公交回去，在语言不通的情况下，我们四个人又是英文，又是翻译软件，拿酒店名片给司机看，不容易的在顿乃克路线旁坐上了3路公交，之后换乘781，坐了30多站，终于回到免税店附近，最后一顿黑猪肉犒劳自己。现在回想，还历历在目，这种在异国他乡的经历非常刺激，不亲身经历是不能理解的。&lt;/p&gt;
+&lt;p&gt;
+  &lt;figure&gt;
+    &lt;img src=&#34;https://img.alicdn.com/imgextra/i2/581166664/TB2VagmXHxmpuFjSZJiXXXauVXa_!!581166664.jpg_620x10000.jpg&#34; alt=&#34;1300&#34;&gt;
+    &lt;figcaption&gt;&lt;center&gt;1300&lt;/center&gt;&lt;/figcaption&gt;
+  &lt;/figure&gt;
+
+
+
+  &lt;figure&gt;
+    &lt;img src=&#34;https://img.alicdn.com/imgextra/i4/581166664/TB2prUmXJXnpuFjSZFoXXXLcpXa_!!581166664.jpg_620x10000.jpg&#34; alt=&#34;1400&#34;&gt;
+    &lt;figcaption&gt;&lt;center&gt;1400&lt;/center&gt;&lt;/figcaption&gt;
+  &lt;/figure&gt;
+
+
+
+  &lt;figure&gt;
+    &lt;img src=&#34;https://img.alicdn.com/imgextra/i1/581166664/TB2MZGCXR0kpuFjSsziXXa.oVXa_!!581166664.jpg_620x10000.jpg&#34; alt=&#34;1500&#34;&gt;
+    &lt;figcaption&gt;&lt;center&gt;1500&lt;/center&gt;&lt;/figcaption&gt;
+  &lt;/figure&gt;
+
+
+
+  &lt;figure&gt;
+    &lt;img src=&#34;https://img.alicdn.com/imgextra/i2/581166664/TB2A3qBXHFlpuFjy0FgXXbRBVXa_!!581166664.jpg_620x10000.jpg&#34; alt=&#34;1700&#34;&gt;
+    &lt;figcaption&gt;&lt;center&gt;1700&lt;/center&gt;&lt;/figcaption&gt;
+  &lt;/figure&gt;
+
+
+
+  &lt;figure&gt;
+    &lt;img src=&#34;https://img.alicdn.com/imgextra/i2/581166664/TB2d2OCXHJkpuFjy1zcXXa5FFXa_!!581166664.jpg_620x10000.jpg&#34; alt=&#34;休息室&#34;&gt;
+    &lt;figcaption&gt;&lt;center&gt;休息室&lt;/center&gt;&lt;/figcaption&gt;
+  &lt;/figure&gt;
+
+
+
+  &lt;figure&gt;
+    &lt;img src=&#34;https://img.alicdn.com/imgextra/i4/581166664/TB2MiUmXHBmpuFjSZFuXXaG_XXa_!!581166664.jpg_620x10000.jpg&#34; alt=&#34;就生标志&#34;&gt;
+    &lt;figcaption&gt;&lt;center&gt;就生标志&lt;/center&gt;&lt;/figcaption&gt;
+  &lt;/figure&gt;
+
+
+
+  &lt;figure&gt;
+    &lt;img src=&#34;https://img.alicdn.com/imgextra/i4/581166664/TB2q5gkXNBmpuFjSZFsXXcXpFXa_!!581166664.jpg_620x10000.jpg&#34; alt=&#34;台阶&#34;&gt;
+    &lt;figcaption&gt;&lt;center&gt;台阶&lt;/center&gt;&lt;/figcaption&gt;
+  &lt;/figure&gt;
+
+
+
+  &lt;figure&gt;
+    &lt;img src=&#34;https://img.alicdn.com/imgextra/i3/581166664/TB2q..kXS0mpuFjSZPiXXbssVXa_!!581166664.jpg_620x10000.jpg&#34; alt=&#34;火山岩台阶&#34;&gt;
+    &lt;figcaption&gt;&lt;center&gt;火山岩台阶&lt;/center&gt;&lt;/figcaption&gt;
+  &lt;/figure&gt;
+
+
+
+  &lt;figure&gt;
+    &lt;img src=&#34;https://img.alicdn.com/imgextra/i2/581166664/TB2rogkXS0mpuFjSZPiXXbssVXa_!!581166664.jpg_620x10000.jpg&#34; alt=&#34;云海缭绕&#34;&gt;
+    &lt;figcaption&gt;&lt;center&gt;云海缭绕&lt;/center&gt;&lt;/figcaption&gt;
+  &lt;/figure&gt;
+
+
+
+  &lt;figure&gt;
+    &lt;img src=&#34;https://img.alicdn.com/imgextra/i4/581166664/TB2pTsjXOlnpuFjSZFgXXbi7FXa_!!581166664.jpg_620x10000.jpg&#34; alt=&#34;开始下山了&#34;&gt;
+    &lt;figcaption&gt;&lt;center&gt;开始下山了&lt;/center&gt;&lt;/figcaption&gt;
+  &lt;/figure&gt;
+
+
+
+  &lt;figure&gt;
+    &lt;img src=&#34;https://img.alicdn.com/imgextra/i4/581166664/TB28uyAXSXlpuFjy0FeXXcJbFXa_!!581166664.jpg_620x10000.jpg&#34; alt=&#34;顿乃克山脚下&#34;&gt;
+    &lt;figcaption&gt;&lt;center&gt;顿乃克山脚下&lt;/center&gt;&lt;/figcaption&gt;
+  &lt;/figure&gt;
+
+
+
+  &lt;figure&gt;
+    &lt;img src=&#34;https://img.alicdn.com/imgextra/i4/581166664/TB2.u9AXM0kpuFjSspdXXX4YXXa_!!581166664.jpg_620x10000.jpg&#34; alt=&#34;坐在回程的公交车上&#34;&gt;
+    &lt;figcaption&gt;&lt;center&gt;坐在回程的公交车上&lt;/center&gt;&lt;/figcaption&gt;
+  &lt;/figure&gt;
+
+
+
+  &lt;figure&gt;
+    &lt;img src=&#34;https://img.alicdn.com/imgextra/i2/581166664/TB2ZguCXR8lpuFjSspaXXXJKpXa_!!581166664.jpg_620x10000.jpg&#34; alt=&#34;烤黑猪肉&#34;&gt;
+    &lt;figcaption&gt;&lt;center&gt;烤黑猪肉&lt;/center&gt;&lt;/figcaption&gt;
+  &lt;/figure&gt;
+
+
+
+  &lt;figure&gt;
+    &lt;img src=&#34;https://img.alicdn.com/imgextra/i4/581166664/TB2oGCCXHVkpuFjSspcXXbSMVXa_!!581166664.png_620x10000.jpg&#34; alt=&#34;横穿汉拿山&#34;&gt;
+    &lt;figcaption&gt;&lt;center&gt;横穿汉拿山&lt;/center&gt;&lt;/figcaption&gt;
+  &lt;/figure&gt;
+
+&lt;/p&gt;
+&lt;h2 id=&#34;第四天&#34;&gt;第四天&lt;/h2&gt;
+&lt;p&gt;最后一天，我们是9：30在酒店集合，然后去机场，每个人都大包小包，相信都是“满载”而归。&lt;/p&gt;
+&lt;p&gt;
+  &lt;figure&gt;
+    &lt;img src=&#34;https://img.alicdn.com/imgextra/i4/581166664/TB2d5NBX0RopuFjSZFtXXcanpXa_!!581166664.jpg_620x10000.jpg&#34; alt=&#34;排队安检&#34;&gt;
+    &lt;figcaption&gt;&lt;center&gt;排队安检&lt;/center&gt;&lt;/figcaption&gt;
+  &lt;/figure&gt;
+
+&lt;/p&gt;
+&lt;p&gt;感谢公司提供这个 outing 的机会，感谢行政的同事忙前忙后给我们制定行程、订机票酒店，我好几次看到 katty 很晚还在公司给我们填写各种出行的表格，非常感谢。&lt;/p&gt;
+&lt;p&gt;Bye jeju, I will be back.&lt;/p&gt;
+&lt;h2 id=&#34;总结攻略&#34;&gt;总结攻略&lt;/h2&gt;
+&lt;ol&gt;
+&lt;li&gt;提前换好韩元，由于韩元是小币种，最好去中国银行，可以适当多换些，花不了在济州岛机场有免费兑换人民币的点。&lt;/li&gt;
+&lt;li&gt;不要相信导游让你掏钱的任何话。这也没办法，导游不满足基本工资，一路上给我们推销各种吃的，玩的，还好我们比较明智，一个都没去，最后导游都有些生气了，哈哈。大家不要担心自己找不到地方，回酒店慢慢 Google（是的，可以随便上这些被墙网站了），各种点评软件都可以参考。&lt;/li&gt;
+&lt;li&gt;大众点评上的好评店不一定真的好，很有可能是刷上去，后来听一些同事说，直接去逛市场，看到那个店韩国人就去试试，效果一般都不错。&lt;/li&gt;
+&lt;li&gt;带好各种地图。去汉拿山明显准备不足，明明可以找好路线，最后还是费了些周折，回到酒店才发现有公交车图。一般飞机场、酒店都有免费的地铁，大家可以多去找找，不要老是拍照而遗漏了这些重要物质。还有一点是提前在百度地图或谷歌地图里下载好离线地图，想我们在汉拿山上信号不会，定位非常慢。&lt;/li&gt;
+&lt;li&gt;不用把所有景点都着急逛完，留着下次再来也更好嘛，去一个点就细细体会，感受这不同的风景。这次我就故意留了牛岛没去。&lt;/li&gt;
+&lt;li&gt;写游记。每个人到一个景点都是拍拍拍，然后发发朋友圈，朋友圈一缺点是承载的信息有限，而且时效性非常强，以后让人看到的几率比较低。为了更好的纪录，必须写游记。✌️&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h2 id=&#34;收获&#34;&gt;收获&lt;/h2&gt;
+&lt;p&gt;洋洋洒洒写了不少，照片也晒了不少，其实这次收获最多不是欣赏到多么美的风景，而是认识了更多的同事，一些平时很少有交集的同事也可以聊上两句，这在套路如此深的社会实属不易，最脑洞大开的是一同事给我讲述其恋爱史与笔友史，真是让我脑洞大开，希望他能根据自身经历，写个小说出来，说不定就成网红了呢。期待&amp;hellip;&lt;/p&gt;
+</description>
     </item>
     
     <item>
@@ -67,7 +1397,144 @@
       <pubDate>Mon, 07 Nov 2016 00:00:00 +0000</pubDate>
       
       <guid>https://liujiacai.net/blog/2016/11/07/run-2-marathon-in-a-week/</guid>
-      <description>我微信里的朋友应该都知道，上周（2016/11/06）与大上周（2016/10/30）我分别跑了杭州与上海的马拉松，第一场上海站完成了人生首</description>
+      <description>&lt;p&gt;我微信里的朋友应该都知道，上周（2016/11/06）与大上周（2016/10/30）我分别跑了杭州与上海的马拉松，第一场上海站完成了人生首个半马，第二场杭州站完成了人生首个全马（42.195KM），现趁着腿还有一些酸痛，回顾下当初为什么要参加马拉松，以及在跑全马最后十公里时那种全身酸痛到最后看到终点线并穿过时的心情，最后分享些注意事项给初次跑马拉松的同学。&lt;/p&gt;
+&lt;p&gt;这两次马拉松的成绩并不好，半马用了两个半小时，全马用了六个小时，基本上都关门了。运动健将们不要嘲笑我，大家开心就好。&lt;/p&gt;
+&lt;h2 id=&#34;事出有因&#34;&gt;事出有因&lt;/h2&gt;
+&lt;p&gt;一句话概括：减肥。毫不客气的说我是胖二十多年了，之前尝试过无数次减肥，每一次都偃旗息鼓。今年年初，受了一次打击，无论如何要减了。说干就干，知道自己的惰性，所以直接去健身房请了私教，效果还不错，截止到10月份大概用了6个月的样子，减了35斤左右。也是在这次减肥过程中逐渐喜欢上了跑步，一开始在跑步机上跑，会觉得有些无聊，尝试找些音乐来听，后来觉得也不是很方便就干脆不听了，回忆回忆白天上班时候的事情，时间倒是也过的充实多了。&lt;/p&gt;
+&lt;p&gt;杭州自然环境比较好（北京的同学可以来亲身体验），我住的地方距离余杭塘河比较近，所以在那里晨跑过一段时间，从刚开始的 3KM，5KM，到最后的 10KM，那段时间也养成了早睡早起的习惯，精神状态也好多了。周末一个人没事也去跑上两圈，今年的夏天就在这样大汗淋漓的跑道上度过了大半部分。&lt;/p&gt;
+&lt;p&gt;跑马拉松的想法也就是在这时候产生的，记得期间听过狗熊有话说 podcast 的一期&lt;a href=&#34;http://m.qingting.fm/vchannels/38116/programs/1723095&#34;&gt;《124期：现场·当我在跑马拉松时我会聊什么》&lt;/a&gt;，没跑过的可以去听听。不要再犹豫、怀疑自己到底行不行，去试试就知道了，不行就下来，这样也没啥遗憾。&lt;/p&gt;
+&lt;h2 id=&#34;上海半马&#34;&gt;上海半马&lt;/h2&gt;
+&lt;p&gt;上马（上海马拉松）开跑时间是早上7点，所以我提前一天坐动车到了上海，住在之前一个同事那里，第二天早上我们6点起床，每人吃了两个肉包子，然后就坐地铁向南京东路杀过去了。&lt;/p&gt;
+&lt;p&gt;整个半马过程也没啥特别的，我们跟随大部队，记得大概到了18KM左右，我才觉得有些累，不过还好，终点就在眼前了。由于这次上马没啥压力，我也就坚定了要挑战杭州全马的决心。下面贴几张当时的照片，以作纪念：&lt;/p&gt;
+&lt;p&gt;
+  &lt;figure&gt;
+    &lt;img src=&#34;https://img.alicdn.com/imgextra/i1/581166664/TB2dgjVbW9I.eBjy0FeXXXqwFXa_!!581166664.jpg_620x10000.jpg&#34; alt=&#34;终点就在眼前&#34;&gt;
+    &lt;figcaption&gt;&lt;center&gt;终点就在眼前&lt;/center&gt;&lt;/figcaption&gt;
+  &lt;/figure&gt;
+
+
+
+  &lt;figure&gt;
+    &lt;img src=&#34;https://img.alicdn.com/imgextra/i2/581166664/TB2.eTQcA1M.eBjSZPiXXawfpXa_!!581166664.jpg_620x10000.jpg&#34; alt=&#34;越过终点线&#34;&gt;
+    &lt;figcaption&gt;&lt;center&gt;越过终点线&lt;/center&gt;&lt;/figcaption&gt;
+  &lt;/figure&gt;
+
+
+
+  &lt;figure&gt;
+    &lt;img src=&#34;https://img.alicdn.com/imgextra/i2/581166664/TB29DRIcNaK.eBjSZFAXXczFXXa_!!581166664.jpg_620x10000.jpg&#34; alt=&#34;奖牌&#34;&gt;
+    &lt;figcaption&gt;&lt;center&gt;奖牌&lt;/center&gt;&lt;/figcaption&gt;
+  &lt;/figure&gt;
+
+&lt;/p&gt;
+&lt;h2 id=&#34;杭州全马&#34;&gt;杭州全马&lt;/h2&gt;
+&lt;p&gt;上次跑没有装备，早上跑（杭马是8点）的比较早一开始还比较冷，所以这次我提前买好了跑步运动鞋与衣服，事后来看效果还是比较满意的。&lt;/p&gt;
+&lt;p&gt;可能是上周跑完上马还没恢复好，在跑前18KM时明显觉得比上马累，而且杭马当天太阳当头，晒的人有力使不出。在快到半马终点时，膝盖也有些痛，这时心里第一次犹豫要不要放弃，想想牛逼都吹出去了，再跑个半马和上次一样，有啥意义呢，于是在半马全马分界线路口，选了全马。&lt;/p&gt;
+&lt;p&gt;跑的时候就听其他跑友说我们算是全马靠后的位置了，我在跑过22KM标志后想再加个速，没想到这时第一次腿开始抽筋，一阵一阵的，痛的走都不敢走了，看着一个个跑友从我身边经过，真是又慌又急，做了大概五分钟的拉伸，吃了个能量棒，渐渐可以走了，正好这时也到了杭州最美跑道，我就走了大概二十多分钟，欣赏欣赏风景。&lt;/p&gt;
+&lt;p&gt;
+  &lt;figure&gt;
+    &lt;img src=&#34;https://img.alicdn.com/imgextra/i1/581166664/TB2QZtLcmiJ.eBjSspiXXbqAFXa_!!581166664.jpg_620x10000.jpg&#34; alt=&#34;杭马最美跑道&#34;&gt;
+    &lt;figcaption&gt;&lt;center&gt;杭马最美跑道&lt;/center&gt;&lt;/figcaption&gt;
+  &lt;/figure&gt;
+
+
+
+  &lt;figure&gt;
+    &lt;img src=&#34;https://img.alicdn.com/imgextra/i1/581166664/TB2GvRAcheI.eBjSsplXXX6GFXa_!!581166664.jpg_620x10000.jpg&#34; alt=&#34;来个自拍&#34;&gt;
+    &lt;figcaption&gt;&lt;center&gt;来个自拍&lt;/center&gt;&lt;/figcaption&gt;
+  &lt;/figure&gt;
+
+&lt;/p&gt;
+&lt;p&gt;距开跑四个小时，12点左右，我来到了30KM标志处，距离终点还有12多公里，算下来基本上是每小时6KM的样子，想想应该没啥压力，就继续开跑了。这时正是太阳最毒的时候，加上每个服务点的喷雾（防腿抽筋）都用光了，脚底板有些酸痛，真的可以说是“体无完肤”，没跑多久就又开始走了，腿一用力就可能抽筋，这时心里第二次打了退堂鼓，安慰自己：30多公里差不多了。而且这时不定时会有救援车在你旁边经过，十分具有诱惑性。&lt;/p&gt;
+&lt;p&gt;
+  &lt;figure&gt;
+    &lt;img src=&#34;https://img.alicdn.com/imgextra/i1/581166664/TB2A_0DccaJ.eBjy0FbXXcwrFXa_!!581166664.jpg_620x10000.jpg&#34; alt=&#34;看不到终点时犹豫的眼神&#34;&gt;
+    &lt;figcaption&gt;&lt;center&gt;看不到终点时犹豫的眼神&lt;/center&gt;&lt;/figcaption&gt;
+  &lt;/figure&gt;
+
+&lt;/p&gt;
+&lt;p&gt;大概又走了二十分钟，来到了钱塘江大桥，桥上风比较大，对于此时的我来说，真是雨后甘霖，一下吹走了身上的疲倦。但是脚还是一样酸痛，于是走着过了桥。再次开启欣赏风景模式。身边的跑友也基本上都是走的过了桥。
+
+  &lt;figure&gt;
+    &lt;img src=&#34;https://img.alicdn.com/imgextra/i4/581166664/TB29QXPcmCI.eBjy1XbXXbUBFXa_!!581166664.jpg_620x10000.jpg&#34; alt=&#34;桥上明显比较开心&#34;&gt;
+    &lt;figcaption&gt;&lt;center&gt;桥上明显比较开心&lt;/center&gt;&lt;/figcaption&gt;
+  &lt;/figure&gt;
+
+&lt;/p&gt;
+&lt;p&gt;
+  &lt;figure&gt;
+    &lt;img src=&#34;https://img.alicdn.com/imgextra/i2/581166664/TB22xNBcg1J.eBjy0FaXXaXeVXa_!!581166664.jpg_620x10000.jpg&#34; alt=&#34;这应该是雾霾&#34;&gt;
+    &lt;figcaption&gt;&lt;center&gt;这应该是雾霾&lt;/center&gt;&lt;/figcaption&gt;
+  &lt;/figure&gt;
+
+&lt;/p&gt;
+&lt;p&gt;下了钱塘江大桥后，觉得可能没戏了，看了看时间，发现才过了半个时间，向前走几步就到了32.5KM 的标志牌。算算我也没差太多，应该能在关门前赶到终点，于是又开始跑起来了。&lt;/p&gt;
+&lt;p&gt;
+  &lt;img src=&#34;https://img.alicdn.com/imgextra/i3/581166664/TB2TKF1cRaM.eBjSZFMXXcypVXa_!!581166664.jpg_620x10000.jpg&#34; alt=&#34;&#34;&gt;
+
+&lt;/p&gt;
+&lt;p&gt;跑的时候和 600 关门兔遇到了好几次，跑累了走时他又把我超了，最后也是没能跟上他们，这时候道路基本上都解封了，机动车也多了起来，路上的行人时不时给我们最后这一批加油。我这时全身酸痛到了极点了，看着两旁的路人，有说有笑，心里却是在滴血，真想推辆旁边的公共自行车骑上那么一段，心里是纠结了好久，幸好又到了一个补给点，喝了点饮料，吃了几小块香蕉，体力算是有所恢复，这时候跑道剩下的跑友也不多了，估计都上了那诱人的救援车。&lt;/p&gt;
+&lt;p&gt;跑友虽然不多了，但是其中不乏几个精神矍铄的老年人，看着他们还在慢慢跑，我有什么理由放弃呢，我又把放弃的心思给压下去，咬着牙，又开始跑起来，自己给自己喊加油。路边的啦啦队虽然没有了，但是激励语还在，比如下图：&lt;/p&gt;
+&lt;p&gt;
+  &lt;figure&gt;
+    &lt;img src=&#34;https://img.alicdn.com/imgextra/i3/581166664/TB2CiJQcQ1M.eBjSZPiXXawfpXa_!!581166664.jpg_620x10000.jpg&#34; alt=&#34;还有6公里就可以发朋友圈了&#34;&gt;
+    &lt;figcaption&gt;&lt;center&gt;还有6公里就可以发朋友圈了&lt;/center&gt;&lt;/figcaption&gt;
+  &lt;/figure&gt;
+
+&lt;/p&gt;
+&lt;p&gt;想想我这一路也是没少得瑟，要是最后没坚持下来是多丢人的事呀，调整心态，向最后6公里进发，这时已经下午1点左右，距离终点还有6KM。&lt;/p&gt;
+&lt;p&gt;最后这 6KM 真是让人望眼欲穿，走走跑跑，期间和一个大爷聊了会天，大爷说咱这个速度是到不了终点了，我一听不行呀，我怎么说也要在关门前冲进去，咬咬牙，使劲又跑了两公里，然后彻底废了，走了一段时间后好像又被那个大爷超了😂，这下是怎么也跑不动了，脚每走一步都酸痛无比，也不敢休息，生怕时间不够用。&lt;/p&gt;
+&lt;p&gt;
+  &lt;figure&gt;
+    &lt;img src=&#34;https://img.alicdn.com/imgextra/i4/581166664/TB2cHNQcOGO.eBjSZFjXXcU9FXa_!!581166664.jpg_620x10000.jpg&#34; alt=&#34;13:40左右到达40KM 标志&#34;&gt;
+    &lt;figcaption&gt;&lt;center&gt;13:40左右到达40KM 标志&lt;/center&gt;&lt;/figcaption&gt;
+  &lt;/figure&gt;
+
+&lt;/p&gt;
+&lt;p&gt;剩下的时间就是走路了，在13:40左右到达 40KM 标志，心想20分钟走2KM应该没问题吧，于是喝光了身上带的饮料，快步走了起来，这时候已经完全没有跑道的痕迹，马路也出现了带着奖牌的跑友，看着他们脸上表情，我知道他们是在享受着“长征”后的果实，我却时怎么也跑不动了，就这么走着走着，到了42KM，到了终点。&lt;/p&gt;
+&lt;h3 id=&#34;终点感想&#34;&gt;终点感想&lt;/h3&gt;
+&lt;p&gt;其实到你终点你会发现，前面的一切都是值得的。内心的那种喜悦，无法通过文字与别人分享，只能自己去经历、去体会。看着那些拍照留恋的跑友，我知道他们和我一样，又会向着下一个挑战出发。事情往往就是这样，结果只是一瞬间，重要的同时也是最艰难漫长的部分是前面的过程。我觉得有意义的人生，应该是充满许多个这样挑战，起起伏伏，无休无止。&lt;/p&gt;
+&lt;p&gt;
+  &lt;figure&gt;
+    &lt;img src=&#34;https://img.alicdn.com/imgextra/i4/581166664/TB22U40cgOI.eBjSszhXXbHvFXa_!!581166664.jpg_620x10000.jpg&#34; alt=&#34;42KM 标志处&#34;&gt;
+    &lt;figcaption&gt;&lt;center&gt;42KM 标志处&lt;/center&gt;&lt;/figcaption&gt;
+  &lt;/figure&gt;
+
+
+
+  &lt;figure&gt;
+    &lt;img src=&#34;https://img.alicdn.com/imgextra/i4/581166664/TB2b68KcU5O.eBjSZFxXXaaJFXa_!!581166664.jpg_620x10000.jpg&#34; alt=&#34;FINISH LINE&#34;&gt;
+    &lt;figcaption&gt;&lt;center&gt;FINISH LINE&lt;/center&gt;&lt;/figcaption&gt;
+  &lt;/figure&gt;
+
+
+
+  &lt;figure&gt;
+    &lt;img src=&#34;https://img.alicdn.com/imgextra/i1/581166664/TB2EutRcOGO.eBjSZFEXXcy9VXa_!!581166664.jpg_620x10000.jpg&#34; alt=&#34;奖牌&#34;&gt;
+    &lt;figcaption&gt;&lt;center&gt;奖牌&lt;/center&gt;&lt;/figcaption&gt;
+  &lt;/figure&gt;
+
+
+
+  &lt;figure&gt;
+    &lt;img src=&#34;https://img.alicdn.com/imgextra/i3/581166664/TB2j9VQcFOP.eBjSZFHXXXQnpXa_!!581166664.jpg_620x10000.jpg&#34; alt=&#34;跑过风景，跑过你&#34;&gt;
+    &lt;figcaption&gt;&lt;center&gt;跑过风景，跑过你&lt;/center&gt;&lt;/figcaption&gt;
+  &lt;/figure&gt;
+
+&lt;/p&gt;
+&lt;h2 id=&#34;总结&#34;&gt;总结&lt;/h2&gt;
+&lt;p&gt;首先吐个槽，相比上马，杭马确实有点 low 了。首先是跑道不够宽，那么多人，中间还堵了两次，这在上海是绝对没有的事；其实是跑道两侧的啦啦队，上马一路上基本都有人，杭马基本上就起点和终点多些，其他点人比较少。但不可否则，杭州的风景比上海好多了。&lt;/p&gt;
+&lt;p&gt;如果说，人生是一场马拉松，那么二十来岁的我们应该相当于10KM处，这时候应该是干劲十足，雄心满满的时候。可是回想自己毕业才两年左右，当初定的目标还记得嘛？自己的五年计划还能找到痕迹嘛？单词背了多少了？多少的周末是在虚度中耗尽？买的书看了多少？&lt;/p&gt;
+&lt;p&gt;都说一个人的时候是提升自我价值的黄金时期，时间多是多，但是如果计划不好，收获也甚微。好了，只是想通过这次跑马告诉自己，不要偏离了方向，向着前方，大步向前，终有达到终点的那一刻。与大家共勉。&lt;/p&gt;
+&lt;h3 id=&#34;跑马建议&#34;&gt;跑马建议&lt;/h3&gt;
+&lt;p&gt;最后给想跑马但还没尝试过的同学提几点建议，供大家参考：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;如果是深秋，准备个长袖跑衣，淘宝搜索马拉松运动服多的是。&lt;/li&gt;
+&lt;li&gt;运动鞋，最好带气垫。与鞋搭配的还有运动袜，不要小看袜子，我跑杭马就随便穿了个，结果和鞋一直有摩擦，这也是造成了我脚酸痛的原因之一。&lt;/li&gt;
+&lt;li&gt;自带喷雾。说实话我跑上马不知道喷雾是干嘛的，只是看到有人去喷，杭马腿抽筋才知道那东西能抑制抽筋，像我跑在最后，基本上每个服务点都喷没了，所以自带还是有必要的。&lt;/li&gt;
+&lt;li&gt;肩包或腰包。吃的喝的服务点都有，自己可以不用带；主要是放手机、钥匙、喷雾、现金。&lt;/li&gt;
+&lt;/ul&gt;
+</description>
     </item>
     
     <item>
@@ -76,7 +1543,116 @@
       <pubDate>Fri, 08 Jan 2016 00:00:00 +0000</pubDate>
       
       <guid>https://liujiacai.net/blog/2016/01/08/review-2015/</guid>
-      <description>今天，已经是 2016 年的第八天了。时间总是这样，当我们身处其中时觉得很漫长，但是过后看看，也没觉得什么。 2015 年是毕业后正式工作的第一年，地点从上海转</description>
+      <description>&lt;p&gt;今天，已经是 2016 年的第八天了。时间总是这样，当我们身处其中时觉得很漫长，但是过后看看，也没觉得什么。
+2015 年是毕业后正式工作的第一年，地点从上海转到了杭州，&lt;a href=&#34;https://liujiacai.net/blog/2014/12/29/review-2014/&#34;&gt;2014 年终总结&lt;/a&gt;时做的那些计划，貌似也没能全部实现。
+这篇文章主要回忆 2015 年中那些印象深刻的事与人，同时展望美好的 2016。&lt;/p&gt;
+&lt;h2 id=&#34;工作&#34;&gt;工作&lt;/h2&gt;
+&lt;h3 id=&#34;再见上海&#34;&gt;再见，上海&lt;/h3&gt;
+&lt;p&gt;毕业后找到第一份工作是在上海的 Ucloud，干的不是很开心，所以在15年年初趁着跳槽高峰期，我也离开了，来到了现在的公司——有赞。&lt;/p&gt;
+&lt;p&gt;现在还记得当时我是怎么去 Ucloud 面试的，当时办公地点还是在五角场，是租的创新工厂的办公区，里面聚集了很多创业公司，记得没事的时候就去楼梯间打打乒乓球，也是挺开心的。换了隆昌路新的办公室后，就没这个条件了。
+在上海的生活也还可以，和一个学英语的男生合租的，平时也会自己做些饭，所以这段时间体重也没下来过。
+房东人是对老夫妻，七八十岁的样子，人很好，我们刚搬进来的时候他们就嘱咐楼上楼下的邻居照顾我们，也会和我说些年轻人应该怎么闯闯之类的话，也是挺感谢的，希望他们身体健康。&lt;/p&gt;
+&lt;p&gt;在上海还有一件印象深刻的是，在元旦我和熊俊去外滩玩，那天我们去的早，后来人越来越多，我们就走了，第二天一看新闻，说外滩发生了&lt;a href=&#34;http://baike.baidu.com/link?url=dIgFFsxQmmTosB4q81HTUi2L3vI9dLBlTo3Yoz3V7QeykjMCPH7G3SsnjFcLulfOsHPTYRVjHEIIu8amz2DL9M4hLyoEAYryU7wNiAoP1d4_KINL2VYKQGnfU8ll7yPCz6N_RkyhPzsjgS6bxVqKoPcAms5rNMK0T-DXco17q7LiTvmbcZqq2qEehMqQph1E4YhT-DL6HdjbAhZ8ZcF4zl0VU0snJTtr2g0xW06-4YKfsFvu-KH1QifcD4qlIKkDezoZJxMrvQkj6HGUR3CG7ZlO9u2-jRLYxcg0R4eY-YS&#34;&gt;踩踏事件&lt;/a&gt;，一身冷汗，现在想想也是挺后怕的。正好最近看到一篇&lt;a href=&#34;http://www.17bdc.com/read/article/reviews/61444/?social_service=s&#34;&gt;英文文章&lt;/a&gt;，学到了一个词，stampede，表示“(人群的)蜂拥，恐慌”，看到一位网友调侃道：&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;去年的新年第一天，上海 stampede；今年的股市第一天，上海再一次 stampede。&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;h3 id=&#34;加入有赞&#34;&gt;加入有赞&lt;/h3&gt;
+&lt;p&gt;离开 Ucloud 后，来到了现在的公司，之前也写过一篇文章&lt;a href=&#34;https://liujiacai.net/blog/2015/04/03/leave-ucloud-to-youzan/&#34;&gt;我来有赞了&lt;/a&gt; 记录初到有赞的感受，准确应该是3月底加入有赞的，还记得当时在上海转租房子，没找到合适的人，我就和房东说了下自己的情况，然后东西一打包，就来杭州了。来杭州也没房子，住在公司附近的布丁酒店一周多，后来经同事介绍来到了现在住的&lt;a href=&#34;http://baike.baidu.com/link?url=r_xfu5sjiUU_uR7DvifUkDB14TCthfbyMPn5lrA7-sJdJ3X3TS-ZmHf4G4Ctc42SSt4ll6mSmWKSmvnc11ED_Frggi5BergYX25tyT56tu6lVgdHs1WD9YIbh6-kQCD8&#34;&gt;望月公寓&lt;/a&gt;。&lt;/p&gt;
+&lt;p&gt;这边的工作氛围比上海我觉得要好些，比较自由，时间规定也没那么严格。在这边的工作的收获也自然更多，不过也觉得不是特别满意，这边和 Ucloud 做基础云计算不一样，业务会多一些，所以我的专业知识提高的没我想的多，更多的是去熟悉业务。我不知道这种状态是好是坏，从 Ucloud 出来也没能摸清下面这些问题：&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;到底该如何专注一个方向？现在这样的工作状态是我想要的嘛？我到底想要什么？&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;杭州的生活也要比上海好些，没有那么多高楼大厦，自然也就没那么压抑。夏天那会还经常跑跑步，周末搞一些小东西，写写博客，挺开心的。&lt;/p&gt;
+&lt;p&gt;今天小兰实习正式结束了，虽然平时我对他也不知道“友好”，但他这么一走，我心里还真是有些不舍，也不知道怎么表达，祝小兰前途一切顺利，改日有机会再聚。&lt;/p&gt;
+&lt;h2 id=&#34;读书&#34;&gt;读书&lt;/h2&gt;
+&lt;p&gt;14 年年终总结时说要看完下面三本书：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;http://book.douban.com/subject/1148282/&#34;&gt;SICP&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;http://book.douban.com/subject/1885170/&#34;&gt;算法导论&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;http://book.douban.com/subject/1291204/&#34;&gt;哥德尔、艾舍尔、巴赫&lt;/a&gt;，英文书名：Gödel, Escher, Bach，简写 GEB。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;到今天，是一个都没完成。当时自己确实没能很好评估这三本书的“质量”，这三本书并不是“十天教你学会C语言”之类的书籍，它们每一本都需要花费大量时间去思考、揣摩，像《GEB》这部著作怕是需要较深的数学功底与AI方面的知识才能领略其精髓。SICP 中文版在268页的&lt;a href=&#34;https://mitpress.mit.edu/sicp/full-text/book/book-Z-H-26.html#footnote_Temp_554&#34;&gt;注解224&lt;/a&gt;中有提到 GEB 的部分内容，这里做个摘抄：&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;有人觉得这样的求值器是违反直觉的，因为它由一个相对简单的过程实现，却能去模拟可能比求值器本身还要负责的各种程序。通用求值器的存在是计算的一种深刻而美妙的性质。递归论是数理逻辑的一个分支，这一理论研究计算的逻辑限制。&lt;a href=&#34;https://en.wikipedia.org/wiki/Douglas_Hofstadter&#34;&gt;Douglas Hofstadter&lt;/a&gt; 的美妙著作《GEB》（1979）里探索了其中的一些思想。&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;在公司内部搞了个 &lt;a href=&#34;https://github.com/sicper&#34;&gt;SICP 读书小组&lt;/a&gt;，每周分享、讲解习题，开始进行的挺好，后来随着大家激情的消退，进度也一再推迟，现在印象比较深的是双 11 前后，我当时为了参加 SF 黑客马拉松，就暂停了两周的读书会，黑客马拉松结束后赶上双11公司做活动，然后就一直拖，第三章看完用了三个月，虽然第三章的内容比较多，怎么也不至于三个月时间才看完。现在进行到第四章了，不管怎样，一定要把这本书坚持一下，什么东西开始都是靠激情，但是能把一件事情做好，除了激情外，肯定需要坚持，而且是长时间的坚持。我也相信古今中外那些让我们记住名字的人，他们的杰出贡献和他们几十年如一日的坚持是分不开的。
+比较欣慰的是，自己的 &lt;a href=&#34;https://github.com/jiacai2050/sicp&#34;&gt;SICP 笔记&lt;/a&gt;截止到现在已经有 113 个 star，这也算是一种鼓励吧，同时自己也写了个 &lt;a href=&#34;https://github.com/jiacai2050/JCScheme&#34;&gt;Scheme 方言&lt;/a&gt;，算是真正领略到了编程语言的奥秘，SICP 虽然是个时间黑洞，但是绝对值得投入。
+
+  &lt;figure&gt;
+    &lt;img src=&#34;https://img.alicdn.com/imgextra/i2/581166664/TB2gk15jpXXXXXxXpXXXXXXXXXX_!!581166664.png&#34; alt=&#34;Github Contributions&#34;&gt;
+    &lt;figcaption&gt;&lt;center&gt;Github Contributions&lt;/center&gt;&lt;/figcaption&gt;
+  &lt;/figure&gt;
+
+&lt;/p&gt;
+&lt;p&gt;从上面 Github 的 Contributions 基本也可以看出来在，我在 5、6、7月份是比较活跃，这阶段应该也是看 SICP 最快的时间段，16 年争取让这个图更平均一些。&lt;/p&gt;
+&lt;p&gt;除了 SICP 之外，较完整看完的一本书是&lt;a href=&#34;http://book.douban.com/subject/3628911/&#34;&gt;《Dive Into Python 3》&lt;/a&gt;，我的书评在&lt;a href=&#34;http://book.douban.com/review/7717953/&#34;&gt;这里&lt;/a&gt;。这本书很大一部分是在坐 89 路公交车去公司的路上看完的，算是充分利用时间吧，这里不得不推荐一下 Kindle，真是看书神器。其他还在看的书有：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;http://book.douban.com/subject/1494026/&#34;&gt;Code : The Hidden Language of Computer Hardware and Software&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;http://book.douban.com/subject/25854634/&#34;&gt;公共问题经济学&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;更多可以查阅我的&lt;a href=&#34;http://book.douban.com/people/liujiacai/do&#34;&gt;豆瓣我读&lt;/a&gt;页面。
+
+  &lt;figure&gt;
+    &lt;img src=&#34;https://img.alicdn.com/imgextra/i3/581166664/TB2cImCjpXXXXcpXpXXXXXXXXXX_!!581166664.png&#34; alt=&#34;2015 在看的书&#34;&gt;
+    &lt;figcaption&gt;&lt;center&gt;2015 在看的书&lt;/center&gt;&lt;/figcaption&gt;
+  &lt;/figure&gt;
+
+&lt;/p&gt;
+&lt;h2 id=&#34;写博客&#34;&gt;写博客&lt;/h2&gt;
+&lt;p&gt;我写博客遵循下面三个原则：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;原创&lt;/code&gt;。我们不是知识的“搬运工”，我们是知识的创造者&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;干货&lt;/code&gt;。探究知识的本质，并不仅仅是 how，重要的是 why&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;通俗易懂&lt;/code&gt;。最好让你一个不学计算机的人也能懂&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;15 年总共写出了 16 篇文章，数量不算多，但是我绝对可以说是我花费大量时间写出来的，除了一两篇是纪录生活轨迹的，绝大部分都是对一些知识的思考。
+像年初写的关于 javascript 的两篇文章&lt;a href=&#34;https://liujiacai.net/blog/2015/02/24/javascript-datatype/&#34;&gt;《javascript中的数据类型》&lt;/a&gt;、&lt;a href=&#34;https://liujiacai.net/blog/2015/02/01/javascript-oop/&#34;&gt;《javascript中的面向对象编程》&lt;/a&gt;，基本把 javascript中的 good parts 写出来了，其中比较让人困惑的&lt;code&gt;__proto__&lt;/code&gt;、&lt;code&gt;this&lt;/code&gt;、面向对象的实现等都有比较详尽的解释，我相信可以胜过互联网上其他关于 javascript 的介绍。&lt;/p&gt;
+&lt;p&gt;然后是关于 Java 集合框架的一些文章，其中我觉得写的比较好的有&lt;a href=&#34;https://liujiacai.net/blog/2015/09/01/java-collection-overview/&#34;&gt;《Java集合框架综述》&lt;/a&gt;、&lt;a href=&#34;https://liujiacai.net/blog/2015/09/03/java-hashmap/&#34;&gt;《Java HashMap 源码解析》&lt;/a&gt;、&lt;a href=&#34;https://liujiacai.net/blog/2015/09/04/java-treemap/&#34;&gt;《Java TreeMap 源码解析》&lt;/a&gt;，看了 SICP 后，对数据结构的理解也更深刻了，语言提供的各种类库基本都是对数据的各种封装，只不过由于应用场景不一样，所以底层实现的方式不一样。&lt;/p&gt;
+&lt;p&gt;之后是关于 SICP 前三章的总结：&lt;a href=&#34;https://liujiacai.net/blog/2015/07/18/sicp-chapter1-summary/&#34;&gt;《SICP 第一章总结》&lt;/a&gt;、&lt;a href=&#34;https://liujiacai.net/blog/2015/09/20/sicp-chapter2-summary/&#34;&gt;《SICP 第二章总结》&lt;/a&gt;、&lt;a href=&#34;https://liujiacai.net/blog/2015/12/26/sicp-chapter3-summary/&#34;&gt;《SICP 第三章总结》&lt;/a&gt;。SICP 这本书给我带来太多太多关于编程上的认识了，希望对编程还有激情的同行们有机会一定要看一看。在看 SICP 之余，使用 Java 实现了个 Scheme 方言，&lt;a href=&#34;https://liujiacai.net/blog/2015/10/03/first-toy-scheme/&#34;&gt;《我的第一个玩具语言 JCScheme 问世了》&lt;/a&gt;这篇文章介绍了实现一个解释器的方方面面，感兴趣的可以参考。&lt;/p&gt;
+&lt;p&gt;年底最后一篇有份量的文章是&lt;a href=&#34;https://liujiacai.net/blog/2015/11/20/strings/&#34;&gt;《字符串，那些你不知道的事》&lt;/a&gt;，这部分内容是我在看《Dive into Python 3》时了解到的，真是大开眼界，我相信你应该也“小看”字符串了，抓紧去看看吧😊。&lt;/p&gt;
+&lt;p&gt;一直觉得能够写出一些通俗易懂但又有干货的文章不容易，我一直在努力。2016，希望为这世界贡献些美好的东西。&lt;/p&gt;
+&lt;h2 id=&#34;生活&#34;&gt;生活&lt;/h2&gt;
+&lt;p&gt;今年五一期间，家里的姐姐结婚了，不过离我老家并不是很远。现在我的小外甥也已经四五个月了。倩姐也在15年12月30号嫁人了。
+想想同龄人，大部分人都娶妻生子，只有一少部分人比较“另类”，还在坚持着不可预知的梦想。不过我觉得这也是正常的，大部分人注定平庸，只有那些不断坚持的人才有可能脱颖而出，当然我也不指望成为什么大老板，只是希望对得起自己的内心，记得小时候看过中央卫视的一个公益广告：&lt;a href=&#34;http://v.youku.com/v_show/id_XNzQwODEyODQ=.html?from=s1.8-1-1.2&#34;&gt;心有多大，舞台就有多大&lt;/a&gt;，还有一句话也挺触动我的：&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;比你优秀的人不可怕，可怕的是比你优秀的人比你更努力&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;是呀，什么东西都比不过坚持，《肖申克的救赎》中的男主角真是做到了十年如一日。我们每个人都很容易被生活磨平了棱角，当初刚毕业时的雄心壮志也不知道丢在了那里。想想我从初中到现在的求学之路，也算幸运，遇到了几个对我人生有重大启发的老师，虽然大学上的不是什么985、211，但是也看到了很多之前不了解的东西，明白了只有去努力，任何时间都不晚。走上编程这条路算是这辈子最幸运的一件事，高考后报专业对编程根本也没什么概念，稀里糊涂的就报了，现在回头看看，真是上天的眷顾。&lt;/p&gt;
+&lt;p&gt;感情状态还是单身，不过幸好还是有几个异性好朋友，工作之余和她们调侃一下生活也变的精彩了很多。下半年遇到了触动我心灵的姑娘，不过貌似时间并不是那么合适，有太多的不定因素了，缘分到底会不会来我也不知道，只能做好自己目前的事情。之前没怎么考虑过定居、今后的家庭之类的话题，和这个姑娘聊了半年多后，也意识到这些问题了，希望 16 年她回国后能有有更多的缘分❤️。&lt;/p&gt;
+&lt;h2 id=&#34;展望-2016&#34;&gt;展望 2016&lt;/h2&gt;
+&lt;p&gt;以上罗列了 2015 年一些重要的事情，新的一年来临了，也要拥抱改变，给自己定一下新年目标。上面多次提到了坚持的意义，我觉得 2015 年我在这方面做的比之前的要好，虽然不是很完美，但是还时有了一些成果，今年一定要贯彻下去，毕竟太多事情需要做了。抓住主线，抵制诱惑，成为一个更好的自己。&lt;/p&gt;
+&lt;h3 id=&#34;减肥&#34;&gt;减肥&lt;/h3&gt;
+&lt;p&gt;具体来说我觉得第一件事就是：&lt;code&gt;减肥&lt;/code&gt;。减肥这两个字对现代人来说真是再熟悉不过了，我从小就胖些，以后也就养成了习惯，也不在乎别人怎么说了，其实这给我现在造成了挺大的苦恼，当然注意是找对象方面，都说女为悦己者容，男也可以为悦己者容呀，更重要的是肥胖对身体健康不好，程序员本来的运动量就少，如果天天加班身体肯定吃不消。&lt;/p&gt;
+&lt;p&gt;我也相信每个胖子都是潜力股，其实减肥也没想的那么困难，只要保证每天的摄入小于消耗的能量，更具体的说，就是管住嘴，这样减肥也不是什么难事，知乎上看到一个减肥成功的人说的一句话，甚是欣赏，这里与大家分享下：&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;贪吃其实是人类贪念的一种，为了满足一时的快感，而不顾后果作出的一些行为。&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;成功的人一定要抑制自己的贪欲，这样才能成为更好的自己，为了在减少摄入时不至于肚子饿，网上一般推荐吃燕麦片，这种食物比较容易有饱腹感，这样就能够愉快的写代码了。后面有什么心得会再来与大家分享。&lt;/p&gt;
+&lt;h3 id=&#34;读书-1&#34;&gt;读书&lt;/h3&gt;
+&lt;p&gt;除了 2015 年一直在读的 SICP，我觉得算法导论可以提上日程了，至于 GEB，我觉得应该还不会涉及到，可以先放一放。
+2016 的书单会包含下面这些：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;http://book.douban.com/subject/1494026/&#34;&gt;Code : The Hidden Language of Computer Hardware and Software&lt;/a&gt;，这本书主要是讲述计算机是如何一步步构造的。从最早的&lt;a href=&#34;https://en.wikipedia.org/wiki/Morse_code&#34;&gt;摩斯电码&lt;/a&gt;，到各种电路元件的实现原理，再到计算机中如何保存信息，对理解计算机如何工作非常有帮助。&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;http://book.douban.com/subject/1230413/&#34;&gt;Computer Systems: A Programmer&amp;rsquo;s Perspective&lt;/a&gt;。这本书主要是让我能够更好的理解操作系统。&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;http://book.douban.com/subject/25854634/&#34;&gt;公共问题经济学&lt;/a&gt;，主要是一些经济学知识，在现代社会，每个人都需要懂一些经济学，不是嘛&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;http://book.douban.com/subject/1888733/&#34;&gt;Java Concurrency in Practice&lt;/a&gt;。主要讲授多线程方面的知识，其实这块知识我一直挺欠缺多，hadoop 本身就是个非常复杂的多线程程序，如果不了解这方面的知识，查错非常不方便，另一方面现在并发的场景越来越多，多线程注定是个热门话题。&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;http://book.douban.com/subject/1632977/&#34;&gt;The Little Schemer - 4th Edition&lt;/a&gt;，这是一本小巧精炼的书，主要讲解 Scheme 方面的东西，对理解一些概念，像递归、lambda 很有帮助，是 SICP 很好的辅助书籍。&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;http://book.douban.com/subject/1726083/&#34;&gt;The Seasoned Schemer&lt;/a&gt;，TLS 的晋级篇，16年应该也会开始读这本书&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;现在罗列的这些书籍 16 年很有可能看不完，后面也会补充这个书单。但是这里我想说的是：&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;行动起来，不要停止探寻新知识的脚步，多去总结、回顾，做到举一反三。&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;不是说看的书越多人就越厉害，这是错误的，准确的说应该是和人思考的多少成正比。&lt;/p&gt;
+&lt;h3 id=&#34;其他&#34;&gt;其他&lt;/h3&gt;
+&lt;p&gt;16 年博客会照常写，还是遵循上面的三个原则。无意间发现可以用 Github 的 issue 来整理自己的 &lt;a href=&#34;https://github.com/jiacai2050/ideas&#34;&gt;ideas&lt;/a&gt;，觉得不错，以后可以利用起来。&lt;/p&gt;
+&lt;p&gt;项目上需要多去实践，反复推敲自己写过的代码，不要仅仅停留在能用级别，王垠的&lt;a href=&#34;http://www.yinwang.org/blog-cn/2015/11/21/programming-philosophy/&#34;&gt;《编程的智慧》&lt;/a&gt;这篇文章里面也反复提到了这一观点。&lt;a href=&#34;https://liujiacai.net/gooreplacer&#34;&gt;gooreplacer&lt;/a&gt; 也一直在不断更新中，希望新的一年能够开发出更多有趣实用的小项目。&lt;/p&gt;
+&lt;p&gt;有出国的想法，所以秉承坚持的原则，每天使用&lt;a href=&#34;http://www.shanbay.com/&#34;&gt;扇贝网&lt;/a&gt; APP 进行签到学习英文，用了一周发现还不错，文章内容比较新颖，就算人家做的再怎么不好，也不能成为自己放弃的借口。&lt;a href=&#34;http://www.shanbay.com/checkin/user/calendar/37223251/201601&#34;&gt;这是&lt;/a&gt;我在扇贝网的签到日历，如果你也想坚持学英语，我们可以加个好友。&lt;/p&gt;
+&lt;h2 id=&#34;总结&#34;&gt;总结&lt;/h2&gt;
+&lt;p&gt;年年岁岁花相似，岁岁年年人不同。
+2015 年已经过去了，让我们朝着 2016，大步向前。
+生活会因你我的努力、坚持变得更好。&lt;/p&gt;
+</description>
     </item>
     
     <item>
@@ -85,7 +1661,232 @@
       <pubDate>Tue, 27 Oct 2015 00:00:00 +0000</pubDate>
       
       <guid>https://liujiacai.net/blog/2015/10/27/sf-hackathon/</guid>
-      <description>上个周末，也就是10月24、25号，参加了人生中第一次黑客马拉松（hackathon），虽然最终没有获奖，但是这个比赛过程中还是 hack 的挺爽，趁</description>
+      <description>&lt;p&gt;上个周末，也就是10月24、25号，参加了人生中第一次&lt;a href=&#34;http://segmentfault.com/hackathon-2015&#34;&gt;黑客马拉松&lt;/a&gt;（hackathon），虽然最终没有获奖，但是这个比赛过程中还是 hack 的挺爽，趁现在还有余热，纪录下比赛时的一些心得与收获。&lt;/p&gt;
+&lt;h2 id=&#34;为什么参加-hackathon&#34;&gt;为什么参加 hackathon&lt;/h2&gt;
+&lt;p&gt;当在公司得知有黑客马拉松之后，我就立即报名了，觉得这件事本身就很酷，虽然身边一些同事说此类比赛没意思，大部分人都是奔着投资去的，但我还是觉得要你怎么看了，你如果去是为了那奖品、钱，我觉得那失去了 hackathon 的意义了，hackathon 我理解的就是&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;做一些很酷的事情，而这些事情在平时的工作中“用不到”，但是完成这些事能够让我们有很强的满足感。&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;也就是玩，虽然当知道自己的作品没有获奖时会有些许失落，但那是一时的，最起码那一天一夜 coding，让我确实很 high。&lt;/p&gt;
+&lt;h2 id=&#34;赛前准备&#34;&gt;赛前准备&lt;/h2&gt;
+&lt;p&gt;编程语言我毫无疑问的选择了 javascript，一来 javascript 与 Scheme 有&lt;a href=&#34;https://en.wikipedia.org/wiki/JavaScript#JavaScript_and_Java&#34;&gt;很深的渊源&lt;/a&gt;，其次我也一直想好好系统学习下 nodejs，所以就是它了。参加比赛前的一周，我停止了 &lt;a href=&#34;https://github.com/jiacai2050/sicp&#34;&gt;SICP&lt;/a&gt; 的阅读，转而进攻&lt;a href=&#34;http://book.douban.com/subject/25870705/&#34;&gt;《Node.js实战》&lt;/a&gt;，这本书之前断断续续翻过前两章，这次基本把这本书看完了，主要是学习了下如何系统的开发一个完整的 node 应用，包括常用模块、通用架构等，之前写的 node 都是玩具，没有错误处理，没有单元测试（这次比赛虽然也没用上，但是知道了如何使用相应工具去测了）。&lt;/p&gt;
+&lt;p&gt;书上最后一章介绍了 node 中较为底层的知识，像&lt;code&gt;net&lt;/code&gt;库，node 的定位就是提供小而美的核心类库，常用的模块都是基于这些核心类库构建。下面纪录两个书中比较有趣的例子：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;4
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;5
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;6
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;7
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;var net = require(&amp;#34;net&amp;#34;);
+var socket = net.connect({host: &amp;#34;github.com&amp;#34;, port: 22});
+socket.on(&amp;#34;data&amp;#34;, function(chunk) {
+    console.log(chunk.toString());
+    socket.end();
+})
+// 启动后，会输出 SSH-2.0-libssh-0.7.0
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;下面的代码片段实现了类似于 Linux 上 &lt;a href=&#34;http://linux.die.net/man/1/nc&#34;&gt;nc&lt;/a&gt; 命令的功能：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt; 1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 4
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 5
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 6
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 7
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 8
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 9
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;10
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;11
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;var net = require(&amp;#34;net&amp;#34;);
+var socket = net.connect({host: process.argv[2], port: process.argv[3]});
+
+socket.on(&amp;#34;connect&amp;#34;, function() {
+    process.stdin.pipe(socket);
+    socket.pipe(process.stdout);
+    process.stdin.resume();
+});
+socket.on(&amp;#34;close&amp;#34;, function() {
+    console.log(&amp;#34;bye...&amp;#34;);
+});
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;其次在看 expressjs 时，无意间发现其作者 &lt;a href=&#34;https://github.com/tj&#34;&gt;tj&lt;/a&gt; 早在 2014年4月份，就已经&lt;a href=&#34;https://medium.com/@tjholowaychuk/farewell-node-js-4ba9e7f3e52b&#34;&gt;抛弃 nodejs，投向 go 的怀抱&lt;/a&gt;，心中难免有些忧伤，大牛总是这样，在我们还在学习某东西时，人家已经发现其缺点，转向更高深的地方&amp;hellip;&amp;hellip;&lt;/p&gt;
+&lt;h2 id=&#34;比赛开始了&#34;&gt;比赛开始了&lt;/h2&gt;
+&lt;p&gt;这次的比赛是命题制——技术改变生活，这基本上是没有限制，经过有赞小伙伴的一番讨论，最终定了3个题目，然后就开始组队做了，我和劲风一组，做的是一个超市扫码购物的微信应用，想要解决的基本问题是——超市排长队付款。对于我来说，主要是想做一些有难度的技术，挑战自己，也没想为什么现在超市为什么不推行扫码购物，当然这也是后来评委问我们的问题。
+这个题目主要的技术难点有：&lt;/p&gt;
+&lt;h3 id=&#34;微信公众号开发&#34;&gt;微信公众号开发&lt;/h3&gt;
+&lt;p&gt;如何扫码是我们遇到的第一个问题，是借助微信还是自己做原生应用，由于我俩都不会 Android 与 IOS 开发，所以微信成了唯一选择。
+微信开发需要有公众号，如果调用 &lt;a href=&#34;http://mp.weixin.qq.com/wiki/7/aaa137b55fb2e0456bf8dd9148dd613f.html&#34;&gt;JS-SDK&lt;/a&gt;，需要有备过案的域名，我们都没有，这时我想到了&lt;a href=&#34;http://sundabao.com/&#34;&gt;大宝&lt;/a&gt;兄，他很慷慨的给我提供云主机、mysql、nginx，加上宝贵的域名，很是感谢。（后面知道了可以用&lt;a href=&#34;http://mp.weixin.qq.com/debug/cgi-bin/sandbox?t=sandbox/login&#34;&gt;测试号&lt;/a&gt;）。&lt;/p&gt;
+&lt;p&gt;这里必须吐槽下微信的开发文档，真是烂：排版烂、个别语句不通顺、经常有死链接，希望微信团队好好维护下。&lt;/p&gt;
+&lt;p&gt;比如这里的&lt;a href=&#34;http://mp.weixin.qq.com/wiki/7/aaa137b55fb2e0456bf8dd9148dd613f.html&#34;&gt;签名算法&lt;/a&gt;，由于微信的人不知道&lt;a href=&#34;http://www.w3school.com.cn/html/html_links.asp&#34;&gt;命名锚（named anchors）&lt;/a&gt;，所以你在打开上面的链接后，需要用&lt;code&gt;Ctrl + F&lt;/code&gt; 来搜索 “签名算法” 才能找到我这里所指的签名算法，最最坑人的是，由于签名是针对网页 URL 的，所以一个网页需要签名一个，而这个 URL 必须是以&lt;code&gt;/&lt;/code&gt;结尾，比如，如果用&lt;code&gt;http://1024.sundabao.com&lt;/code&gt;这个 URL 来签名是不对的，必须是&lt;code&gt;http://1024.sundabao.com/&lt;/code&gt;，这个真的好坑。&lt;/p&gt;
+&lt;p&gt;相比之下，Github的&lt;a href=&#34;https://developer.github.com/v3&#34;&gt;开发者文档&lt;/a&gt;，看起来就很让人舒服，希望微信团队好好学学。&lt;/p&gt;
+&lt;h3 id=&#34;订单系统&#34;&gt;订单系统&lt;/h3&gt;
+&lt;p&gt;扫码问题解决了，剩下的就是一个集成购物车的订单系统，之前在公司虽然也是在数据部，但是报表做的不多，真是没想到这订单系统是多么麻烦，我当时遇到问题就是，购物车选好后，点击提交，这时，按理说应该生成订单的，但是生成订单的同时是否需要把购物车的商品删除呢，第一感觉是需要，但是后来发现不是这样的，如果顾客发现还有商品没有购买，这时他会返回上一页继续购买，所以正确的做法是在确认支付订单后，再去把购物车的商品删掉。但是这样也会有问题，因为顾客确认支付方式后，有可能支付失败了，这时按理说购物车里的东西还是应该有的，但是我们这里比较简单，只要用户点击支付，就认为成功了。可见，要做一个完整的订单＋交易系统，是多么不容易的事。&lt;/p&gt;
+&lt;h3 id=&#34;callback-hell&#34;&gt;callback hell&lt;/h3&gt;
+&lt;p&gt;由于订单系统的逻辑比较多，涉及很多数据库的操作，而我们使用 nodejs 也没用什么 ORM 系统，只是用原生的 sql 来做，这时就陷入了 &lt;a href=&#34;http://callbackhell.com/&#34;&gt;callback hell&lt;/a&gt;，之前写 node 程序一般都不怎么关注错误处理， 所以一直没怎么发现这个问题，这次在做这个订单系统，真是暴露无疑，太难维护了。&lt;/p&gt;
+&lt;p&gt;下面代码片段的功能是：扫描一个商品，向购物车列表中增加一个商品的 &lt;code&gt;callback hell&lt;/code&gt;&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt; 1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 4
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 5
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 6
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 7
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 8
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 9
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;10
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;11
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;12
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;13
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;14
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;15
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;16
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;17
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;18
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;19
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;20
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;21
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;22
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;23
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;24
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;25
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;26
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;27
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;28
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;29
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;30
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;31
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;32
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;33
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;34
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;35
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;exports.add = function(userId, goodsId, goodsNum, cb) {
+    var that = this;
+    var dbPool = db.getPool();
+    var sql = &amp;#34;insert into 1024_cart values (?,?,?) ON DUPLICATE KEY UPDATE goods_num=goods_num+1&amp;#34;;
+    sql = db.formatSQL(sql, [userId, goodsId, goodsNum]);
+    dbPool.query(sql, function(err, result) {
+        if(err) {
+            logger.error(&amp;#34;exec:&amp;#34; + sql + &amp;#34; error:&amp;#34; + err);
+            cb({code:-2, msg: &amp;#34;服务器内部错误！&amp;#34;});
+        } else if(result.affectedRows &amp;gt; 0) {
+            goodsDAO.select(goodsId, function(err, result) {
+                if(err) {
+                    logger.error(&amp;#34;exec:goodsDAO.select. error:&amp;#34; + err);
+                    cb({code:-2, msg: &amp;#34;服务器内部错误！&amp;#34;});
+                }
+                else if(result.length == 0) {
+                    that.delete(userId, goodsId);
+                    cb({code:-1, msg: &amp;#34;数据库中没有该商品！&amp;#34;});
+                } else {
+                    var goods = result[0];
+                    getGoodsNum(userId, goodsId, function(err, result) {
+                        if(err) {
+                            cb({code:-2, msg: &amp;#34;服务器内部错误！&amp;#34;});
+                        } else {
+                            goods[&amp;#34;num&amp;#34;] = result[0][&amp;#34;goods_num&amp;#34;];
+                            cb({code:0, data: goods});
+                        }
+                    })
+                }
+            }); 
+        } else {
+            cb({code:-3, msg: &amp;#34;修改失败！&amp;#34;});
+        }
+    });
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;h2 id=&#34;编码与生活&#34;&gt;编码与生活&lt;/h2&gt;
+&lt;p&gt;在整个比赛过程中（大概20个小时），我睡了不到4个小时，大脑一直处于兴奋状态，一直在解决问题，从动态获取微信签名，到解决订单系统的 bug，到最后的测试，都是极度兴奋的，coding 的比较 high。&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;&lt;strong&gt;我觉得我会编码到老&lt;/strong&gt;。&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;记得在学生时代就不断听到有人说，程序员是青春饭，做几年后要转向管理岗，真不知道说这些话的人是出于什么心理，当然有部分人是把编码当成为一份养家糊口的工作，但是我相信更多人是因为热爱编码而编码的，从编码中能汲取无限快乐。&lt;/p&gt;
+&lt;p&gt;如果你身边在有人 balabala 的说诸如此类的话，我劝你最好离这种人远些，道不同不相为谋，世界这么大，为什么不去做自己喜欢的事呢？&lt;/p&gt;
+&lt;h2 id=&#34;精彩瞬间&#34;&gt;精彩瞬间&lt;/h2&gt;
+&lt;p&gt;
+  &lt;figure&gt;
+    &lt;img src=&#34;https://img.alicdn.com/imgextra/i4/581166664/TB29QBpgFXXXXcOXXXXXXXXXXXX_!!581166664.jpg&#34; alt=&#34;美丽的互联网小镇&#34;&gt;
+    &lt;figcaption&gt;&lt;center&gt;美丽的互联网小镇&lt;/center&gt;&lt;/figcaption&gt;
+  &lt;/figure&gt;
+
+&lt;/p&gt;
+&lt;p&gt;
+  &lt;figure&gt;
+    &lt;img src=&#34;https://img.alicdn.com/imgextra/i4/581166664/TB2bstCgFXXXXXSXXXXXXXXXXXX_!!581166664.jpg&#34; alt=&#34;午餐时刻&#34;&gt;
+    &lt;figcaption&gt;&lt;center&gt;午餐时刻&lt;/center&gt;&lt;/figcaption&gt;
+  &lt;/figure&gt;
+
+&lt;/p&gt;
+&lt;p&gt;
+  &lt;figure&gt;
+    &lt;img src=&#34;https://img.alicdn.com/imgextra/i3/581166664/TB2pBXCgFXXXXanXXXXXXXXXXXX_!!581166664.jpg&#34; alt=&#34;比赛开始了&#34;&gt;
+    &lt;figcaption&gt;&lt;center&gt;比赛开始了&lt;/center&gt;&lt;/figcaption&gt;
+  &lt;/figure&gt;
+
+&lt;/p&gt;
+&lt;p&gt;
+  &lt;figure&gt;
+    &lt;img src=&#34;https://img.alicdn.com/imgextra/i4/581166664/TB2dNhogFXXXXXmXpXXXXXXXXXX_!!581166664.jpg&#34; alt=&#34;休息，休息一会♨️&#34;&gt;
+    &lt;figcaption&gt;&lt;center&gt;休息，休息一会♨️&lt;/center&gt;&lt;/figcaption&gt;
+  &lt;/figure&gt;
+
+
+
+  &lt;figure&gt;
+    &lt;img src=&#34;https://img.alicdn.com/imgextra/i4/581166664/TB2ZDFngFXXXXXvXpXXXXXXXXXX_!!581166664.jpg&#34; alt=&#34;大家都睡了，但我们还在继续&amp;amp;hellip;&#34;&gt;
+    &lt;figcaption&gt;&lt;center&gt;大家都睡了，但我们还在继续&amp;amp;hellip;&lt;/center&gt;&lt;/figcaption&gt;
+  &lt;/figure&gt;
+
+&lt;/p&gt;
+&lt;p&gt;
+  &lt;figure&gt;
+    &lt;img src=&#34;https://img.alicdn.com/imgextra/i3/581166664/TB2QsppgFXXXXXQXpXXXXXXXXXX_!!581166664.jpg&#34; alt=&#34;凌晨3点的互联网小镇&#34;&gt;
+    &lt;figcaption&gt;&lt;center&gt;凌晨3点的互联网小镇&lt;/center&gt;&lt;/figcaption&gt;
+  &lt;/figure&gt;
+
+&lt;/p&gt;
+&lt;p&gt;
+  &lt;figure&gt;
+    &lt;img src=&#34;https://img.alicdn.com/imgextra/i1/581166664/TB2w8xkgFXXXXX5XpXXXXXXXXXX_!!581166664.jpg&#34; alt=&#34;圆满结束，感谢 sf 组办方&#34;&gt;
+    &lt;figcaption&gt;&lt;center&gt;圆满结束，感谢 sf 组办方&lt;/center&gt;&lt;/figcaption&gt;
+  &lt;/figure&gt;
+
+&lt;/p&gt;
+&lt;p&gt;
+  &lt;figure&gt;
+    &lt;img src=&#34;https://img.alicdn.com/imgextra/i1/581166664/TB212BEgFXXXXX0XXXXXXXXXXXX_!!581166664.jpg&#34; alt=&#34;有赞小伙伴&#34;&gt;
+    &lt;figcaption&gt;&lt;center&gt;有赞小伙伴&lt;/center&gt;&lt;/figcaption&gt;
+  &lt;/figure&gt;
+
+&lt;/p&gt;
+&lt;p&gt;注：图片均来自 sf 官方，如涉及个人隐私请告知。&lt;/p&gt;
+&lt;h2 id=&#34;总结&#34;&gt;总结&lt;/h2&gt;
+&lt;p&gt;这次参加比赛，玩的很开心，没什么遗憾。至于代码就不开源了，写的比较烂，后面等功力提升了在说这事。感兴趣可以看看我们作品&lt;a href=&#34;http://note.youdao.com/share/web/file.html?id=134b727dc48180570c66408da03116d4&amp;amp;type=note&#34;&gt;易购 EasyGo&lt;/a&gt;的简介。&lt;/p&gt;
+&lt;p&gt;这里我想回答当时评委问我们组的问题——&lt;strong&gt;为什么现在的超市不推广扫码支付&lt;/strong&gt;：&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;二维码识别后，一般会包含商品的生产日期这个信息，而对于超市某些产品，像海鲜，是不想让顾客知道这个的&amp;hellip;&lt;/li&gt;
+&lt;li&gt;同一商品不同超市买的价格可能不一样，这样卖的贵的超市是不愿意用这套系统的&amp;hellip;&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;对于这些，我只能说，经济基础决定上层建筑，商家还是以盈利为目的的。&lt;/p&gt;
+&lt;p&gt;比赛是结束了，但生活的挑战还在继续，&lt;a href=&#34;https://github.com/jiacai2050/sicp&#34;&gt;SICP&lt;/a&gt; 要继续搞起了，这次停了有两个多星期了，真要多下功夫了。&lt;/p&gt;
+&lt;p&gt;希望大家都能够 happy hacking ！&lt;/p&gt;
+</description>
     </item>
     
     <item>
@@ -94,7 +1895,46 @@
       <pubDate>Sat, 11 Jul 2015 00:00:00 +0000</pubDate>
       
       <guid>https://liujiacai.net/blog/2015/07/11/review-3-month-life-in-youzan/</guid>
-      <description>好久没写博客了，上一篇还是写在三个月前，当时应该是在有赞客满毕业后，现在转正也将近半个多月了。本来想的是每个月至少一篇原创技术文章的，没想到</description>
+      <description>&lt;p&gt;好久没写博客了，上一篇还是写在三个月前，当时应该是在有赞客满毕业后，现在转正也将近半个多月了。本来想的是每个月至少一篇原创技术文章的，没想到坚持还没一年就“食言”了。&lt;/p&gt;
+&lt;h2 id=&#34;时间都去哪了&#34;&gt;时间都去哪了&lt;/h2&gt;
+&lt;div&gt;
+&lt;iframe frameborder=&#34;no&#34; border=&#34;0&#34; marginwidth=&#34;0&#34; marginheight=&#34;0&#34; width=330 height=86 src=&#34;http://music.163.com/outchain/player?type=2&amp;id=28126661&amp;auto=0&amp;height=66&#34;&gt;&lt;/iframe&gt;
+&lt;/div&gt;
+没坚持写博客最直接也最根本的原因就是：懒。
+&lt;p&gt;最近几天杭州有&lt;a href=&#34;http://nb.ifeng.com/zjxw/detail_2015_07/10/4093975_0.shtml&#34;&gt;台风登陆&lt;/a&gt;，周六不用去公司了，公司领导层也决定今后实行双休，我今天也趁此机会好好反思一下最近三个月做的事情，看看时间都去哪了。&lt;/p&gt;
+&lt;h2 id=&#34;回顾反思&#34;&gt;回顾反思&lt;/h2&gt;
+&lt;h3 id=&#34;忙工作&#34;&gt;忙工作&lt;/h3&gt;
+&lt;p&gt;新到一家公司，从熟悉业务到最终能够干活，成本还是不小的，尤其是一家创业型公司，一般都是身兼数职，而且我自身定位一开始也不是很清晰，有种忙这忙那的感觉，最后的成果不是很大。用得到知识基本上还是在ucloud学的，翻翻之前的日报（公司要求新人写日报的效果还是大大有益的，最起码我现在回顾的时候有据可循），觉得下面这些东西算是新学到的：&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;通过调研hadoop streaming任务慢，学习strace命令查看进程到底在做什么。&lt;/li&gt;
+&lt;li&gt;为了开发hive服务，学习hive权限验证，可以具体到某个表。&lt;/li&gt;
+&lt;li&gt;为优化hive任务，学习研究hiveQL如何转为mapreduce，尝试explain 一些语句。&lt;/li&gt;
+&lt;li&gt;为了搭建日志收集系统，学习flume使用方式，不过到目前为止也还是没用的。&lt;/li&gt;
+&lt;li&gt;日常Hadoop维护，这个包含的东西比较杂乱，因为一个分布式的环境，出了一个问题，可能的原因实在是太多了，从服务本身的问题到机器的问题。其次就是编写各种shell脚本，说实话到现在我觉得写shell也不是十分得心应手，对于一些命令如sed、awk、ps、iftop、find、date等还只是简单的入门级别，写一个脚本有时需要较多的时间。&lt;/li&gt;
+&lt;li&gt;熟悉python&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;最近日报不怎么写了，开始写半周报。现在想想一天能干的事好有限，我最近早上醒来的时候，会想一下：我到底想要什么？我的人生目标是什么？今天我该如何去做才能离目标越来越近？张爱玲好像有句话：“出名要趁早”，我不知道是不是我太急功近利了，以至于乱了手脚。我一直能想着为Hadoop社区贡献patch，但是我觉得现在我对他的了解，和之前也差不多，三个月的时间，在这方面貌似只是原地打转。记得之前看过耗子叔写的文章，说他在职业生涯早期通过不断面试来提高自己，我也效仿了下，现在还记得当时人家问我，我回答的不好的问题：&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;你在日常运维Hadoop时，出现过哪些问题？如何解决的？现在系统的瓶颈是什么？如何解决？&lt;/li&gt;
+&lt;li&gt;在运行Hadoop任务时，如何出行某些问题特别慢？你会如何排查问题？&lt;/li&gt;
+&lt;li&gt;有没有遇到过这样的场景：当正在上传一个文件到hdfs上时，另一个程序开始读这个文件，这时会有什么问题？&lt;/li&gt;
+&lt;li&gt;hdfs文件是怎么存储的？有没有用过Arvo？&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;对于前两个问题，应该属于考察解决问题的思路的，看看你在遇到问题时，能不能保持大脑清晰，有个清晰的方案来排查解决问题。当时我回答道，CPU是系统瓶颈，IO不是，但是当人家在顺着问下去时，我就不能够很好的回答了。其实这个问题就说明了我分析问题的能力不够，遇到问题后没有打破沙锅问到底的精神，经常性就不了了之了。想想前两天出现的resourcemanager假死的情况，我好像也是没什么定论。
+第三个问题应该算是看看Hadoop使用经验丰富与否，是否处理过一些不太正常的情况。
+最后一个问题应该算是对Hadoop生态系统的考察，也可以说是系统架构的考虑。说实话这个我是真不清楚，之前Hadoop集群只是搭着玩玩，从来没想过如何一个集群保证一年7*24不间断正常运行，如何发挥系统的最佳性能，经过这个问题还是有帮助，最起码现在开始考虑如何处理小文件问题？以什么格式存储文件，文本、二进制还是压缩格式？集群在什么情况下可能崩溃？&lt;/p&gt;
+&lt;h3 id=&#34;sicphttpsgithubcomjiacai2050sicp&#34;&gt;&lt;a href=&#34;https://github.com/jiacai2050/sicp&#34;&gt;SICP&lt;/a&gt;&lt;/h3&gt;
+&lt;p&gt;当时我能来有赞，也是因为这本书。花了两个月时间算是把第一章给结束了。想想工作之余能够把这本书坚持下来，确实没想的那么简单，这次我们组内四个人，成立了个小组，周末能够讨论上几次，习题一道道过，遇到一些可以扩展的知识点，我们也是尽量发散思维，比如讲找零钱问题，我们扯到了动态规划、尾递归优化、过程执行轨迹的可视化等等，为了找出找零钱的迭代算法，我们讨论了好几次，正好这个周五把第一章所有内容＋习题都过完一遍了，我会抽时间把第一章的内容在总结次，到时候再好好说说找零钱问题，这里就不细说了。&lt;/p&gt;
+&lt;p&gt;我们这个学习小组看完第一章也是磕磕绊绊，中间还停了两周，刚开始几小节还可以，后来逐渐聚不齐了，要不就是谁有事或者工作忙，总之就是没能够进行下去，想想我今年年初的目标，看完三本书，这样算下来，能够完完整整的把SICP看完，也是不容易了。&lt;/p&gt;
+&lt;p&gt;后面再接再厉，把进度顶上去。&lt;/p&gt;
+&lt;h3 id=&#34;亲情友情爱情&#34;&gt;亲情、友情、爱情&lt;/h3&gt;
+&lt;p&gt;这三个月家里发生的事也是蛮多的，五一的时候我姐姐结婚了。怎么说呢，觉得自从上中学后，和姐姐的交流就不多了，我们之间从来没问过各自的理想。姐姐大学毕业后，考过了老师、公务员、事业编，结果也不怎么顺利，一直在家里和我爸爸一起干，开了个淘宝店，最近年逼婚问题也是愈演愈烈，我记得妈妈给我说过姐姐因为这个还哭过，作为一个没什么经验的我，完全不能理解姐姐的心情。这次结婚了，算是对大家最好的交代，端午那天我姐生了个小男孩，在我看来好快，刚结婚没几个月就有小孩了，不过这也好，感觉一下子把好几年要干的事一下解决了。希望我姐姐等家庭稳定后再好好考，以我姐的实力，考个高中老师，绝对没有问题。&lt;/p&gt;
+&lt;p&gt;至于我自己，我也只能说是随缘了，感情这东西，太深奥。想想现在的处境，也确实不适合找，有个老同学还能谈谈，要是说从头开始的，我觉得就别浪费大家的时间了。这东西也挺耽误时间的，在看网上一些暖文的时候，也挺像有个人能一起谈人生、谈理想，一起奋斗的。&lt;/p&gt;
+&lt;h2 id=&#34;总结&#34;&gt;总结&lt;/h2&gt;
+&lt;p&gt;革命尚未胜利，同志仍需努力。&lt;/p&gt;
+&lt;p&gt;我觉得现在的问题一方面是把零碎时间利用好，不要小看这些时间，想想有时候看个10分钟视频，刷会微博，再因为某某好玩的东西，东点点西看看的，时间就这么溜走了。&lt;/p&gt;
+&lt;p&gt;另一方面就是控制好自己欲望，什么事情都不是一步就能够成功的，慢慢来，稳扎稳打，夯实基础。&lt;/p&gt;
+</description>
     </item>
     
     <item>
@@ -103,7 +1943,61 @@
       <pubDate>Fri, 03 Apr 2015 00:00:00 +0000</pubDate>
       
       <guid>https://liujiacai.net/blog/2015/04/03/leave-ucloud-to-youzan/</guid>
-      <description>今天晚上终于有时间来写写博客了，想想决定从ucloud离职到现在，差不多一个多月了。关于离职的原因，一句话两句话也说不清楚，离职这事也纠结了</description>
+      <description>&lt;p&gt;今天晚上终于有时间来写写博客了，想想决定从ucloud离职到现在，差不多一个多月了。关于离职的原因，一句话两句话也说不清楚，离职这事也纠结了好久，正好顺着年后跳槽高峰期，从上海跳到了美丽大杭州。&lt;/p&gt;
+&lt;p&gt;跳槽是件折腾的事。从投简历，再到搬家，都是耗时耗力的事。找合适的工作，真是好比找个女朋友，两方都看顺眼才行。不过，我觉得，还是比较幸运的，找到了&lt;a href=&#34;http://youzan.com/&#34;&gt;有赞&lt;/a&gt;——一家做&lt;code&gt;微电商&lt;/code&gt;的创业公司。&lt;/p&gt;
+&lt;h2 id=&#34;客满轮岗&#34;&gt;客满轮岗&lt;/h2&gt;
+&lt;p&gt;有赞的新人需要在客满（客户满意部，也就是客服）轮岗，目的很明确——熟悉业务。轮岗时间为两周，在这期间，学到的电商知识真是太多太多，什么B2C了，O2O了，我也能张口即来了。当然，熟悉这些名词只是第一步，我觉得更重要的是对现在电商生态的分析，大家估计也都很清楚，现在想在淘宝开店有多难，刷单这早是过时的行为了，效果好的还是通过购买广告位，争取在商品搜索页面的第一页就能出现。&lt;/p&gt;
+&lt;p&gt;客满结束有个ppt分享，我是用 &lt;a href=&#34;https://github.com/impress/impress.js/&#34;&gt;impress.js&lt;/a&gt; 做的，&lt;a href=&#34;http://youzan.liujiacai.net/&#34;&gt;在线地址&lt;/a&gt;，大家感兴趣可以参考。
+下面我将简单说说最近两周内收获到的东西。&lt;/p&gt;
+&lt;h3 id=&#34;微商&#34;&gt;微商&lt;/h3&gt;
+&lt;p&gt;其实大家不难发现，淘宝、京东之类的电商平台的短板，就是它能够展现的店家、商品是有限的，不管你再怎么设计，一个页面能够承载的信息量是一定的，记得之前在北京听过&lt;a href=&#34;http://102.alibaba.com/competition/etao.htm&#34;&gt;阿里搜索引擎专场&lt;/a&gt;的分享，当时就说到了，淘宝现在搜索的痛点，不是什么个性化搜索，而是如何在有限的页面里尽可能多的展示店铺、商品。
+那么如何展示更多的店铺、商品呢？如果只限于淘宝这一个点，可以说目前是无解的（如果，你能想到，马上联系马云吧），究其原因，就是因为淘宝是个中心，所有的店铺、商品都需要经由淘宝这个平台来呈现，所以一个简单的解决方式，把这个中心点拿掉，这样不就解决这个问题了嘛。
+但是如果没有淘宝这个统一入口了，顾客怎么买东西呢？在提出这个问题的时候，我们的问题从“&lt;strong&gt;如何在有限的页面布局中尽可能多的展现店铺、商品？&lt;/strong&gt;”转化到“&lt;strong&gt;如何在没有平台的前提下，提供一种方式，让顾客能够快速找到自己想要的商品？&lt;/strong&gt;”，白鸦在“逛”创业失败后，也遇到了这个问题，微信的崛起让白鸦看到了解决这个问题办法——微商。&lt;/p&gt;
+&lt;h3 id=&#34;去中心化&#34;&gt;去中心化&lt;/h3&gt;
+&lt;p&gt;微商现在没有一个统一定义，是伴随着微信而崛起的一种&lt;code&gt;社交化移动社交电商&lt;/code&gt;，不过微信只是微商的一种载体，其他的社交平台，像微博、人人都可以。微商与传统电商的区别是：&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;传统电商以商品为中心，微商则是以人为中心。
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;传统电商就以淘宝为例，在淘宝购物的大致流程为：&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;输入商品关键字&amp;ndash;&amp;gt;多角度比较（价格、销量、评论）&amp;ndash;&amp;gt;下单&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;当然，你也可能是通过别人分享的链接去购买的，但我觉得这种购买方式相比于上面的可以忽略不计。这里可以顺便插一句，为什么淘宝把像蘑菇街、美丽说之类的导购网站给封杀了？原因其实很简单：&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;如果淘宝大部分顾客是通过第三分导购网站过来了，对淘宝有两个威胁：一是淘宝的广告位对商家来说不是很有竞争力了；二是如果那天这些导购网站不把链接指向淘宝了，那淘宝不就被架空了嘛。&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;所以淘宝在很早的时候就掐断了来自第三方导购网站的链接。&lt;/p&gt;
+&lt;p&gt;回到正题，因为&lt;code&gt;淘宝需要提供广告位，所以就必须以商品为中心&lt;/code&gt;。以商品为中心，就意味着需要个统一的入口，让顾客可以进行商品搜索，而这又会导致出现“&lt;strong&gt;如何在有限的页面布局中尽可能多的展现店铺、商品？&lt;/strong&gt;”这个问题。&lt;/p&gt;
+&lt;p&gt;以人为中心就不一样了。首先，我们知道人都有群体性，都是需要朋友的。我们通过朋友介绍，购买商品往往也是比较放心的，尤其是朋友是某方面的高手时。我相信，如果你身边有个懂电脑的朋友，你买电脑时，一定会参考他的意见。&lt;/p&gt;
+&lt;p&gt;朋友之间有下面两个特征：&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;信任度高、黏性强&lt;/li&gt;
+&lt;li&gt;有共同的喜好&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;如果把社交结合到购物上，就是现在的“微商”了。想想为什么淘宝会入股新浪微博，目的不正是如此嘛。&lt;/p&gt;
+&lt;p&gt;不过相对于微信，微博的黏性不够，因为大部分人在微博上只有很少的关注，只有大V才有可能有一大批脑残粉。相比之下，腾讯的微信，完胜，这也从侧面应证了腾讯在社交方面的强势。随着公众号的推出，使每个人都可能成为中心。比如，你很懂电脑，并且开了个订阅号，天天推送电脑方面的维修知识，相信肯定能在你的社交圈内成为个中心。&lt;/p&gt;
+&lt;p&gt;每个人都有自己的特长，也就意味着每个人都有可能成为自己社交圈中某一方面的中心。如果把这一特点放到电商上，不正好解决了去中心化问题嘛，而且还有可能顺便解决假货问题。说明一下，解决假货问题不是说没有假货了，而是说，顾客能够区分出真货假货了，因为在中国大环境内，假货还是很有必要的。&lt;/p&gt;
+&lt;p&gt;微商就是借助于微信这个平台，解决了中心化问题，但是同时也引入了新的问题：&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;刷屏，相信大家都很反感这个。如果你的朋友圈内天天都是商品推广链接，那你的朋友很有可能就把你屏蔽了。其实这个问题属于营销，就是说如何经营你的朋友（潜在顾客，微信粉丝）。&lt;/li&gt;
+&lt;li&gt;囤货，这是开店首要的。如果你买手机，手上没有个几十部，你怎么开店，但是囤货需要大量资金，大部分人是无法承担的。&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;这时候就需要有赞了。&lt;/p&gt;
+&lt;h3 id=&#34;有赞&#34;&gt;有赞&lt;/h3&gt;
+&lt;p&gt;有赞前名口袋通，目标是为微电商提供完整的解决方案。下面重点说说有赞是如何解决上面两个问题的：&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;有赞与微信打通，提供基于微信粉丝的管理后台。粉丝经验不再是广告投放，需要服务、需要互动，顾客面对的不再是一个品牌商标，而是某个销售员。&lt;/li&gt;
+&lt;li&gt;通过引入&lt;a href=&#34;http://fx.youzan.com/&#34;&gt;分销平台&lt;/a&gt;，解决货源问题&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;此外，有赞还免费的提供CRM系统、服务商平台，解决开店难问题。下图给出一个我理解的有赞产品架构，不一定准确，仅供参考。&lt;/p&gt;
+&lt;center&gt;
+    &lt;img src=&#34;http://img02.taobaocdn.com/imgextra/i2/581166664/TB2u20XcpXXXXcPXXXXXXXXXXXX_!!581166664.png&#34; alt=&#34;有赞产品架构&#34;/&gt;
+&lt;/center&gt;
+&lt;p&gt;我是从“商家－商品－顾客”的角度来把各个产品串联起来的。从上图右侧可以看出，商品的流传主要靠的是顾客口碑相传。&lt;/p&gt;
+&lt;p&gt;其实仅仅通过上图的描述，并不能看出有赞的优势来，别人完全可以复制出来。在客满期间，一些创始人也给我们分析了有赞的生态，我觉得这块理解的不好，这里就不写了，今后有了更深入的理解再补上。
+iDoNews上有篇文章，大家可以参考：&lt;a href=&#34;http://www.donews.com/idonews/article/5449.shtm&#34;&gt;以“有赞”为例，谈谈免费模式背后的微商经济&lt;/a&gt;&lt;/p&gt;
+&lt;h2 id=&#34;新的起点&#34;&gt;新的起点&lt;/h2&gt;
+&lt;p&gt;从今年开始决定换工作，到现在客满两周结束，也算是完成了一次转变。这期间说实话，没怎么看书、写程序。早先计划着手gooreplacer的Safari版的，也一直被搁置了；一些jvm、sed的博文素材也没老整理，现在业务也熟悉完了，下面该继续做技术了。&lt;/p&gt;
+</description>
     </item>
     
     <item>
@@ -112,7 +2006,51 @@
       <pubDate>Mon, 29 Dec 2014 00:00:00 +0000</pubDate>
       
       <guid>https://liujiacai.net/blog/2014/12/29/review-2014/</guid>
-      <description>不知不觉间，又到一年尾，想想自己这正式工作也有大半年了，加上之前的实习，也算是有一年半多“工作经验”的人了。在今年的六月份，大学也划上了圆满</description>
+      <description>&lt;p&gt;不知不觉间，又到一年尾，想想自己这正式工作也有大半年了，加上之前的实习，也算是有一年半多“工作经验”的人了。在今年的六月份，大学也划上了圆满的句号，还记得当初大一刚去学校报道时的一个标语——“今天我以烟大为荣，明天烟大以我为荣”，我肯定是不达标了。&lt;/p&gt;
+&lt;p&gt;“年年岁岁花相似，岁岁年年人不同。”这首诗我记得每年的寒假作业上都会有吧。想想这一年经历，很多事，酸甜苦辣，应有尽有。下面简单整理下，不仅仅是为了记住这些事，更重要的是能够在这些事中吸取经验，克服自身的缺点。&lt;/p&gt;
+&lt;h2 id=&#34;再见北京2014120143&#34;&gt;再见，北京（2014.1～2014.3）&lt;/h2&gt;
+&lt;p&gt;年初时，我还在果壳网实习，这份实习从13年暑假开始，我还记得是和刘晓丽一起坐着火车去的，当时觉得出来了就要混出个样子，没想到我干了不到一年就呵呵了。在果壳网的实习收获主要有两点：&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;学习clojure，接触函数式编程&lt;/li&gt;
+&lt;li&gt;完成&lt;a href=&#34;https://github.com/jiacai2050/hebo&#34;&gt;hebo项目&lt;/a&gt;&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;其实当初找工作想法挺简单的，能有个地方安心的学习就够了，果壳应该算是完成了我这个初衷，果壳的工作氛围比较松，加班的情况很少，当然也可能是因为我是实习生，没接触生产环境。是&lt;a href=&#34;http://cn.linkedin.com/pub/%E6%98%8E%E7%90%86-%E8%8B%91/0/1a1/153/zh-cn&#34;&gt;明理&lt;/a&gt;把我招进去，我当时在果壳话比较少，没怎么和明理深入交流，想想也挺遗憾的。
+离职应该是在3月25号，当时租房子的中介跑了，房东来赶我们，想想一起住的几个人，行色匆匆，到现在也不知道人家叫什么。每个在北京漂过的人都应该知道一个人是什么滋味。
+当时也去参加过阿里校招，被刷，投简历，被刷。在北京这么个名校云集的地方，烟大的，有些自卑。所以我给自己找了个借口——我要考研。辞职后，回家看书考研去了。&lt;/p&gt;
+&lt;h2 id=&#34;考研之路2014420145&#34;&gt;考研之路（2014.4～2014.5）&lt;/h2&gt;
+&lt;p&gt;从北京回家，想着从头开始，但是往往事与愿违。刚开始考研的激情还比较浓，看书什么的也还好，但是慢慢的就开始看不进去了，还记得当时买了那本《SICP》，每天就看几页，做做习题，也没怎么运动，天天就是吃、吃、睡、睡，家里环境好呀，也没人。浑浑噩噩的，很快就到了要回学校做毕业设计的时间了。回学校后就断了考研的想法。&lt;/p&gt;
+&lt;p&gt;其实就像每个毕业生都会经历的那样，就业与考研在那段时间也一直困扰着我，一直到今天（2015-1-10）回头再看看，也不知道这条路选的是否正确。&lt;/p&gt;
+&lt;h2 id=&#34;毕业设计2014520146&#34;&gt;毕业设计（2014.5～2014.6）&lt;/h2&gt;
+&lt;p&gt;从家里回到学校做毕业设计应该是在5月11号左右。从大三暑假就开始出来实习，到这次重新回来，算算也是有半年的时间了，重新回到学校，感觉一切是那么熟悉又那么陌生，熟悉的是相同的教学楼，陌生的是不同的心情，仿佛我已经不属于这个地方了。毕业设计是用的我在果壳做的hebo项目，鉴于前期代码基本已经完成了，这次回学校主要是文档的编写，导师我找的是张老师，合作挺愉快的，经过几次修改后，最后我的论文被评为了优秀，作为奖励，发了¥500RMB。&lt;/p&gt;
+&lt;p&gt;我在所有实习的同学中回来的算是早的，随着大家陆陆续续的回来，相互寒碜几句，问问都找了什么样的公司，待遇多少，刚开始也想着在学校找个自习室什么的上个自习考研的来，但是还是觉得自己太浮躁了，现在在看书，根本静不下心来了，这期间也投了几个简历，当时应该是投了蘑菇街，还因此去了趟杭州，不过还是败下阵了，当时让我写一个算法，应该是&lt;a href=&#34;http://blog.csdn.net/v_july_v/article/details/6444021&#34;&gt;求连续子数组的最大和&lt;/a&gt;，我当时大概用了半个小时才把这个算法写出来吧，面试官印象是个很“短小精湛”的小伙子，个子不高，瘦瘦的，但是通过交流就知道是个算法狂人，他也给我指出了我的“硬伤”，基本功不行，我简历上写了会lucene、hadoop，猛地一看很唬人，其实自己就是调用API级别的菜鸟，内部原理不甚了解，以前也写过一篇&lt;a href=&#34;https://liujiacai.net/blog/2014/05/19/go-into-java-world/&#34;&gt;文章&lt;/a&gt;总结，事过半年了，貌似还是菜鸟。&lt;/p&gt;
+&lt;h2 id=&#34;杭州找工作2014620147&#34;&gt;杭州找工作（2014.6～2014.7）&lt;/h2&gt;
+&lt;p&gt;在学校昨晚毕业设计答辩后，就觉得应该去杭州，阿里巴巴对于像我这样的应届生还是有莫大的吸引力的。从上次面试蘑菇街，这次算是第二次来了，这次我主要是在内推网上投的简历，来之前投了的又拍云，这次来主要是先是面试它，现在还记得，当时我应该是租的文一路的布丁旅馆，又拍云面试很顺利，整个过程下来没问什么具体的技术，就是泛泛谈谈，之后就让回去等通知了，我还记得当时面试出来后，我就给学坤打了个电话，说应该问题不大了，又了这个保底的，就没什么特别担心的了，但是又拍云一直没给我最终结果，导致时间越长，就越担心，收到offer应该是在一个星期后了，最后给我工资和我预期差距较大，几经纠结后，还是决定在找找看，当时在内推看到ucloud的招聘，投递简历后，先是让他们那边安排了次电话面试，我还记得当时第一次约的时间他们那边没给我打，得知又拍云的薪资后，我又尝试主动联系他们，简单电话聊过之后，让我去他们公司试试，之后就是来上海面，那天一早从杭州出发，公交到杭州城站，动车到浦东站，地铁到ucloud，面试一下午，之后原路线返回，回到杭州已经晚上11点了。&lt;/p&gt;
+&lt;p&gt;到当前写作时间（2015-1-10），已经过去大半年了，一直在ucloud。&lt;/p&gt;
+&lt;p&gt;##ucloud（2014.7～2014.12）&lt;/p&gt;
+&lt;p&gt;确定在上海工作后，就开始租房，上海租房比北京好些，黑中介少些。&lt;/p&gt;
+&lt;p&gt;到现在，回想这半年的工作，正好前几天公司的KPI自评，发现自己还是不行，一直没找到感觉，还是浮躁，没找到点上。感觉工作内容也一直在变，什么感觉说不出来，就是没找到兴奋点上。部门领导也看出来了，主动和我交流，指出我有如下两个缺点：&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;空想，没有实际行动&lt;/li&gt;
+&lt;li&gt;责任心不强&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;这两点很好理解，第一点，每个人都想成功，但是怎么做呢，具体到这个月需要达到什么效果，这周需要完成什么呢，没想过。第二点，自己只顾自己的一亩三分地了，不去管应该由用户抛出来的问题，觉得别人可以解决或者这块不属于我管，我不用关心。&lt;/p&gt;
+&lt;p&gt;通过这次KPI自评，还是找到一些需要解决的问题，下面半年争取有个质的突破。&lt;/p&gt;
+&lt;h2 id=&#34;2015-你好&#34;&gt;2015 你好&lt;/h2&gt;
+&lt;p&gt;上面简单梳理了下2014年发生的事情，下面罗列一下在2015年需要干的事情。&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;工作态度要端正，KPI时指出的缺点要克服，工作用心，多思考，多实践；作为衡量指标，每周的周报一定要有干货，每个月自己在进行一次总结。&lt;/li&gt;
+&lt;li&gt;看书&lt;/li&gt;
+&lt;/ol&gt;
+&lt;blockquote&gt;
+&lt;p&gt;这是个很容易拖延的话题，毕竟现在看书太“难”了。但还是要罗列下15年必须看完的书了。&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;http://book.douban.com/subject/1148282/&#34;&gt;SICP&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;http://book.douban.com/subject/1885170/&#34;&gt;算法导论&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;http://book.douban.com/subject/1291204/&#34;&gt;哥德尔、艾舍尔、巴赫&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;这三本书实体版都已经买来了，不管工作多重，也要抽业余时间看完。&lt;/p&gt;
+</description>
     </item>
     
     <item>
@@ -121,7 +2059,100 @@
       <pubDate>Sat, 09 Aug 2014 00:00:00 +0000</pubDate>
       
       <guid>https://liujiacai.net/blog/2014/08/09/inter-intra-cept-ee-er/</guid>
-      <description>故事是这么开始的，我遇到了inter-organizational与intra-organizational这么两个词组，其实也很好区分，前</description>
+      <description>&lt;p&gt;故事是这么开始的，我遇到了inter-organizational与intra-organizational这么两个词组，其实也很好区分，前面是“不同组织之间的”，后者是“同一组织内部的”，搞计算机的应该知道有个叫intranet的网，它是与internet不一样的，专指企业内部网络。我这里想以这两个词缀为基准，展开一系列联想，学英语的乐趣不就在于此嘛。&lt;/p&gt;
+&lt;h2 id=&#34;inter-&#34;&gt;inter-&lt;/h2&gt;
+&lt;p&gt;a prefix occurring in loanwords from Latin, where it meant “between,” “among,” “in the midst of,” “mutually,” “reciprocally,” “together,” “during”&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;intercept　拦截。在里面（inter）握住（cept），想想小时侯站在河里用手抓鱼的场景吧&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;cept也是词根，意为take、hold、seize“拿，抓，握住”
+deceptive　de坏+cept拿,抓,握住+ive……的→拿坏的东西来→骗人的； 靠不住的； 迷惑的； 虚伪的
+susceptible　sus+cept+ible→能被拿下→易受影响&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;sus前缀，表示在…下面
+suspect(sus+pect看→在下面看一看→怀疑)
+suspend悬挂，中止(sus+pend挂→挂在下面→悬挂)
+suspire叹息，渴望(sus+spir呼吸+e→喝望)&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;conspire 搞阴谋； 协力促成 (con共同+spir+e→一起呼吸→共谋、阴谋)&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;/blockquote&gt;
+&lt;/blockquote&gt;
+&lt;/blockquote&gt;
+&lt;blockquote&gt;
+&lt;blockquote&gt;
+&lt;blockquote&gt;
+&lt;p&gt;sustain支撑;承受(sus+tain握住→在下面握住→支撑)&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;/blockquote&gt;
+&lt;/blockquote&gt;
+&lt;blockquote&gt;
+&lt;blockquote&gt;
+&lt;p&gt;accept(ac再+cept拿,抓,握住→一再拿→接受)
+except除外 (ex出+cept拿,抓,握住→拿出)
+perception理解;感知,感觉 (per全部+cept拿,抓,握住+ion状态→全部抓住→理解;感知)
+concept观念, 概念 (con共同+cept拿,抓,握住→共同把握→共同的想法→观念,概念)
+receipt收据,收到 (re再+ceipt=cept抓→再次拿到→得到的收据)&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;/blockquote&gt;
+&lt;blockquote&gt;
+&lt;p&gt;interest(inter在……中+est存在,实质→实质在什么里面→兴趣，爱好，利益)&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;解释inter-含义时出现了个词loanword，loan就是贷款的意思，那loan接＋word字→外来词，借用词。&lt;/p&gt;
+&lt;h2 id=&#34;intra-&#34;&gt;intra-&lt;/h2&gt;
+&lt;p&gt;a prefix meaning “within,” used in the formation of compound words&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;intramural校内的(反义intermural)；市内的(反义extramural)(intra+mural抽象概念的&amp;quot;墙&amp;quot;)
+intra respiration 胞内呼吸&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;说实话，ee、er后缀是我看到loan后想到的&lt;/p&gt;
+&lt;h2 id=&#34;-ee&#34;&gt;-ee&lt;/h2&gt;
+&lt;ol&gt;
+&lt;li&gt;
+&lt;p&gt;a suffix forming from transitive verbs nouns which denote a person who is the object or beneficiary of the act specified by the verb ( addressee; employee; grantee  ); recent formations now also mark the performer of an act, with the base being an intransitive verb ( escapee; returnee; standee ) or, less frequently, a transitive verb ( attendee  ) or another part of speech ( absentee; refugee  ).
+我简单翻译下上面的解释。-ee后缀一般的功能是把一个动词转化为具有该动词性质的人，通常是被动的，像loanee(债务人，借入者)、employee（员工）、addressee(收件人)、grantee(受颁赠者)。
+但是最近一些年也能表达主动的概念，像escapee逃脱者、returnee回国人员（returner指重返工作岗位的人，尤指生完小孩的女性
+）、standee站着看的人，（公共汽车上的站客； 站立的乘客，但这些动词一般都是非及物动词。及物动词占很少一部分，典型的有attendee（会议等的）出席者、absentee缺席者、refugee避难者。&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;除了上面的含义外，还有一个意思，indicating a diminutive小型的 form of something，典型的例子有bootee女人的短靴&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h2 id=&#34;-er&#34;&gt;-er&lt;/h2&gt;
+&lt;ol&gt;
+&lt;li&gt;从人所占用的物品来指明人的身份。&lt;/li&gt;
+&lt;/ol&gt;
+&lt;blockquote&gt;
+&lt;p&gt;hatter帽子制造者
+tiler盖瓦工人
+tinner锡矿工人
+moonshiner烈酒走私者（是的，你没看错，moonshine除了月光外，还有妄想、私酒的意思，貌似后面这两个意思一般都是在有月光的大晚上干的哈）&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;ol start=&#34;2&#34;&gt;
+&lt;li&gt;从一些特征或环境来指明某人的身份&lt;/li&gt;
+&lt;/ol&gt;
+&lt;blockquote&gt;
+&lt;p&gt;six-footer身高六英尺的人，六英尺长的东西
+three-master 三桅的船； 三桅船
+teetotaler 绝对禁酒者，禁酒主义者
+fiver　&amp;lt;英·非正&amp;gt;五镑钞票a five-pound note；&amp;lt;美&amp;gt;五元钞a five-dollar bill.
+tenner &amp;lt;美&amp;gt;十磅纸币，十元纸币&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;ol start=&#34;3&#34;&gt;
+&lt;li&gt;用于动词，表明动作具有反复的性质&lt;/li&gt;
+&lt;/ol&gt;
+&lt;blockquote&gt;
+&lt;p&gt;flicker闪烁； 飘扬，摆动
+flutter飘动； 鼓翼
+shiver发抖，颤抖
+shudder战栗； 发抖； 震动； 颤动&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;h2 id=&#34;单词参考&#34;&gt;单词参考&lt;/h2&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;a href=&#34;http://dictionary.reference.com/&#34;&gt;http://dictionary.reference.com/&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;http://www.iciba.com/&#34;&gt;http://www.iciba.com/&lt;/a&gt;&lt;/li&gt;
+&lt;/ol&gt;
+</description>
     </item>
     
     <item>
@@ -130,7 +2161,113 @@
       <pubDate>Fri, 09 May 2014 00:00:00 +0000</pubDate>
       
       <guid>https://liujiacai.net/blog/2014/05/09/understand-serious-music/</guid>
-      <description>初识古典 今天收获太大了，我也终于能享受“严肃”音乐了。 事情的经过是这么样的，以前了解过GEB，都说他怎么怎么好，怎么把巴赫的音乐与艾舍尔的画</description>
+      <description>&lt;h2 id=&#34;初识古典&#34;&gt;初识古典&lt;/h2&gt;
+&lt;p&gt;今天收获太大了，我也终于能享受“严肃”音乐了。&lt;/p&gt;
+&lt;p&gt;事情的经过是这么样的，以前了解过&lt;a href=&#34;http://book.douban.com/subject/1291204/&#34;&gt;GEB&lt;/a&gt;，都说他怎么怎么好，怎么把巴赫的音乐与艾舍尔的画相对比，我是个音乐盲，平时也就是听听流行歌曲，上哪里去听懂老巴赫的音乐，对音乐的唯一一点记忆是高三时上基本能力课时，一个有激情的音乐老师讲过巴赫如何牛叉，但是当时应付高考，谁去认真理睬这60分的基本能力呀。&lt;/p&gt;
+&lt;p&gt;现在作为一个程序员，职业习惯让我对任务事情都有刨根问题的兴趣，想弄明白它的本质到底是怎么样的，现在这个疑惑跑到了音乐身上。为什么我就不能“听懂”巴赫音乐中所表达出的意境呢，是我没有乐理知识嘛，为了这个我还下载了&lt;a href=&#34;http://www.56.com/w43/album-aid-8156170.html&#34;&gt;宋大叔教音乐&lt;/a&gt;,但是没能听下，然后我想了万能的知乎，我上提了一问题&lt;a href=&#34;http://www.zhihu.com/question/23698905&#34;&gt;一个音乐盲如何才能听懂莫扎特、贝多芬、巴赫的作品？&lt;/a&gt;,希望知友们能给我指条明道，让我尽快能够掌握音乐入门方法。&lt;/p&gt;
+&lt;p&gt;不出所料，在强大的知友帮助下我找了一个视频&lt;a href=&#34;http://www.tudou.com/programs/view/6ULRRxqmBFM/&#34;&gt;走进音乐世界&lt;/a&gt;，这貌似应该是一个中央民族大学的老师做的一个演讲，真的是太赞了，这位周老师讲的实在是太好了，道出了想我这样的“音乐凡人”为什么听不懂想巴赫的“高雅”音乐的原因，对音乐感兴趣的人推荐去看这个视频，这个视频2个多小时，但绝对能让你物有所值。&lt;/p&gt;
+&lt;p&gt;很喜欢周老师的开场，视频一开始周老师就从大家都知道的典故&lt;a href=&#34;http://baike.baidu.com/view/42504.htm?fr=aladdin#2&#34;&gt;俞伯牙和钟子期的故事&lt;/a&gt;切题，通过这两个人的故事，大家都懂的了知音难求的道理，但是到现在几千年来我们对音乐的欣赏水平还是没变。&lt;/p&gt;
+&lt;p&gt;通过这个切题我就能知道这个周老师绝对是个博才多学的人，通过看完这个视频也证明了这一点。周老师说音乐艺术的基本材料是音响，而音响有两个基本属性：&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;ul&gt;
+&lt;li&gt;没有造型性，这说明音响不能&lt;strong&gt;直接&lt;/strong&gt;传达视觉形象&lt;/li&gt;
+&lt;li&gt;没有语义性，这说明音响不能&lt;strong&gt;直接&lt;/strong&gt;传达思想概念&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;这也就说明了我们为什么听不懂，因为音乐本身不能直传达作者的思想，不仅仅我们不懂，那么专业搞音乐的人也不懂。看到周老说这些话我真是全身舒畅，原来大家都是不懂装呀。哈哈！&lt;/p&gt;
+&lt;p&gt;但是音乐作为一门让无数人着迷的艺术，不可能装了几千年吧，肯定还是少了些什么吧。周老师说这里的关键是&lt;strong&gt;联觉&lt;/strong&gt;，其实这个大家平时也都知道，就是我们平时看到一种东西联想到另一种东西的能力，这种能力是我们每个人与生俱来的，所以我们每个人都能听“懂”音乐。&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;ul&gt;
+&lt;li&gt;高音，轻快、活泼&lt;/li&gt;
+&lt;li&gt;低音，沉重、压抑&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;这就是音乐中给人最直接的感受&lt;/p&gt;
+&lt;p&gt;比较有意思的是，周老师还爆料了他们音乐圈一些众所周知的秘密，其实说音乐鉴赏课都是扯淡，评论都是后人加上去的，要不然没法卖呀，大家想想自己买回来一碟音乐光盘，发现里面没有什么讲解，会不会很失望，这就是商业与艺术的差别。写评论主观因素很大，所以这就导致了我们听不懂。周老师以前就干过不少为音乐作品写评论的事，周老师说这里有个秘诀，把评论写的抽象些，比如“倾诉”，具体什么内容都可以，这样最起码不会跑题了吧。周老师确实很可爱有没有。&lt;/p&gt;
+&lt;p&gt;到这里我就豁然开朗了，以前接受的教育都是错误的，为什么听音乐前&lt;strong&gt;必须&lt;/strong&gt;了解作者的经历，创作背景一类的东西呀，都是扯淡，听音乐就是放松的，根本没必要去做那么多的准备，好听就听，不好听就换一个，这也是知友们所说的。&lt;/p&gt;
+&lt;p&gt;最后周老师把音乐鉴赏上升到国家软实力问题上了，为什么大家买手机都说不要买国产手机，就因为设计不好呗，为什么不好，这里的根本原因是，&lt;strong&gt;感性意识&lt;/strong&gt;差，我们从小的教育都是带有功利性的，去春游回来必须写日记，导致玩也玩的不痛快，想我听巴赫的音乐非要生搬硬套到艾舍尔的画上，也是教育体制的受害者。长此以往下去，导致我们失去了对事物感性的认识，其实这点和现在所倡导的“用户体验”很相似，我们在设计一个产品是功能再强大，但是界面丑陋无比，我相信也是没人会用的，这也给我提了个醒，技术要与市场结合，需要深入掌握用户的心理，怎么设计让用户用着舒服，怎么才能提供用户更好的体验，这都是重中之重的问题。&lt;/p&gt;
+&lt;p&gt;中国人一直认为&lt;strong&gt;实用&lt;/strong&gt;的价值大于&lt;strong&gt;感性&lt;/strong&gt;的认识，这也就导致了我们的厕所为什么这么脏，能用就行呗！&lt;/p&gt;
+&lt;p&gt;说了不少了，因为这个问题困扰了我好久，在周老师的视频和知友们的解答下终于让我又有了新的认识，感觉真的是太好了。&lt;/p&gt;
+&lt;p&gt;PS:百度后发现这位周老师竟是中央音乐学院的副校长，网上的好评也是不断。
+最后附上周老师演讲的ppt与为我们准备的音乐资源（按类别分好）
+&lt;img src=&#34;http://img03.taobaocdn.com/imgextra/i3/581166664/TB2m4K_apXXXXX5XXXXXXXXXXXX_!!581166664.png&#34; alt=&#34;周海宏功能音乐10CD MP3&#34;/&gt;&lt;/p&gt;
+&lt;p&gt;&lt;a href=&#34;&#34;&gt;http://pan.baidu.com/s/1kTr5fy3&lt;/a&gt;&lt;/p&gt;
+&lt;h2 id=&#34;更新认识2014519&#34;&gt;更新认识，2014.5.19&lt;/h2&gt;
+&lt;p&gt;我的这个问题在&lt;a href=&#34;http://www.zhihu.com/question/23698905&#34;&gt;知乎&lt;/a&gt;、&lt;a href=&#34;http://v2ex.com/t/111959&#34;&gt;v2ex&lt;/a&gt;上发起的问题讨论十分热烈，主要是围绕这对音乐的态度，其中&lt;a href=&#34;http://www.zhihu.com/people/han-edward&#34;&gt;Han Edwar&lt;/a&gt;从专业角度出发，强调必须去弄懂一首曲子中所传递的意思，关于这个问题我想的是我想试着去听听古典音乐吧，老是空说也没什么用，还需要用实践来证明一下。&lt;/p&gt;
+&lt;h2 id=&#34;更新认识2015419&#34;&gt;更新认识，2015.4.19&lt;/h2&gt;
+&lt;p&gt;将近一年后再来看看这个问题，貌似和当初差不多少，现在偶尔也会在网上找一些古典音乐听听，但还是没能听出感觉，看来我的路还很长。这个问题在知乎上有了875个关注了，看来大家对这个问题都还蛮感兴趣的。其中有个&lt;a href=&#34;http://www.zhihu.com/question/23698905/answer/34179234&#34;&gt;匿名的回复&lt;/a&gt;，从GEB这本书阐述的中心思想入手，倒是给了我不少的启发。怕以后找不到了，在这里留个存根：&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;音乐我不熟，GEB那本书我很喜欢，这里给题主提供另一个看问题的角度。
+
+首先，GEB这本书讲的是什么？它探讨的是“什么是自我”。
+
+自我这个概念，是人与眼下世间万物的区别（因为我们还没发现外星智慧、也没发现地球上的其他生物有自我意识）。
+那么，如果机器，或者严格的说，程序，有了自我意识，这程序，该叫什么？它是不是人？同时，我们怎样才能判断某程序有了自我意识？
+
+第一个问题，目前大家有比较一致的答案，倾向于叫它“人工智能”（没错，AI就是从这儿来的！）。
+但是对第二个问题，不同的人有不同的看法。
+
+以图灵为首的计算机科学家倾向于从行为上判断。从著名的“中文小屋”（图灵测试的出处）到今天的谷歌翻译、机器学习，都可以归于这个学派。
+
+侯士达（GEB的作者）不这么看。他坚持认为，有self-consciousness的程序才叫人工智能。在深度学习几乎要席卷世界的今天，他成了少数派；但是在出版GEB的上世纪七十年代末八十年代初，正是学界反思五十年代提出的“人工智能”概念的时期。所以他的这种观点在当时并不像今天听来这么离经叛道，反而还有点追本溯源的意思。
+关键是，他文笔好啊。这本书一出，立刻引爆了流行，荣获普利策奖和美国国家图书奖。美国人民一起竖大拇指：原来搞CS的人也可以萌萌的！
+
+扯远了。
+侯士达虽然认为自我很重要，是判断人工智能的标准。但是你怎么描述自我呢？
+我当然可以指着鼻子说：“我就是我，是颜色不一样的烟火。”
+但是机器人也可以指着自己的鼻子/显示器这么说。
+你怎么证明，机器人指着自己的鼻子，跟你指着自己的鼻子，两件事当中有某些决定性的区别呢？
+
+GEB整本书就试图干这件事。
+侯士达到处搜集、自己创作了大量的例子，想要展示给读者，自我是什么，自我意识是怎么回事，什么样的行为中体现了自我意识。
+比方说，一台唱机（就是放唱片的机器，现在很少见到了）X，播放了一张叫“我不能在唱机X上播放”的唱片后，就爆炸了。
+他不断展示，是因为他意识到“自我”或许不是一个可以证明的东西。但是他知道这东西存在，你也可以感受到这东西的存在。就好比禅宗里常说的“不要把我的手指当成月亮”。（是的，侯士达也很喜欢禅宗公案）
+
+
+接下来，自我跟巴赫的音乐有什么关系？
+如上所述，侯士达的这本书最后成了一本自指案例大全（身为程序员的你，是不是看到此时产生了巨大的熟悉感？）。
+自指不仅包括递归，也包括元小说（metafiction，也可以叫超小说，后设小说等等），字谜等等众多形态。
+
+侯士达认为最了不起的自指的例子，就是标题里这三个人的创作：
+哥德尔不完备性定理的证明；
+艾舍尔的石板画；
+巴赫的赋格、卡农等作品。
+
+在他看来（我懂的少，当然赞成他的看法了），这三者是自指这一概念在三个不同领域的最高成就，是他这本书想要表达的主题的完美再现。
+所以，你也可以认为这本书就是针对“自我”这个主题的不断重复、变形、强化。
+
+身为程序员，想必你已经了解了哥德尔不完备性定理证明的思路。
+艾舍尔画中的自指，只要视力正常的人也可以一眼看出。
+所以对你来说，可能理解的唯一障碍就是“巴赫的音乐到底是怎么回事？”
+
+简而言之，你可以把它理解成下图的音乐版：
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;
+  &lt;figure&gt;
+    &lt;img src=&#34;http://img04.taobaocdn.com/imgextra/i4/581166664/TB2J1Y2cpXXXXc_XXXXXXXXXXXX_!!581166664.jpg&#34; alt=&#34;荷兰画家埃舍尔的视觉迷宫&#34;&gt;
+    &lt;figcaption&gt;&lt;center&gt;荷兰画家埃舍尔的视觉迷宫&lt;/center&gt;&lt;/figcaption&gt;
+  &lt;/figure&gt;
+
+&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;接下来，回到原问题的子问题，如何欣赏巴赫的作品？
+不知道你听没听过《赋格的艺术》和《音乐的奉献》，如果还没听，不妨一试：
+The Art of Fugue / Musical Offering专辑，地址：http://www.xiami.com/album/488768
+
+简单（且不准确的）来说，卡农就是只有一段旋律，复制后通过时序排列形成“和谐组合”。
+- 难度比简单的和声创作要大。因为假设与音符a和谐的音符有c、e、A，那么创作和声时a下方对应的音符就有3个选择，a后面的音符也可以任意选择；而创作卡农时假设下方的旋律序列比上方晚一拍，那么a后面的音符就只有3个选择（因为要与a和谐），且该选择要与下一个音符和谐，而同时要避免横向序列不能听……
+赋格就是允许把第一段旋律X做变形后得到Y，X与Y通过时序排列形成“和谐组合”。
+
+巴赫的厉害之处在于，它不仅掌握了这些规则、在规则下创作出了“好听”的音乐，而且还可以玩花活儿：[果壳搬运] 巴赫螃蟹卡农视觉图解，地址：http://www.iqiyi.com/w_19rr9svtnh.html
+
+有了类似视频的帮助，巴赫的作品就不只是一段莫名其妙的声音，而具备了与哥德尔、艾舍尔的视觉可比性。
+这种结构/形式的完美性体现出的乐趣，我相信是擅长编程的人都可以轻易体会到的。
+
+最后，回到你的原问题：如何听懂莫扎特、贝多芬、巴赫的音乐？
+如果要“懂”，前面陈壮壮说的懂乐器、这里说的玩结构、还有晓渔赞成的情感体验和反对的历史背景了解，你最好都要涉及；但如果只想“欣赏”，那我觉得怎样能让你觉得“有所得”，你就怎样来。
+即使是知乎上炮轰的“装备党”（水电和火电哪个更适合听古典？）、豆瓣上讽刺的“看谱党”（只通过看乐谱欣赏古典乐）、爱乐群体中的“版本党”（热衷于比较不同演奏家、不同年代录制的古典乐唱片版本间的优劣），也都从古典乐中获得了自己想要的乐趣。
+
+所以，这最后的问题，需要问题主你：你想从古典乐中获得什么？
+&lt;/code&gt;&lt;/pre&gt;
+</description>
     </item>
     
   </channel>

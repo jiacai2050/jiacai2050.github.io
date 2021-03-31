@@ -23,7 +23,7 @@
 
 
 
-<meta name="generator" content="Hugo 0.79.0 with theme even" />
+<meta name="generator" content="Hugo 0.81.0 with theme even" />
 
 
 <link rel="canonical" href="https://liujiacai.net/blog/2018/07/08/mark-sweep/" />
@@ -35,7 +35,7 @@
 
 
 
-<link href="/sass/main.min.c7bc1becf36bcf6a9ebd25d2947e43a2eb745ddb0c9a32b43126fd7fa460c351.css" rel="stylesheet">
+<link href="/sass/main.min.24f64ae1eb89951aa146cbb31238f141b5994462fa2362bbd7bae8c71e0359cc.css" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
 <link rel="stylesheet" href="/css/jiacai.css">
 
@@ -43,19 +43,15 @@
 <meta property="og:title" content="深入浅出垃圾回收（二）Mark-Sweep 详析及其优化" />
 <meta property="og:description" content="在上一篇文中介绍的追踪类（tracing）GC 较引用计数（Reference Counting）性能更高，但原生的追踪类 GC 也有其自身缺点，需要" />
 <meta property="og:type" content="article" />
-<meta property="og:url" content="https://liujiacai.net/blog/2018/07/08/mark-sweep/" />
-<meta property="article:published_time" content="2018-07-08T12:26:31+00:00" />
-<meta property="article:modified_time" content="2020-12-04T22:35:59+08:00" />
+<meta property="og:url" content="https://liujiacai.net/blog/2018/07/08/mark-sweep/" /><meta property="article:section" content="post" />
+<meta property="article:published_time" content="2018-07-08T12:26:31&#43;00:00" />
+<meta property="article:modified_time" content="2020-12-04T22:35:59&#43;08:00" />
+
 <meta itemprop="name" content="深入浅出垃圾回收（二）Mark-Sweep 详析及其优化">
-<meta itemprop="description" content="在上一篇文中介绍的追踪类（tracing）GC 较引用计数（Reference Counting）性能更高，但原生的追踪类 GC 也有其自身缺点，需要">
-<meta itemprop="datePublished" content="2018-07-08T12:26:31+00:00" />
-<meta itemprop="dateModified" content="2020-12-04T22:35:59+08:00" />
+<meta itemprop="description" content="在上一篇文中介绍的追踪类（tracing）GC 较引用计数（Reference Counting）性能更高，但原生的追踪类 GC 也有其自身缺点，需要"><meta itemprop="datePublished" content="2018-07-08T12:26:31&#43;00:00" />
+<meta itemprop="dateModified" content="2020-12-04T22:35:59&#43;08:00" />
 <meta itemprop="wordCount" content="4016">
-
-
-
-<meta itemprop="keywords" content="GC," />
-<meta name="twitter:card" content="summary"/>
+<meta itemprop="keywords" content="GC," /><meta name="twitter:card" content="summary"/>
 <meta name="twitter:title" content="深入浅出垃圾回收（二）Mark-Sweep 详析及其优化"/>
 <meta name="twitter:description" content="在上一篇文中介绍的追踪类（tracing）GC 较引用计数（Reference Counting）性能更高，但原生的追踪类 GC 也有其自身缺点，需要"/>
 
@@ -716,7 +712,7 @@ copy(o):
 
 
 
-<script type="text/javascript" src="/js/main.min.c12618f9a600c40bd024996677e951e64d3487006775aeb22e200c990006c5c7.js"></script>
+<script type="text/javascript" src="/js/main.min.c99b103c33d1539acf3025e1913697534542c4a5aa5af0ccc20475ed2863603b.js"></script>
 
 
 <script type="application/javascript">

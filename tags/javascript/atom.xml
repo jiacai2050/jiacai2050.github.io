@@ -13,7 +13,478 @@
       <pubDate>Sat, 28 May 2016 00:00:00 +0000</pubDate>
       
       <guid>https://liujiacai.net/blog/2016/05/28/scope-closure/</guid>
-      <description>如果你写过 javascript，应该听说过变量提升（hoisting），如果你自诩“Life is short, I use Python”，那么多多少少会用过glo</description>
+      <description>&lt;p&gt;如果你写过 javascript，应该听说过&lt;a href=&#34;https://en.wikipedia.org/wiki/JavaScript_syntax#hoisting&#34;&gt;变量提升&lt;/a&gt;（hoisting），如果你自诩“Life is short, I use Python”，那么多多少少会用过&lt;code&gt;global&lt;/code&gt;、&lt;code&gt;nonlocal&lt;/code&gt;这两个关键字。无论新手还是老手，遇到这些时都会觉得很别扭，稍不留神就会出现意想不到的 bug，如果你仔细观察就会发现，它们其实是一个问题：变量作用域的问题。&lt;/p&gt;
+&lt;p&gt;其次，随着函数式编程的日趋火热，&lt;a href=&#34;https://en.wikipedia.org/wiki/Closure_%28computer_programming%29&#34;&gt;闭包&lt;/a&gt;逐渐成为了 buzzword，但我相信没几个人（希望你是那少数人）能够准确概括出闭包的精髓，而其实闭包这一概念也是解决变量作用域问题。&lt;/p&gt;
+&lt;p&gt;这篇文章首先介绍作用域相关的知识，主要是比较 dynamic scope 与 static(或lexical) scope 语言的优劣势；然后分析 Python 中为什么需要&lt;code&gt;global&lt;/code&gt;和&lt;code&gt;nonlocal&lt;/code&gt;，Javascript 为什么有&lt;code&gt;变量提升&lt;/code&gt;，我这里不仅仅是介绍what，更重要的是why，要知道这两门语言的设计者都是深耕CS领域多年的老手，不会轻易犯错的，肯定有“不为人知”的一面，但遗憾的是网上大部分文章就是解释what，很少有涉及到why的，希望我这篇文章能够填充这一空缺；最后介绍闭包这一重要概念。&lt;/p&gt;
+&lt;h2 id=&#34;作用域&#34;&gt;作用域&lt;/h2&gt;
+&lt;p&gt;简单来说，作用域限定了程序中变量的查找范围。&lt;/p&gt;
+&lt;p&gt;在编程语言中有子过程（subroutine，也称为函数、过程）之前，所有的变量都在一个称为“global”的环境中，现在来看这当然是非常不合理，所以在之后有子过程的大部分静态语言（变量的类型不可变）里面，不同的 block（像if、while、for、函数等），具有不同的环境。例如：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt; 1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 4
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 5
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 6
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 7
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 8
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 9
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;10
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;11
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-c&#34; data-lang=&#34;c&#34;&gt;&lt;span class=&#34;cp&#34;&gt;#include&lt;/span&gt; &lt;span class=&#34;cpf&#34;&gt;&amp;lt;stdio.h&amp;gt;&lt;/span&gt;&lt;span class=&#34;cp&#34;&gt;
+&lt;/span&gt;&lt;span class=&#34;cp&#34;&gt;&lt;/span&gt;
+&lt;span class=&#34;kt&#34;&gt;int&lt;/span&gt; &lt;span class=&#34;nf&#34;&gt;main&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;()&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
+    &lt;span class=&#34;k&#34;&gt;if&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;1&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;==&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;1&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
+        &lt;span class=&#34;kt&#34;&gt;int&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;i&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;1&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;
+    &lt;span class=&#34;p&#34;&gt;}&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;else&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
+        &lt;span class=&#34;kt&#34;&gt;int&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;i&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;2&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;
+    &lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
+    &lt;span class=&#34;n&#34;&gt;printf&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s&#34;&gt;&amp;#34;i = %d&lt;/span&gt;&lt;span class=&#34;se&#34;&gt;\n&lt;/span&gt;&lt;span class=&#34;s&#34;&gt;&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;i&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;);&lt;/span&gt;  &lt;span class=&#34;c1&#34;&gt;// error: use of undeclared identifier &amp;#39;i&amp;#39;
+&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;k&#34;&gt;return&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;0&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;
+&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;上面代码片段是一简单的 C 语言程序，在执行 if 代码块时，会新创建一个环境（称为E1，其外围环境为全局环境E0。见下图），然后在 E1 中定义变量&lt;code&gt;i&lt;/code&gt;，在 if 代码块结束后，E1 这个环境就会被删除，这时 main 函数后面的程序就无法访问 if 代码块的变量了。&lt;/p&gt;
+&lt;center&gt;
+&lt;img src=&#34;https://img.alicdn.com/imgextra/i4/581166664/TB2SPDZpFXXXXaVXXXXXXXXXXXX_!!581166664.png&#34; alt=&#34; if 代码块示意图&#34;/&gt;
+&lt;/center&gt;
+&lt;p&gt;上面这一做法符合我们的直观印象，也是比较合理的设计。但是在一些动态语言（变量的类型可以任意改变）中，并没有变量声明与使用的区别，而是在第一次使用时去声明这个变量，像下面这个 Python 示例：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;4
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;5
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;6
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;k&#34;&gt;if&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;1&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;==&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;1&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;
+    &lt;span class=&#34;n&#34;&gt;i&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;1&lt;/span&gt;
+&lt;span class=&#34;k&#34;&gt;else&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;
+    &lt;span class=&#34;n&#34;&gt;i&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;2&lt;/span&gt;
+
+&lt;span class=&#34;k&#34;&gt;print&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;i&lt;/span&gt;  &lt;span class=&#34;c1&#34;&gt;# 输出 1&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;在 Python 中，执行 if 代码块时不会去创建新的环境，而是在 if 代码块所处的环境中去执行。&lt;/p&gt;
+&lt;p&gt;根据我目前所了解到的：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;静态语言（C、Java、C#等）具有块级别（block level，包含if、while、for、switch、函数等）的变量作用域；&lt;/li&gt;
+&lt;li&gt;动态语言（Javascript、Python、Ruby等）只具有函数级别（function level）的变量作用域&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3 id=&#34;dynamic-scope-vs-static-scope&#34;&gt;dynamic scope vs. static scope&lt;/h3&gt;
+&lt;p&gt;首先声明一点，这里的dynamic与static是指的变量的作用域，不是指变量的类型，与动态语言与静态语言要区分开。&lt;/p&gt;
+&lt;p&gt;在上面我们了解到，所有的高级语言都具有函数作用域。我们一般是这样使用函数的，先声明再使用，也就是说函数的声明与使用是分开的，这就涉及到一个问题，函数作用域的外围环境是声明时的还是运行时的呢？不同的外围环境对应不同的语言：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;dynamic scope 的语言，函数作用域的外围环境是&lt;code&gt;运行时&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;static scope 的语言，函数作用域的外围环境是&lt;code&gt;声明时&lt;/code&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;看下面这个 Python 示例：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;4
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;5
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;6
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;7
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;8
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;9
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;    &lt;span class=&#34;c1&#34;&gt;# foo.py&lt;/span&gt;
+    &lt;span class=&#34;n&#34;&gt;s&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;foo&amp;#34;&lt;/span&gt;
+    &lt;span class=&#34;k&#34;&gt;def&lt;/span&gt; &lt;span class=&#34;nf&#34;&gt;foo&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;():&lt;/span&gt;
+        &lt;span class=&#34;k&#34;&gt;print&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;s&lt;/span&gt;
+
+    &lt;span class=&#34;c1&#34;&gt;# bar.py&lt;/span&gt;
+    &lt;span class=&#34;kn&#34;&gt;from&lt;/span&gt; &lt;span class=&#34;nn&#34;&gt;foo&lt;/span&gt; &lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;foo&lt;/span&gt;
+    &lt;span class=&#34;n&#34;&gt;s&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;bar&amp;#34;&lt;/span&gt;
+    &lt;span class=&#34;n&#34;&gt;foo&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;()&lt;/span&gt;   &lt;span class=&#34;c1&#34;&gt;# 输出 foo&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;上面的示例包括两个文件：&lt;code&gt;foo.py&lt;/code&gt;、&lt;code&gt;bar.py&lt;/code&gt;，在&lt;code&gt;bar.py&lt;/code&gt;中调用&lt;code&gt;foo.py&lt;/code&gt;的&lt;code&gt;foo&lt;/code&gt;函数，因为 Python 属于 static scope 的语言，所以这时的环境是这样的：&lt;/p&gt;
+&lt;center&gt;
+&lt;img src=&#34;https://img.alicdn.com/imgextra/i4/581166664/TB2yp6lpFXXXXXAXFXXXXXXXXXX_!!581166664.png&#34; alt=&#34; 在 bar 中调用 foo 函数时的环境示意图&#34;/&gt;
+&lt;/center&gt;
+在调用 foo 时，会创建一新环境E1，E1 虽然是在 bar 的全局环境中创建的，但是其外围指向的是 foo 的全局环境。在执行 foo 函数时，变量的查找顺序是这样的：
+1. 首先在 E1 中找到，找不到就会去其外围环境中去查找；找到则直接返回
+2. 在E1外围环境中查找，如果找到直接返回，如果找不到则再在外围环境的外围环境中继续查找，止到外围环境为空（foo、bar 模块的全局环境的外围指向均为空）
+3. 去语言内置的变量中去查找，找到则直接返回；找不到就会报错。
+&lt;p&gt;static scope 是比较符合正常思维的，也是比较正确的实现方式，否则我们在使用第三份类库时，很容易就会发生变量冲突或覆盖的情况。采用 dynamic scope 的语言都是比较古老的，现在还比较常见的是 Shell，想想大家在写 Shell 时是多痛苦就知道 dynamic scope 是多么反人类了。&lt;/p&gt;
+&lt;h2 id=&#34;javascript-中的变量作用域&#34;&gt;JavaScript 中的变量作用域&lt;/h2&gt;
+&lt;p&gt;就像前面说的，Javascript 具有 function level 的 static scope，但是这里有一个常见的问题，具体代码：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt; 1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 4
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 5
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 6
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 7
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 8
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 9
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;10
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;11
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-js&#34; data-lang=&#34;js&#34;&gt;&lt;span class=&#34;kd&#34;&gt;var&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;list&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;nb&#34;&gt;document&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;getElementById&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;list&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;);&lt;/span&gt;
+
+&lt;span class=&#34;k&#34;&gt;for&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;kd&#34;&gt;var&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;i&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;1&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;i&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;&amp;lt;=&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;5&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;i&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;++&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
+    &lt;span class=&#34;kd&#34;&gt;var&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;item&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;nb&#34;&gt;document&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;createElement&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;li&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;);&lt;/span&gt;
+    &lt;span class=&#34;nx&#34;&gt;item&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;appendChild&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nb&#34;&gt;document&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;createTextNode&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;Item &amp;#34;&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;+&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;i&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;));&lt;/span&gt;
+
+    &lt;span class=&#34;nx&#34;&gt;item&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;onclick&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;kd&#34;&gt;function&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;ev&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
+        &lt;span class=&#34;nx&#34;&gt;alert&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;Item &amp;#34;&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;+&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;i&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;+&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34; is clicked.&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;);&lt;/span&gt;
+    &lt;span class=&#34;p&#34;&gt;};&lt;/span&gt;
+    &lt;span class=&#34;nx&#34;&gt;list&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;appendChild&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;item&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;);&lt;/span&gt;
+&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;你也许会想当然的认为依次单击时每个Item会依次显示1,2,3&amp;hellip;，但其实这里无论你单击那个Item，都只会显示6，你可以去 &lt;a href=&#34;https://jsfiddle.net/jiacai2050/w6agke9d/&#34;&gt;JSFiddle&lt;/a&gt; 测试下。
+究其原因，就是因为每个item click 所对应的回调函数的声明与执行是分开的，而且 Javascript 中只有 function level 的作用域，所以在单击Item时的环境是这样的：&lt;/p&gt;
+&lt;center&gt;
+&lt;img src=&#34;https://img.alicdn.com/imgextra/i4/581166664/TB2YEkppFXXXXXbXXXXXXXXXXXX_!!581166664.png&#34; alt=&#34; 使用 var 定义 i 时，单击 Item 时的环境模型示意图&#34;/&gt;
+&lt;/center&gt;
+在 for 代码块执行完后，`i` 的值为6，又因为Javascript 中只有 function level 的作用域，所以这里的 `i` 被定义在了 E0 中。
+&lt;p&gt;为了解决这个问题，ES6 引入了&lt;code&gt;let&lt;/code&gt;，使用&lt;code&gt;let&lt;/code&gt;定义的变量具有 block level 的作用域，所以如果把上面的代码片段中的&lt;code&gt;var&lt;/code&gt;换成&lt;code&gt;let&lt;/code&gt;，环境会变成下面的形式：&lt;/p&gt;
+&lt;center&gt;
+&lt;img src=&#34;https://img.alicdn.com/imgextra/i2/581166664/TB29sDTpFXXXXXpXpXXXXXXXXXX_!!581166664.png&#34; alt=&#34; 使用 let 定义 i 时，单击 Item 时的环境模型示意图&#34;/&gt;
+&lt;/center&gt;
+相信大家通过上面的图示，可以解决心中的疑惑了。最后，给出一个思考，下面的代码片段输出什么值：
+```js
+var a = &#34;before&#34;;
+function foo(){
+    console.log(a);
+}
+function bar(fun){
+    var a = &#34;after&#34;;
+    fun();
+}
+bar(foo);   // 输出 ？
+```
+&lt;h3 id=&#34;hoisting&#34;&gt;hoisting&lt;/h3&gt;
+&lt;p&gt;先看一个比较典型的例子：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;4
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;5
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;6
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;7
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;8
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-js&#34; data-lang=&#34;js&#34;&gt;&lt;span class=&#34;kd&#34;&gt;var&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;foo&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;1&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;
+&lt;span class=&#34;kd&#34;&gt;function&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;bar&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;()&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
+    &lt;span class=&#34;k&#34;&gt;if&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;!&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;foo&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
+        &lt;span class=&#34;kd&#34;&gt;var&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;foo&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;10&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;
+    &lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
+    &lt;span class=&#34;nx&#34;&gt;alert&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;foo&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;);&lt;/span&gt;
+&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
+&lt;span class=&#34;nx&#34;&gt;bar&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;();&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;你也许知道，这里弹出的值是10，而不是1，因为javascript会把所有的变量提前（hositing），也就是说，上面的代码等价于：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;4
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;5
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;6
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;7
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;8
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;9
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-js&#34; data-lang=&#34;js&#34;&gt;&lt;span class=&#34;kd&#34;&gt;var&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;foo&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;1&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;
+&lt;span class=&#34;kd&#34;&gt;function&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;bar&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;()&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
+    &lt;span class=&#34;kd&#34;&gt;var&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;foo&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;
+    &lt;span class=&#34;k&#34;&gt;if&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;!&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;foo&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
+        &lt;span class=&#34;nx&#34;&gt;foo&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;10&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;
+    &lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
+    &lt;span class=&#34;nx&#34;&gt;alert&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;foo&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;);&lt;/span&gt;
+&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
+&lt;span class=&#34;nx&#34;&gt;bar&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;();&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;上面这个例子就简单演示了什么是变量提升，下面重点讲述为什么要这么设计？首先看下面一段代码：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt; 1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 4
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 5
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 6
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 7
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 8
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 9
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;10
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;11
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;12
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;13
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;14
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;15
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;16
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;17
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;18
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;19
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-js&#34; data-lang=&#34;js&#34;&gt;&lt;span class=&#34;kd&#34;&gt;function&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;is_even&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;n&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
+  &lt;span class=&#34;k&#34;&gt;if&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;n&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;==&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;0&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
+    &lt;span class=&#34;k&#34;&gt;return&lt;/span&gt; &lt;span class=&#34;kc&#34;&gt;true&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;
+  &lt;span class=&#34;p&#34;&gt;}&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;else&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
+    &lt;span class=&#34;k&#34;&gt;return&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;is_odd&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;n&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;-&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;1&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;);&lt;/span&gt;      
+  &lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
+
+&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
+
+&lt;span class=&#34;nx&#34;&gt;is_even&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;2&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;);&lt;/span&gt; &lt;span class=&#34;c1&#34;&gt;// true
+&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;
+&lt;span class=&#34;kd&#34;&gt;function&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;is_odd&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;n&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
+  &lt;span class=&#34;k&#34;&gt;if&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;n&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;==&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;0&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
+    &lt;span class=&#34;k&#34;&gt;return&lt;/span&gt; &lt;span class=&#34;kc&#34;&gt;false&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;
+  &lt;span class=&#34;p&#34;&gt;}&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;else&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
+    &lt;span class=&#34;k&#34;&gt;return&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;is_even&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;n&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;-&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;1&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;);&lt;/span&gt;      
+  &lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
+&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
+
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;按照常规思维，在运行&lt;code&gt;is_even(2);&lt;/code&gt; 时，会去调用还没定义的&lt;code&gt;is_odd&lt;/code&gt;函数，所以应该会报错，但是由于 Javascript 里面有 hositing，所以是可以运行，但是为什么要这么设计呢？
+这要追溯到 Javascript 语言设计者的初衷了，Brendan Eich 在创造这门世界级语言时，一开始打算用 Scheme 的思想来实现，而且当时 Brendan 也是在看 SICP 这本书，&lt;a href=&#34;https://mitpress.mit.edu/sicp/full-text/book/book-Z-H-26.html#%25_sec_4.1.6&#34;&gt;SICP 4.1.6&lt;/a&gt; 在介绍内部定义时，给出了解决变量同一时刻定义的一种解决方式：将所有的变量名提前。这样同一环境中的其他地方就能够使用所有的定义了。需要注意的是，这里只是将变量名提前，赋值的动作不变，显然，Javascript 采用了这一思想（这其实是&lt;a href=&#34;https://en.wikipedia.org/wiki/Forward_declaration&#34;&gt;forward_declaration&lt;/a&gt; 技术的一种实现手段）。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt; 1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 4
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 5
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 6
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 7
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 8
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 9
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;10
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;11
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;12
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-lisp&#34; data-lang=&#34;lisp&#34;&gt;&lt;span class=&#34;c1&#34;&gt;;; SICP 书中的示例代码&lt;/span&gt;
+&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nb&#34;&gt;lambda&lt;/span&gt; &lt;span class=&#34;nv&#34;&gt;&amp;lt;vars&amp;gt;&lt;/span&gt;
+  &lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nv&#34;&gt;define&lt;/span&gt; &lt;span class=&#34;nv&#34;&gt;u&lt;/span&gt; &lt;span class=&#34;nv&#34;&gt;&amp;lt;e1&amp;gt;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+  &lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nv&#34;&gt;define&lt;/span&gt; &lt;span class=&#34;nv&#34;&gt;v&lt;/span&gt; &lt;span class=&#34;nv&#34;&gt;&amp;lt;e2&amp;gt;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+  &lt;span class=&#34;nv&#34;&gt;&amp;lt;e3&amp;gt;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;span class=&#34;c1&#34;&gt;;; 转为下面的形式&lt;/span&gt;
+&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nb&#34;&gt;lambda&lt;/span&gt; &lt;span class=&#34;nv&#34;&gt;&amp;lt;vars&amp;gt;&lt;/span&gt;
+  &lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;k&#34;&gt;let&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;((&lt;/span&gt;&lt;span class=&#34;nv&#34;&gt;u&lt;/span&gt; &lt;span class=&#34;ss&#34;&gt;&amp;#39;*unassigned*&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+        &lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nv&#34;&gt;v&lt;/span&gt; &lt;span class=&#34;ss&#34;&gt;&amp;#39;*unassigned*&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;))&lt;/span&gt;
+    &lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nv&#34;&gt;set!&lt;/span&gt; &lt;span class=&#34;nv&#34;&gt;u&lt;/span&gt; &lt;span class=&#34;nv&#34;&gt;&amp;lt;e1&amp;gt;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+    &lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nv&#34;&gt;set!&lt;/span&gt; &lt;span class=&#34;nv&#34;&gt;v&lt;/span&gt; &lt;span class=&#34;nv&#34;&gt;&amp;lt;e2&amp;gt;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+    &lt;span class=&#34;nv&#34;&gt;&amp;lt;e3&amp;gt;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;))&lt;/span&gt;  
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;这个问题有人在 Twitter &lt;a href=&#34;https://twitter.com/BrendanEich/status/33403701100154880&#34;&gt;问过 Brendan 这个问题&lt;/a&gt;，Brendan是这么回答的：&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;Function declaration hoisting is for mutual recursion &amp;amp; generally to avoid painful bottom-up ML-like order&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;对 Javascript 历史感兴趣的同学可以看看 Brendan 本人的自述：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://brendaneich.com/2011/06/new-javascript-engine-module-owner/&#34;&gt;https://brendaneich.com/2011/06/new-javascript-engine-module-owner/&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id=&#34;python-中的变量作用域&#34;&gt;Python 中的变量作用域&lt;/h2&gt;
+&lt;p&gt;准确来说，Python 里面有四种作用域：&lt;code&gt;function&lt;/code&gt;, &lt;code&gt;module&lt;/code&gt;, &lt;code&gt;global&lt;/code&gt;和 &lt;code&gt;class&lt;/code&gt; 作用域。由于 Python 不区分变量的声明，所以在第一次初始化变量时（必须为赋值操作）将变量加入当前环境中。如果在没对变量进行初始化的情况下使用该变量就会报运行时异常，但如果仅仅是访问（并不赋值）的情况下，查找变量的顺序会按照 LEGB 规则 (Local, Enclosing, Global, Built-in)。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;4
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;5
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;6
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;n&#34;&gt;s&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;hello&amp;#34;&lt;/span&gt;
+&lt;span class=&#34;k&#34;&gt;def&lt;/span&gt; &lt;span class=&#34;nf&#34;&gt;foo&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;():&lt;/span&gt;
+    &lt;span class=&#34;n&#34;&gt;s&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;+=&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;world&amp;#34;&lt;/span&gt;
+    &lt;span class=&#34;k&#34;&gt;return&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;s&lt;/span&gt;
+
+&lt;span class=&#34;n&#34;&gt;foo&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;()&lt;/span&gt;  &lt;span class=&#34;c1&#34;&gt;# UnboundLocalError: local variable &amp;#39;s&amp;#39; referenced before assignment    &lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;由于在函数 foo 中在没有对 s 初始化的情况下使用了该值，所以这里会报异常，解决的办法就是使用 global 关键字：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;4
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;5
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;6
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;7
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;s = &amp;#34;hello&amp;#34;
+def foo():
+    global s
+    s += &amp;#34; world&amp;#34;
+    return s
+
+foo()  # return &amp;#34;hello world&amp;#34;
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;但由于 global 关键字只能限定在&lt;code&gt;global&lt;/code&gt;作用域内查找变量，在有嵌套定义的时候就有问题了，比如：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;4
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;5
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;6
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;7
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;8
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;9
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;k&#34;&gt;def&lt;/span&gt; &lt;span class=&#34;nf&#34;&gt;foo&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;():&lt;/span&gt;
+    &lt;span class=&#34;n&#34;&gt;s&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;hello&amp;#34;&lt;/span&gt;
+    &lt;span class=&#34;k&#34;&gt;def&lt;/span&gt; &lt;span class=&#34;nf&#34;&gt;bar&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;():&lt;/span&gt;
+        &lt;span class=&#34;k&#34;&gt;global&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;s&lt;/span&gt;     &lt;span class=&#34;c1&#34;&gt;# NameError: global name &amp;#39;s&amp;#39; is not defined&lt;/span&gt;
+        &lt;span class=&#34;n&#34;&gt;s&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;+=&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34; world&amp;#34;&lt;/span&gt;
+        &lt;span class=&#34;k&#34;&gt;return&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;s&lt;/span&gt;
+    &lt;span class=&#34;k&#34;&gt;return&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;bar&lt;/span&gt;
+
+&lt;span class=&#34;n&#34;&gt;foo&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;()()&lt;/span&gt;    
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;Python 3 中引入了 &lt;code&gt;nonlocal&lt;/code&gt; 关键字来解决这个问题，：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;4
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;5
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;6
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;7
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;8
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;9
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;k&#34;&gt;def&lt;/span&gt; &lt;span class=&#34;nf&#34;&gt;foo&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;():&lt;/span&gt;
+    &lt;span class=&#34;n&#34;&gt;s&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;hello&amp;#34;&lt;/span&gt;
+    &lt;span class=&#34;k&#34;&gt;def&lt;/span&gt; &lt;span class=&#34;nf&#34;&gt;bar&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;():&lt;/span&gt;
+        &lt;span class=&#34;n&#34;&gt;nonlocal&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;s&lt;/span&gt;
+        &lt;span class=&#34;n&#34;&gt;s&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;+=&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34; world&amp;#34;&lt;/span&gt;
+        &lt;span class=&#34;k&#34;&gt;return&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;s&lt;/span&gt;
+    &lt;span class=&#34;k&#34;&gt;return&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;bar&lt;/span&gt;
+
+&lt;span class=&#34;n&#34;&gt;foo&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;()()&lt;/span&gt;   &lt;span class=&#34;c1&#34;&gt;# return &amp;#34;hello world&amp;#34;&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;在 Python 2 中，我们可以通过引入一可变容器解决（其实就是绕过直接修改 &lt;code&gt;s&lt;/code&gt; 的值）&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;4
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;5
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;6
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;7
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;8
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;k&#34;&gt;def&lt;/span&gt; &lt;span class=&#34;nf&#34;&gt;foo&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;():&lt;/span&gt;
+    &lt;span class=&#34;n&#34;&gt;s&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;hello&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;
+    &lt;span class=&#34;k&#34;&gt;def&lt;/span&gt; &lt;span class=&#34;nf&#34;&gt;bar&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;():&lt;/span&gt;
+        &lt;span class=&#34;n&#34;&gt;s&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;0&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;+=&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34; world&amp;#34;&lt;/span&gt;
+        &lt;span class=&#34;k&#34;&gt;return&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;s&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;0&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;
+    &lt;span class=&#34;k&#34;&gt;return&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;bar&lt;/span&gt;
+
+&lt;span class=&#34;n&#34;&gt;foo&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;()()&lt;/span&gt;   &lt;span class=&#34;c1&#34;&gt;# return &amp;#34;hello world&amp;#34;&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;h3 id=&#34;类级别作用域&#34;&gt;类级别作用域&lt;/h3&gt;
+&lt;p&gt;还是先看代码：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;4
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;5
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;6
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;7
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;k&#34;&gt;class&lt;/span&gt; &lt;span class=&#34;nc&#34;&gt;Foo&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nb&#34;&gt;object&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;):&lt;/span&gt;
+    &lt;span class=&#34;n&#34;&gt;username&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;Foo&amp;#34;&lt;/span&gt;
+    &lt;span class=&#34;k&#34;&gt;def&lt;/span&gt; &lt;span class=&#34;nf&#34;&gt;say_hello&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;bp&#34;&gt;self&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;):&lt;/span&gt;
+        &lt;span class=&#34;k&#34;&gt;print&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;Hello &lt;/span&gt;&lt;span class=&#34;si&#34;&gt;%s&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;%&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;username&lt;/span&gt;
+
+&lt;span class=&#34;n&#34;&gt;foo&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;Foo&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;()&lt;/span&gt;
+&lt;span class=&#34;n&#34;&gt;foo&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;say_hello&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;()&lt;/span&gt;  &lt;span class=&#34;c1&#34;&gt;# NameError: global name &amp;#39;username&amp;#39; is not defined                &lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;&lt;code&gt;username&lt;/code&gt;是定义在&lt;code&gt;Foo&lt;/code&gt;类级别的，内部的&lt;code&gt;say_hello&lt;/code&gt;方法在查找自由变量&lt;code&gt;username&lt;/code&gt;的作用域会按照上面说的LEGB 规则 (Local, Enclosing, Global, Built-in)，并不会去查找类级别作用域的变量，所以这里会报错。修改的方法也很简单：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span class=&#34;k&#34;&gt;def&lt;/span&gt; &lt;span class=&#34;nf&#34;&gt;say_hello&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;bp&#34;&gt;self&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;):&lt;/span&gt;
+    &lt;span class=&#34;k&#34;&gt;print&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;Hello &lt;/span&gt;&lt;span class=&#34;si&#34;&gt;%s&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;%&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;Foo&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;username&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;可以看到，Python 在试图省略掉变量声明的同时，反而造成了更复杂的情况，相关讨论在 Python mail-list 里面讨论也很火热，有兴趣的读者可以参考：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;http://legacy.python.org/dev/peps/pep-3104/&#34;&gt;PEP 3104 &amp;ndash; Access to Names in Outer Scopes&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id=&#34;闭包&#34;&gt;闭包&lt;/h2&gt;
+&lt;p&gt;还是先看一个例子：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;4
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;5
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;6
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;7
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-js&#34; data-lang=&#34;js&#34;&gt;&lt;span class=&#34;kd&#34;&gt;function&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;add&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;x&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
+  &lt;span class=&#34;k&#34;&gt;return&lt;/span&gt; &lt;span class=&#34;kd&#34;&gt;function&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;y&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
+    &lt;span class=&#34;k&#34;&gt;return&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;x&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;+&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;y&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;
+  &lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
+&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
+&lt;span class=&#34;kd&#34;&gt;var&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;add3&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;add&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;3&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;);&lt;/span&gt;
+&lt;span class=&#34;nx&#34;&gt;alert&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;add3&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;4&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;));&lt;/span&gt;  &lt;span class=&#34;c1&#34;&gt;// return 7
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;这里的&lt;code&gt;add3&lt;/code&gt;就是一闭包对象，它包括两部分，一个&lt;code&gt;函数&lt;/code&gt;与声明函数时的&lt;code&gt;环境&lt;/code&gt;。这就是闭包的核心，没有任何神奇的地方，闭包就是解决自由变量作用域的问题。&lt;/p&gt;
+&lt;h2 id=&#34;参考&#34;&gt;参考&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;http://www.adequatelygood.com/JavaScript-Scoping-and-Hoisting.html&#34;&gt;JavaScript Scoping and Hoisting&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;http://dmitrysoshnikov.com/notes/note-4-two-words-about-hoisting/&#34;&gt;Note 4. Two words about “hoisting”&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://hacks.mozilla.org/2015/07/es6-in-depth-let-and-const/&#34;&gt;ES6 In Depth: let and const&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://docs.python.org/3.5/reference/executionmodel.html#interaction-with-dynamic-features&#34;&gt;The Python Language Reference 4. Execution model&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+</description>
     </item>
     
     <item>
@@ -22,7 +493,847 @@
       <pubDate>Sat, 26 Mar 2016 00:00:00 +0000</pubDate>
       
       <guid>https://liujiacai.net/blog/2016/03/26/python-ruby-javascript/</guid>
-      <description>最近一直在看红宝石（ruby）语言，到现在为止，算是对其设计有一些了解。作为一动态语言，ruby 经常会拿来与 python 对比，确实这两门语言在语法层面</description>
+      <description>&lt;p&gt;最近一直在看红宝石（ruby）语言，到现在为止，算是对其设计有一些了解。作为一动态语言，ruby 经常会拿来与 python 对比，确实这两门语言在语法层面、实现层面有很多共同的地方，但是它们也在很多设计理念上存在重要差异，通过对比这些相同点、异同点，更加有助于理解这两门语言。同时，Node.js、React Native 的出现，将 javascript 这门“前端”语言推向了全栈，同样作为一门动态语言，javascript 与 ruby、python 在很多概念上也存在很多相同点、异同点。&lt;/p&gt;
+&lt;p&gt;本篇文章着重从编程语言设计的角度进行阐述，希望对编程语言爱好者理解这三门语言有所帮助，做到融会贯通。&lt;/p&gt;
+&lt;center&gt;
+&lt;img src=&#34;https://img.alicdn.com/imgextra/i4/581166664/TB2kVcxcByN.eBjSZFgXXXmGXXa_!!581166664.png&#34; alt=&#34; js_python_ruby&#34;/&gt;
+&lt;/center&gt;
+&lt;h2 id=&#34;讨论范围&#34;&gt;讨论范围&lt;/h2&gt;
+&lt;p&gt;Python、Ruby、Javascript(ECMAScript) 准确说是一种语言规范，规范可以有多种实现，这体现在不同的解释器上。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Python 的解释器主要有 CPython、IronPython、Jython、PyPy&lt;/li&gt;
+&lt;li&gt;Ruby 的解释器主要有 Ruby MRI(CRuby)、JRuby、MacRuby、IronRuby&lt;/li&gt;
+&lt;li&gt;Javascript 的解释器主要有 Chakra, SpiderMonkey, V8&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;本文主要讨论的是 CPython、CRuby，它们是其语言作者亲自设计的，也是应用场景最广的。
+Javascript 在语言设计之初根本没考虑到其应用范围会如此之广，所以相比其他语言，它语言内置的功能要弱很多，&lt;a href=&#34;http://es6-features.org/&#34;&gt;ES6&lt;/a&gt; 的出现就是为了解决这个问题，本文所涉及的 javascript 运行在基于 V8 引擎的 Node.js 中，且具备 ES6 语法。&lt;/p&gt;
+&lt;h2 id=&#34;语言定义&#34;&gt;语言定义&lt;/h2&gt;
+&lt;p&gt;首先看一下 wikipedia 上对这三门语言的定义：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Python is a widely used &lt;code&gt;high-level&lt;/code&gt;, &lt;code&gt;general-purpose&lt;/code&gt;, &lt;code&gt;interpreted&lt;/code&gt;, &lt;code&gt;dynamic&lt;/code&gt; programming language&lt;/li&gt;
+&lt;li&gt;Ruby is a &lt;code&gt;dynamic&lt;/code&gt;, &lt;code&gt;reflective&lt;/code&gt;, &lt;code&gt;object-oriented&lt;/code&gt;, &lt;code&gt;general-purpose&lt;/code&gt; programming language.&lt;/li&gt;
+&lt;li&gt;JavaScript is a &lt;code&gt;high-level&lt;/code&gt;, &lt;code&gt;dynamic&lt;/code&gt;, &lt;code&gt;untyped&lt;/code&gt;, and &lt;code&gt;interpreted&lt;/code&gt; programming language.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;其实上面标红的关键字对于这三门语言来说都适用，只是每个语言的强调点不一样而已。&lt;/p&gt;
+&lt;p&gt;通常会称这三门语言为&lt;code&gt;动态语言&lt;/code&gt;，支持&lt;code&gt;函数式&lt;/code&gt;、&lt;code&gt;面向对象&lt;/code&gt;两种编程范式，这两点其实是最重要的。&lt;/p&gt;
+&lt;h2 id=&#34;设计理念&#34;&gt;设计理念&lt;/h2&gt;
+&lt;p&gt;&lt;code&gt;既轻量又强大&lt;/code&gt;是大多数动态语言相通的设计理念，关于 javascript 设计理念更多的介绍可以参考我的&lt;a href=&#34;http://liujiacai.net/blog/2015/02/01/javascript-oop/#%E8%AE%BE%E8%AE%A1%E7%90%86%E5%BF%B5&#34;&gt;这篇文章介绍&lt;/a&gt;。至于 Python 与 Ruby 设计理念的区别，一句话即可概括：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Python: 一件事情只有一种方法做&lt;/li&gt;
+&lt;li&gt;Ruby: 一件事情有多种方法做&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;比如，Python 中 Tuple, Array, String 没有相应获取大小的方法，而是提供了统一的&lt;code&gt;len&lt;/code&gt;来解决这个问题&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;4
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;5
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;6
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;&amp;gt;&amp;gt;&amp;gt; len([1,2])
+2
+&amp;gt;&amp;gt;&amp;gt; len(&amp;#34;hello world&amp;#34;)
+11
+&amp;gt;&amp;gt;&amp;gt; len((1,2))
+2
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;至于 Ruby 的&lt;code&gt;一件事情有多种方法做&lt;/code&gt;的理念，后面我在讲解 lambda 与字符串拼接时再介绍。&lt;/p&gt;
+&lt;h2 id=&#34;语法&#34;&gt;语法&lt;/h2&gt;
+&lt;p&gt;如果你之前没接触过 ruby、python 的语法，推荐先去了解下：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;官方文档 &lt;a href=&#34;https://www.ruby-lang.org/en/documentation/quickstart/&#34;&gt;Ruby in Twenty Minutes&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;http://www.techotopia.com/index.php/Ruby_Essentials&#34;&gt;Ruby Essentials&lt;/a&gt;，两个小时绝对看完了&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;http://python-best-practice.liujiacai.net&#34;&gt;python 最佳实践&lt;/a&gt;，应该用不了半个小时&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;javascript 实在是太简单了，就不用特别看了。&lt;/p&gt;
+&lt;p&gt;综合来说，python、javascript 还是比较中规中矩的，即使 ES6 里面加了&lt;a href=&#34;https://github.com/lukehoban/es6features&#34;&gt;很多花哨的语法糖衣&lt;/a&gt;，但是也比较直观，但是 ruby 这个语言就比较变态了，各种符号，像&lt;code&gt;class Son &amp;lt; Father&lt;/code&gt;表示类的基础，&lt;code&gt;&amp;quot;hello&amp;quot; &amp;lt;&amp;lt; &amp;quot; world&amp;quot;&lt;/code&gt;表示字符串的拼接，&lt;code&gt;@var&lt;/code&gt;表示对象的成员变量，&lt;code&gt;@@var&lt;/code&gt;表示类的成员变量，&lt;code&gt;$var&lt;/code&gt;表示全局变量。&lt;/p&gt;
+&lt;p&gt;而且在 ruby 中，方法调用时的括号可有可无，即使有参数也可以省略：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;4
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;5
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;6
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;&amp;gt; def add(a, b)
+&amp;gt;     a + b
+&amp;gt; end
+&amp;gt;
+&amp;gt; add 1, 2
+=&amp;gt; 3
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;如果你对 Scheme 熟悉，上面的代码还能像下面这么写，是不是很亲切&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;4
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;5
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;6
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;&amp;gt; (def add a, b
+&amp;gt;     a + b
+&amp;gt; end)
+
+&amp;gt; (add 1, 2)
+=&amp;gt; 3
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;这也就是充分说明，括号在 ruby 中只是起到了“分割”的作用，并没有什么语法含义。&lt;/p&gt;
+&lt;h3 id=&#34;面向对象&#34;&gt;面向对象&lt;/h3&gt;
+&lt;p&gt;面向对象主要的核心是用&lt;code&gt;对象&lt;/code&gt;来达到数据封装的目的。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;javascript 基于原型链实现面向对象，更详细的介绍可以参考&lt;a href=&#34;http://liujiacai.net/blog/2015/02/01/javascript-oop/&#34;&gt;《javascript中的面向对象编程》&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;python、ruby 基于类来实现面向对象，和 java 类似，但是更纯粹些。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt; 1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 4
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 5
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 6
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 7
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 8
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 9
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;10
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;11
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;12
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;13
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;14
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;15
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;16
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;17
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;18
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;19
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;20
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;21
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;$ python
+&amp;gt;&amp;gt;&amp;gt; def func(): return 1
+&amp;gt;&amp;gt;&amp;gt; type(func)
+&amp;lt;type &amp;#39;function&amp;#39;&amp;gt;
+&amp;gt;&amp;gt;&amp;gt; func2 = lambda x: x
+&amp;gt;&amp;gt;&amp;gt; type(func2)
+&amp;lt;type &amp;#39;function&amp;#39;&amp;gt;
+&amp;gt;&amp;gt;&amp;gt; type(1)
+&amp;lt;type &amp;#39;int&amp;#39;&amp;gt;
+&amp;gt;&amp;gt;&amp;gt; dir(1)
+[&amp;#39;__abs__&amp;#39;, &amp;#39;__add__&amp;#39;, .....]
+#--------------------------------------------------#
+$ irb
+&amp;gt; def add(a, b)
+&amp;gt;    a + b
+&amp;gt; end
+&amp;gt; method(:add)
+=&amp;gt; #&amp;lt;Method: Object#add&amp;gt;
+# 上面 ruby 的例子中，使用了 Symbol 来表示 add 方法，这是由于 ruby 中直接写 add 表示函数调用
+&amp;gt; 1.methods
+=&amp;gt; [:%, :&amp;amp;, :*, :+, :-, :/, .....]
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;可以看到，在 python、ruby 中，像&lt;code&gt;1&lt;/code&gt;这样的数字字面量也是对象。&lt;/p&gt;
+&lt;h3 id=&#34;lambda-表达式&#34;&gt;lambda 表达式&lt;/h3&gt;
+&lt;p&gt;lambda 表达式表示的是匿名函数。由于在这三门语言中，函数均是一等成员，所以可以很方便的进行函数式编程&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt; 1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 4
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 5
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 6
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 7
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 8
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 9
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;10
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;11
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;$ node
+&amp;gt; [1,2,3].map((x) =&amp;gt; x + 1)
+[ 2, 3, 4 ]
+#--------------------------------------------------#
+$ python
+&amp;gt;&amp;gt;&amp;gt; map(lambda x: x+1, [1,2,3])
+[2, 3, 4]
+#--------------------------------------------------#
+$ irb
+&amp;gt; [1,2,3].map &amp;amp;(lambda {|x| x+1})
+ =&amp;gt; [2, 3, 4]
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;Python 的 lambda 表达式是这三者中最弱的一个，只能包含一个表达式，javascript 与 ruby 的则没有这种限制。&lt;/p&gt;
+&lt;p&gt;细心的读者会发现上面 ruby 版本的 lambda 前有个&lt;code&gt;&amp;amp;&lt;/code&gt;，这是必须的，否则会报下面的错误&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;ArgumentError: wrong number of arguments (given 1, expected 0)
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;这是因为在 ruby 中，方法除了接受参数外，还可以接受一个代码块(block)，代码块在 ruby 中有两种写法：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;一行的话用&lt;code&gt;{}&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;多行的话用&lt;code&gt;do ... end&lt;/code&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;4
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;5
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;6
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;7
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;8
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;&amp;gt; [1,2,3].each { |num| print &amp;#34;#{num}! &amp;#34; }
+1! 2! 3!
+=&amp;gt;[1,2,3]
+&amp;gt; [1,2,3].each do |num|
+&amp;gt;    print &amp;#34;#{num}!&amp;#34;
+&amp;gt; end
+1! 2! 3!
+ =&amp;gt;[1,2,3]         # Identical to the first case.
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;&lt;code&gt;&amp;amp;&lt;/code&gt; 的作用是告诉解释器，现在传入的不是正常的参数，而是一个代码块。这个传入的代码块在方法内通过&lt;code&gt;yield&lt;/code&gt;进行调用。这里可以做个演示：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt; 1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 4
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 5
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 6
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 7
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 8
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 9
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;10
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;11
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;12
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;13
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;14
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;class Array
+  def my_each
+    i = 0
+    while i &amp;lt; self.size
+        yield(self[i])  
+        i+=1      
+    end
+    self
+  end
+end
+
+&amp;gt; [1,2,3].my_each { |num| print &amp;#34;#{num}!&amp;#34; }
+1! 2! 3!
+=&amp;gt; [1,2,3]
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;Ruby 中 lambda 表达式属于 &lt;a href=&#34;http://ruby-doc.org/core-2.2.0/Proc.html&#34;&gt;Proc 类型&lt;/a&gt;，&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;&amp;gt; lambda {|x| x}.class
+=&amp;gt; Proc
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;这里可以看到，只是对于闭包的支持，Ruby 就提供了多种方案。更多可以参考：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;http://www.eriktrautman.com/posts/ruby-explained-blocks-procs-and-lambdas-aka-closures&#34;&gt;Ruby Explained: Blocks, Procs, and Lambdas, aka &amp;ldquo;Closures&amp;rdquo;&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://blog.newrelic.com/2015/04/30/weird-ruby-part-4-code-pods/&#34;&gt;Weird Ruby Part 4: Code Pods (Blocks, Procs, and Lambdas)&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3 id=&#34;yield&#34;&gt;yield&lt;/h3&gt;
+&lt;p&gt;就像上面说的，ruby 中 &lt;code&gt;yield&lt;/code&gt; 就是表示代码块的调用，没有其他含义。而在 python 与 javascript &lt;code&gt;yield&lt;/code&gt; 是用来构造&lt;a href=&#34;https://wiki.python.org/moin/Generators&#34;&gt;生成器（generator）&lt;/a&gt;的，都是用来控制程序运行流程，相当于用户态的“线程”：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt; 1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 4
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 5
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 6
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 7
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 8
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 9
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;10
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;11
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;12
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;13
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;14
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;15
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;16
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;17
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;18
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;19
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;$ python
+def iter():
+    for x in xrange(10):
+        yield x
+
+foo = iter()
+print next(foo)
+print next(foo)
+#--------------------------------------------------#
+
+$ node
+function* iter() {
+ for (var i = 0; i &amp;lt; 10; i++)
+    yield i
+}
+var foo = iter()
+console.log(foo.next().value)
+console.log(foo.next().value)
+
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;上面两份代码都依次打印出&lt;code&gt;0&lt;/code&gt;, &lt;code&gt;1&lt;/code&gt;。&lt;/p&gt;
+&lt;p&gt;关于生成器的更多资料，可以参考：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://strongloop.com/strongblog/how-to-generators-node-js-yield-use-cases/&#34;&gt;Generators in Node.js: Common Misconceptions and Three Good Use Cases&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;http://www.dabeaz.com/coroutines/Coroutines.pdf&#34;&gt;More details on Python generators and coroutines&lt;/a&gt;（强烈推荐 Python 读者看）&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;在 ruby 中，与生成器对应的概念是 &lt;a href=&#34;http://ruby-doc.org/core-2.2.0/Fiber.html&#34;&gt;Fiber&lt;/a&gt;，例如：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;4
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;5
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;6
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;7
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;8
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;iter = Fiber.new do
+  (0..10).each do |x|
+    Fiber.yield x
+  end
+end
+
+puts iter.resume
+puts iter.resume
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;上面的代码也依次打印出&lt;code&gt;0&lt;/code&gt;, &lt;code&gt;1&lt;/code&gt;。&lt;/p&gt;
+&lt;p&gt;关于生成器与 Fiber 的关系，可以参考：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://nikolaygrozev.wordpress.com/2015/07/14/overview-of-modern-concurrency-and-parallelism-concepts/comment-page-1&#34;&gt;Overview of Modern Concurrency and Parallelism Concepts&lt;/a&gt; （需翻墙，强烈推荐读者看）&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;http://merbist.com/2011/02/22/concurrency-in-ruby-explained/&#34;&gt;http://merbist.com/2011/02/22/concurrency-in-ruby-explained/&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;其实，生成器、Fiber 以及相关概念背后的理论基础是 &lt;a href=&#34;https://en.wikipedia.org/wiki/Continuation&#34;&gt;continuation&lt;/a&gt;，continuation 的应用场景非常广泛，各种编程语言中的&lt;a href=&#34;https://en.wikipedia.org/wiki/Exception_handling&#34;&gt;异常处理&lt;/a&gt;也是基于它来实现的。鉴于这个话题比较大，这里不再展开叙述，感兴趣的读者可以参考&lt;a href=&#34;http://matt.might.net/articles/programming-with-continuations--exceptions-backtracking-search-threads-generators-coroutines/&#34;&gt;这篇文章&lt;/a&gt;，后面我也会单独再写一篇文章进行介绍。
+这里仅仅给出 continuation 的一个简单示例以飨读者：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;4
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;5
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;6
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;7
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;; Scheme 语言中没有 return 语句，利用 continuation 可以模拟 return
+(define (f return)
+  (return 2)
+  3)
+
+(display (f (lambda (x) x))) ; displays 3
+(display (call-with-current-continuation f)) ; displays 2
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;关于这里例子详细的解释可以参考&lt;a href=&#34;https://en.wikipedia.org/wiki/Call-with-current-continuation#Examples&#34;&gt;WIKI Call-with-current-continuation&lt;/a&gt;。&lt;/p&gt;
+&lt;h3 id=&#34;字符串&#34;&gt;字符串&lt;/h3&gt;
+&lt;h4 id=&#34;immutable-vs-mutable&#34;&gt;immutable vs mutable&lt;/h4&gt;
+&lt;p&gt;&lt;a href=&#34;https://liujiacai.net/blog/2015/11/20/strings/&#34;&gt;字符串&lt;/a&gt;作为对字符的一种抽象，实现时有两种选择：可变的与不可变的。这两种实现的优缺点如下：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;可变的字符串，这意味着对字符串进行修改、追加等操作时可在原有字符串基础上直接操作，比较节省空间。但是可变的特点会导致如下几个问题：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;相等性（equality）。如果一个对象是可变的，我们应该如何判断两个对象是相等的呢？这里还有个容易混淆的概念：同一性（identity），同一性是指两个变量指向同一个对象，相等性指两个变量指向不同的两个对象，但这两个对象的值是一样的。
+
+  &lt;figure&gt;
+    &lt;img src=&#34;https://img.alicdn.com/imgextra/i3/581166664/TB29NApmFXXXXbvXpXXXXXXXXXX_!!581166664.png&#34; alt=&#34;string_identity_equal&#34;&gt;
+    &lt;figcaption&gt;&lt;center&gt;string_identity_equal&lt;/center&gt;&lt;/figcaption&gt;
+  &lt;/figure&gt;
+
+&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;并发性（concurrence）。在多线程的环境中，需要对可变对象进行各种复杂的锁机制来保障其正确性。&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;不可变字符串没有上面的两个问题，但是不可变字符串在进行修改时由于会新生成一个对象，所以会比较消耗空间，所以这采用不可变字符串实现的语言一般都会提供一个具备 buffer 的字符串构造对象来生成字符串，像 Java 中的 &lt;a href=&#34;https://docs.oracle.com/javase/7/docs/api/java/lang/StringBuffer.html&#34;&gt;StringBuffer&lt;/a&gt;，Python 中的 &lt;a href=&#34;https://docs.python.org/2/library/stringio.html&#34;&gt;StringIO&lt;/a&gt;。&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Ruby 中字符串是&lt;code&gt;可变&lt;/code&gt;的，但是 Ruby 中提供了不可变字符串的替代品 Symbol，而且 Ruby 2.3 也提供了&lt;code&gt;--enable-frozen-string-literal&lt;/code&gt; 选项用以声明字符串是不可变的。具体可参考：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://wyeworks.com/blog/2015/12/1/-strings-in-ruby-2-dot-3&#34;&gt;https://wyeworks.com/blog/2015/12/1/-strings-in-ruby-2-dot-3&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt; 1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 4
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 5
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 6
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 7
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 8
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 9
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;10
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;11
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;12
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;13
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;14
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;15
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;16
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;17
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;18
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;19
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;20
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;21
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;22
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;23
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;24
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;25
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;26
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;$ irb
+&amp;gt; &amp;#34;a&amp;#34;.equal? &amp;#34;a&amp;#34;   # equals?--- identity comparison
+ =&amp;gt; false
+&amp;gt; &amp;#34;a&amp;#34;.eql? &amp;#34;a&amp;#34;     # eql?   --- hash equality
+ =&amp;gt; true
+&amp;gt; &amp;#34;a&amp;#34; == &amp;#34;a&amp;#34;       # ==     --- generic &amp;#34;equality&amp;#34;
+ =&amp;gt; true
+&amp;gt; str = &amp;#34;hello&amp;#34;
+ =&amp;gt; &amp;#34;hello&amp;#34;
+&amp;gt; str.__id__
+ =&amp;gt; 70099860517540
+&amp;gt; &amp;#34;hello&amp;#34;.__id__
+ =&amp;gt; 70099856137920
+&amp;gt; str &amp;lt;&amp;lt; &amp;#34; world&amp;#34;
+ =&amp;gt; &amp;#34;hello world&amp;#34;
+&amp;gt; str.__id__
+ =&amp;gt; 70099860517540     # 与之前的 id 一样，说明 str 所指向的对象没变
+
+&amp;gt; str = &amp;#34;hello&amp;#34;
+ =&amp;gt; &amp;#34;hello&amp;#34;
+&amp;gt; str.__id__
+ =&amp;gt; 70099860630880
+&amp;gt; str += &amp;#34; world&amp;#34;
+ =&amp;gt; &amp;#34;hello world&amp;#34;
+&amp;gt; str.__id__
+ =&amp;gt; 70099856250160    # 与之前的 id 不一样，说明 += 在进行字符串拼接时，会生成一新对象
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;Python、Javascript 中字符串都是&lt;code&gt;不可变&lt;/code&gt;的。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt; 1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 4
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 5
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 6
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 7
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 8
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 9
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;10
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;11
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;12
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;13
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;14
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;15
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;16
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;17
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;$ python
+&amp;gt;&amp;gt;&amp;gt; str = &amp;#34;hello world&amp;#34;
+&amp;gt;&amp;gt;&amp;gt; str2 = str.replace(&amp;#34;o&amp;#34;, &amp;#34;oo&amp;#34;)
+&amp;gt;&amp;gt;&amp;gt; str
+&amp;#39;hello world&amp;#39;
+&amp;gt;&amp;gt;&amp;gt; str2
+&amp;#39;helloo woorld&amp;#39;
+
+$ node
+&amp;gt; str = &amp;#34;hello world&amp;#34;
+&amp;#39;hello world&amp;#39;
+&amp;gt; str2 = str.replace(&amp;#34;o&amp;#34;, &amp;#34;oo&amp;#34;)
+&amp;#39;helloo world&amp;#39;
+&amp;gt; str
+&amp;#39;hello world&amp;#39;
+&amp;gt; str2
+&amp;#39;helloo world&amp;#39;
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;h4 id=&#34;拼接&#34;&gt;拼接&lt;/h4&gt;
+&lt;p&gt;大多数语言都可以直接通过&lt;code&gt;+&lt;/code&gt;进行字符串的拼接，但是这样做既不优雅，效率也低，所以一些语言会有些替代方案。
+Ruby 与 Python 中对这块的支持比较强大，ES6 中借鉴了以上两门语言的语法，引入了 &lt;a href=&#34;https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_literals&#34;&gt;template_string&lt;/a&gt;，这在极大程度上方便了字符串的拼接。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt; 1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 4
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 5
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 6
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 7
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 8
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 9
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;10
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;11
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;12
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;13
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;14
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;15
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;16
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;17
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;18
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;$ node
+&amp;gt; var a = 5;
+&amp;gt; var b = 10;
+&amp;gt; console.log(`Fifteen is ${a + b} and\nnot ${2 * a + b}.`);
+// &amp;#34;Fifteen is 15 and
+// not 20.&amp;#34;
+#--------------------------------------------------#
+$ python
+&amp;gt; long_string = &amp;#34;&amp;#34;&amp;#34;
+&amp;gt; my name is {username},
+&amp;gt; my age is {age}
+&amp;gt; &amp;#34;&amp;#34;&amp;#34;.format(username=&amp;#34;zhangsan&amp;#34;, age=10)
+#--------------------------------------------------#
+$ irb
+&amp;gt; long_string = &amp;#34;&amp;#34;&amp;#34;
+&amp;gt; my name is %{username},
+&amp;gt; my age is %{age}
+&amp;gt; &amp;#34;&amp;#34;&amp;#34; % {username: &amp;#34;zhangsan&amp;#34;, age:10}
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;就是上面不可变字符串缺点中说的，对字符串进行追加时效率比较低，那么在 Python 与 Javascript 中进行大量字符串拼接时该采用什么方式呢？下面给出我的两组测试：&lt;/p&gt;
+&lt;h5 id=&#34;python&#34;&gt;Python&lt;/h5&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt; 1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 4
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 5
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 6
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 7
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 8
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 9
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;10
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;11
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;12
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;13
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;14
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;15
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;16
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;17
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;18
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;19
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;20
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;21
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;22
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;23
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;24
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;25
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;26
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;27
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;28
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;29
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;30
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;31
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;32
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;33
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;34
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;35
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;36
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;37
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;38
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;39
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;40
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;41
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;42
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;43
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;44
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;45
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;46
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;47
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;48
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;49
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;50
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;51
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;52
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;53
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-go&#34; data-lang=&#34;go&#34;&gt;&lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;time&lt;/span&gt;
+&lt;span class=&#34;nx&#34;&gt;try&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;
+    &lt;span class=&#34;nx&#34;&gt;from&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;StringIO&lt;/span&gt; &lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;StringIO&lt;/span&gt;
+&lt;span class=&#34;nx&#34;&gt;except&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;ImportError&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;
+    &lt;span class=&#34;nx&#34;&gt;from&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;io&lt;/span&gt; &lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;StringIO&lt;/span&gt;  &lt;span class=&#34;err&#34;&gt;#&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;StringIO&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;is&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;in&lt;/span&gt; &lt;span class=&#34;kn&#34;&gt;package&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;io&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;in&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;python&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;3&lt;/span&gt;
+
+&lt;span class=&#34;nx&#34;&gt;try&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;
+    &lt;span class=&#34;nx&#34;&gt;xrange&lt;/span&gt;
+&lt;span class=&#34;nx&#34;&gt;except&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;NameError&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;
+    &lt;span class=&#34;nx&#34;&gt;xrange&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;range&lt;/span&gt;  &lt;span class=&#34;err&#34;&gt;#&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;xrange&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;is&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;gone&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;in&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;python&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;3&lt;/span&gt;
+
+
+&lt;span class=&#34;nx&#34;&gt;def&lt;/span&gt; &lt;span class=&#34;nf&#34;&gt;method1&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;loop_count&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;):&lt;/span&gt;
+    &lt;span class=&#34;nx&#34;&gt;start&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;time&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nf&#34;&gt;time&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;()&lt;/span&gt;
+    &lt;span class=&#34;nx&#34;&gt;out_str&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;err&#34;&gt;&amp;#39;&amp;#39;&lt;/span&gt;
+    &lt;span class=&#34;k&#34;&gt;for&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;num&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;in&lt;/span&gt; &lt;span class=&#34;nf&#34;&gt;xrange&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;loop_count&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;):&lt;/span&gt;
+        &lt;span class=&#34;nx&#34;&gt;out_str&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;+=&lt;/span&gt; &lt;span class=&#34;nf&#34;&gt;repr&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;num&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+
+    &lt;span class=&#34;nb&#34;&gt;print&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s&#34;&gt;&amp;#34;+= : %f seconds&amp;#34;&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;%&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;time&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nf&#34;&gt;time&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;()&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;-&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;start&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;))&lt;/span&gt;
+    &lt;span class=&#34;k&#34;&gt;return&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;out_str&lt;/span&gt;
+
+
+&lt;span class=&#34;nx&#34;&gt;def&lt;/span&gt; &lt;span class=&#34;nf&#34;&gt;method2&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;loop_count&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;):&lt;/span&gt;
+    &lt;span class=&#34;nx&#34;&gt;start&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;time&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nf&#34;&gt;time&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;()&lt;/span&gt;
+    &lt;span class=&#34;nx&#34;&gt;str_list&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;[]&lt;/span&gt;
+    &lt;span class=&#34;k&#34;&gt;for&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;num&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;in&lt;/span&gt; &lt;span class=&#34;nf&#34;&gt;xrange&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;loop_count&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;):&lt;/span&gt;
+        &lt;span class=&#34;nx&#34;&gt;str_list&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nb&#34;&gt;append&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nf&#34;&gt;repr&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;num&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;))&lt;/span&gt;
+    &lt;span class=&#34;nx&#34;&gt;out_str&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;err&#34;&gt;&amp;#39;&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nf&#34;&gt;join&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;str_list&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+    &lt;span class=&#34;nb&#34;&gt;print&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s&#34;&gt;&amp;#34;list + join : %f seconds&amp;#34;&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;%&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;time&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nf&#34;&gt;time&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;()&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;-&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;start&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;))&lt;/span&gt;
+    &lt;span class=&#34;k&#34;&gt;return&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;out_str&lt;/span&gt;
+
+
+&lt;span class=&#34;nx&#34;&gt;def&lt;/span&gt; &lt;span class=&#34;nf&#34;&gt;method3&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;loop_count&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;):&lt;/span&gt;
+    &lt;span class=&#34;nx&#34;&gt;start&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;time&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nf&#34;&gt;time&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;()&lt;/span&gt;
+    &lt;span class=&#34;nx&#34;&gt;out_str&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;err&#34;&gt;&amp;#39;&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nf&#34;&gt;join&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;([&lt;/span&gt;&lt;span class=&#34;nf&#34;&gt;repr&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;num&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;for&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;num&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;in&lt;/span&gt; &lt;span class=&#34;nf&#34;&gt;xrange&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;loop_count&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)])&lt;/span&gt;
+    &lt;span class=&#34;nb&#34;&gt;print&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s&#34;&gt;&amp;#34;list comprehension + join : %f seconds&amp;#34;&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;%&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;time&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nf&#34;&gt;time&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;()&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;-&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;start&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;))&lt;/span&gt;
+    &lt;span class=&#34;k&#34;&gt;return&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;out_str&lt;/span&gt;
+
+&lt;span class=&#34;nx&#34;&gt;def&lt;/span&gt; &lt;span class=&#34;nf&#34;&gt;method4&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;loop_count&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;):&lt;/span&gt;
+    &lt;span class=&#34;nx&#34;&gt;start&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;time&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nf&#34;&gt;time&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;()&lt;/span&gt;
+    &lt;span class=&#34;nx&#34;&gt;file_str&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;nf&#34;&gt;StringIO&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;()&lt;/span&gt;
+    &lt;span class=&#34;k&#34;&gt;for&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;num&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;in&lt;/span&gt; &lt;span class=&#34;nf&#34;&gt;xrange&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;loop_count&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;):&lt;/span&gt;
+        &lt;span class=&#34;nx&#34;&gt;file_str&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nf&#34;&gt;write&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nf&#34;&gt;repr&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;num&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;))&lt;/span&gt;
+
+    &lt;span class=&#34;nx&#34;&gt;out_str&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;file_str&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nf&#34;&gt;getvalue&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;()&lt;/span&gt;
+    &lt;span class=&#34;nb&#34;&gt;print&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s&#34;&gt;&amp;#34;StringIO : %f seconds&amp;#34;&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;%&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;time&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nf&#34;&gt;time&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;()&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;-&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;start&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;))&lt;/span&gt;
+    &lt;span class=&#34;k&#34;&gt;return&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;out_str&lt;/span&gt;
+
+&lt;span class=&#34;nx&#34;&gt;loop_count&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;1000000&lt;/span&gt;
+&lt;span class=&#34;nf&#34;&gt;method1&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;loop_count&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;span class=&#34;nf&#34;&gt;method2&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;loop_count&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;span class=&#34;nf&#34;&gt;method3&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;loop_count&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;span class=&#34;nf&#34;&gt;method4&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;loop_count&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;下面给出统计结果&lt;/p&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th&gt;python版本&lt;/th&gt;
+&lt;th&gt;+=&lt;/th&gt;
+&lt;th&gt;list + join&lt;/th&gt;
+&lt;th&gt;list comprehension + join&lt;/th&gt;
+&lt;th&gt;stringIO&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td&gt;2.7.6&lt;/td&gt;
+&lt;td&gt;0.181868&lt;/td&gt;
+&lt;td&gt;0.219901&lt;/td&gt;
+&lt;td&gt;0.194387&lt;/td&gt;
+&lt;td&gt;1.085162&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;3.5.0&lt;/td&gt;
+&lt;td&gt;0.330583&lt;/td&gt;
+&lt;td&gt;0.271803&lt;/td&gt;
+&lt;td&gt;0.229952&lt;/td&gt;
+&lt;td&gt;0.313573&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;p&gt;从上面的比较可以看出，&lt;code&gt;list comprehension + join&lt;/code&gt; 的方式时最快，而且写法也比较优雅的。&lt;/p&gt;
+&lt;h5 id=&#34;javascript&#34;&gt;Javascript&lt;/h5&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt; 1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 4
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 5
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 6
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 7
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 8
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 9
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;10
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;11
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;12
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;13
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;14
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;15
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;16
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;17
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;18
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;19
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;20
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;21
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;22
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;23
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;24
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;25
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;26
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;27
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;28
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;29
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;30
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;31
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;32
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;33
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;34
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;function method1(loop_count) {
+    var out_str = &amp;#34;&amp;#34;;
+    var start = Date.now()
+    for (i=0;i&amp;lt;loop_count;i++) {
+        out_str += i;
+    }
+    console.log(`+= cost : ${Date.now() - start} ms`);
+    return out_str;
+}
+function method2(loop_count) {
+    var arr = []
+    var start = Date.now()
+    for (i=0;i&amp;lt;loop_count;i++) {
+        arr.push(i);
+    }
+    var out_str = arr.join(&amp;#34;&amp;#34;);
+    console.log(`arr + join cost : ${Date.now() - start} ms`);
+    return out_str;
+}
+function method3(loop_count) {
+    var out_str = &amp;#34;&amp;#34;;
+    var start = Date.now()
+    for (i=0;i&amp;lt;loop_count;i++) {
+        out_str.concat(i);
+    }
+    console.log(`str.concat cost: ${Date.now() - start} ms`);
+    return out_str;
+}
+
+var loop_count = 1000000;
+method1(loop_count)
+method2(loop_count)
+method3(loop_count)
+
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th&gt;&lt;/th&gt;
+&lt;th&gt;+=&lt;/th&gt;
+&lt;th&gt;arr + join&lt;/th&gt;
+&lt;th&gt;str.concat&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td&gt;耗时（单位：ms）&lt;/td&gt;
+&lt;td&gt;199&lt;/td&gt;
+&lt;td&gt;230&lt;/td&gt;
+&lt;td&gt;126&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;p&gt;上面的测试结果使用 Node v5.9.1 测试出来的，从结果来看，&lt;code&gt;str.concat&lt;/code&gt; 是速度最快的。&lt;/p&gt;
+&lt;h3 id=&#34;查看值类型&#34;&gt;查看值类型&lt;/h3&gt;
+&lt;p&gt;动态语言最主要的特点就是&lt;code&gt;变量无类型&lt;/code&gt;，利用&lt;a href=&#34;https://en.wikipedia.org/wiki/Reflection_%28computer_programming%29&#34;&gt;反射机制&lt;/a&gt;可以查看&lt;code&gt;运行时变量的值的类型&lt;/code&gt;。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt; 1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 4
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 5
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 6
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 7
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 8
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 9
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;10
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;11
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;12
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;13
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;14
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;$ node
+&amp;gt; str = &amp;#34;hello world&amp;#34;
+&amp;gt; typeof str     
+&amp;#39;string&amp;#39;
+#------------------------------#
+$ irb
+&amp;gt; str = &amp;#34;hello world&amp;#34;
+&amp;gt; str.class
+String
+#------------------------------#
+$ python
+&amp;gt; str = &amp;#34;hello world&amp;#34;
+&amp;gt; type(str)
+&amp;lt;type &amp;#39;str&amp;#39;&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;h2 id=&#34;包管理&#34;&gt;包管理&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;Python，&lt;a href=&#34;https://pypi.python.org/pypi&#34;&gt;PyPI&lt;/a&gt;，多版本兼容推荐使用 &lt;a href=&#34;https://virtualenv.pypa.io&#34;&gt;virtualenv&lt;/a&gt; 管理&lt;/li&gt;
+&lt;li&gt;Ruby， &lt;a href=&#34;https://rubygems.org/&#34;&gt;GEMS&lt;/a&gt;，多版本兼容，推荐使用 &lt;a href=&#34;https://rvm.io/&#34;&gt;rvm&lt;/a&gt; + &lt;a href=&#34;http://bundler.io/&#34;&gt;bundler&lt;/a&gt; 管理&lt;/li&gt;
+&lt;li&gt;Node.js，由于 Node.js 出现较晚，它避免了Python、Ruby 包全局污染的问题，而是选择将第三份模块安装在项目内的&lt;code&gt;node_modules&lt;/code&gt;文件夹内&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id=&#34;总结&#34;&gt;总结&lt;/h2&gt;
+&lt;p&gt;经过上面简短的介绍，我相信大家对这三门语言有了全面的理解，多了解一门语言，也就是多个解决问题的思路。&lt;/p&gt;
+&lt;p&gt;个人感觉，Python、Javascript 的语法比较中规中矩，适合大部分程序员学习。Ruby 更适合 geek 去学，因为它的很多奇特语法会让你思考语言的设计细节，而不仅仅是使用这么简单。&lt;/p&gt;
+&lt;p&gt;最近我在看&lt;a href=&#34;https://book.douban.com/subject/7056800/&#34;&gt;Ruby元编程&lt;/a&gt;，里面的很多内容就很有意思，一些内容在看 SICP 时就已经遇到，这种似曾相识的感觉很棒，我相信对编程语言的了解又加深了一步。谢谢 &lt;a href=&#34;https://en.wikipedia.org/wiki/Yukihiro_Matsumoto&#34;&gt;Yukihiro Matsumoto&lt;/a&gt;大叔，带给我们 ruby 这么美妙的语言。&lt;/p&gt;
+&lt;h2 id=&#34;参考&#34;&gt;参考&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;http://stackoverflow.com/questions/7299010/why-is-string-concatenation-faster-than-array-join&#34;&gt;http://stackoverflow.com/questions/7299010/why-is-string-concatenation-faster-than-array-join&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://waymoot.org/home/python_string/&#34;&gt;https://waymoot.org/home/python_string/&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://wyeworks.com/blog/2015/12/1/immutable-strings-in-ruby-2-dot-3&#34;&gt;https://wyeworks.com/blog/2015/12/1/immutable-strings-in-ruby-2-dot-3&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;http://stackoverflow.com/questions/7156955/whats-the-difference-between-equal-eql-and&#34;&gt;http://stackoverflow.com/questions/7156955/whats-the-difference-between-equal-eql-and&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;http://stackoverflow.com/questions/214714/mutable-vs-immutable-objects&#34;&gt;http://stackoverflow.com/questions/214714/mutable-vs-immutable-objects&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://kentreis.wordpress.com/2007/02/08/identity-and-equality-in-ruby-and-smalltalk/&#34;&gt;https://kentreis.wordpress.com/2007/02/08/identity-and-equality-in-ruby-and-smalltalk/&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+</description>
     </item>
     
     <item>
@@ -31,7 +1342,327 @@
       <pubDate>Tue, 24 Feb 2015 00:00:00 +0000</pubDate>
       
       <guid>https://liujiacai.net/blog/2015/02/24/javascript-datatype/</guid>
-      <description>学一门编程语言，无非两方面：一是语法，二是数据类型。类C语言的语法不外乎if、while、for、函数、算术运算等，面向对象的语言再加上ob</description>
+      <description>&lt;p&gt;学一门编程语言，无非两方面：一是语法，二是数据类型。类C语言的语法不外乎if、while、for、函数、算术运算等，面向对象的语言再加上object。
+语法只是语言设计者预先做的一套规则，不同语言语法不尽相同，但都有一些共通点，对于熟悉一两门编程语言的人，学其他的编程语言时，语法往往不是问题（当然，如果你一直学的是类C语言，那么首次接触lisp时肯定也要花些时间），学习的重点往往是数据类型及其相关操作上，不是有句老话：“数据结构＋算法＝程序”！其次，有些语言的语法本身就存在设计问题（javascript更甚），我们没必要深究这些点，当然，如果你自诩geek，可以把玩把玩。&lt;/p&gt;
+&lt;p&gt;本文将对javascript中的数据类型做一个详尽的介绍。&lt;/p&gt;
+&lt;h2 id=&#34;弱类型-vs-强类型&#34;&gt;弱类型 vs 强类型&lt;/h2&gt;
+&lt;p&gt;鉴于javascript的&lt;a href=&#34;https://liujiacai.net/blog/2015/02/01/javascript-oop/#%E8%AE%BE%E8%AE%A1%E7%90%86%E5%BF%B5&#34;&gt;设计理念&lt;/a&gt;，javascript被设计成一种弱类型的语言。
+说到这里，难免要说一下，弱类型与强类型的区别。
+一些人会误以为这两者的差别就是“强类型的语言在声明一个变量时需要指明它的类型，而弱类型的则不用”。其实这种观点是错误的。比如下面这个Java代码片段：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;String s = &amp;#34;hello&amp;#34;;
+int l = s.getBytes().length;
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;编译器是怎么知道&lt;code&gt;.length&lt;/code&gt;是合法的表达式呢？这是因为编译器知道&lt;code&gt;s&lt;/code&gt;的数据类型为&lt;code&gt;String&lt;/code&gt;，当调用&lt;code&gt;String&lt;/code&gt;的&lt;code&gt;getBytes&lt;/code&gt;方法时，返回值的数据类型为&lt;code&gt;byte[]&lt;/code&gt;，所以&lt;code&gt;.length&lt;/code&gt;是合法的表达式。
+这两者真正的区别是：&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;在强类型的语言，每个表达式的类型都能够在编译时确定，并且只允许适用于该类型的操作；
+弱类型的语言允许对任意类型施加任何操作，只是这个操作有可能在运行时报错。&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;h2 id=&#34;数据类型&#34;&gt;数据类型&lt;/h2&gt;
+&lt;p&gt;根据&lt;a href=&#34;http://www.ecma-international.org/ecma-262/5.1/#sec-8&#34;&gt;ECMAScript 5.1&lt;/a&gt;的规范，javascript中共有六种数据类型，分别为：&lt;code&gt;Undefined&lt;/code&gt;, &lt;code&gt;Null&lt;/code&gt;, &lt;code&gt;Boolean&lt;/code&gt;, &lt;code&gt;Number&lt;/code&gt;, &lt;code&gt;String&lt;/code&gt;、&lt;code&gt;Object&lt;/code&gt;。前五种属于基本类型，最后一种属于对象类型。&lt;/p&gt;
+&lt;h3 id=&#34;基本数据类型&#34;&gt;基本数据类型&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;Undefined&lt;/code&gt;类型只有一个值，为&lt;code&gt;undefined&lt;/code&gt;，意味着“空值(no value)”，适用于所有数据类型。&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;Null&lt;/code&gt;类型只有一个值，为&lt;code&gt;null&lt;/code&gt;，意味着“空对象(no object)”，只适用于对象类型。&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;Boolean&lt;/code&gt;类型有两个值，为&lt;code&gt;true&lt;/code&gt;与&lt;code&gt;false&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;Number&lt;/code&gt;类型的值是遵循IEEE 754标准的64位浮点数的集合，类似于Java的double。没有整型数据结构。此外还包含三个特殊的值：&lt;code&gt;NaN&lt;/code&gt;、&lt;code&gt;Infinity&lt;/code&gt;、&lt;code&gt;-Infinity&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;String&lt;/code&gt;类型的值是有穷个Unicode字符的集合。必须用&lt;code&gt;&#39;&lt;/code&gt;或&lt;code&gt;&amp;quot;&lt;/code&gt;括起来。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h4 id=&#34;基本类型的string与对象类型的string区别&#34;&gt;基本类型的string与对象类型的string区别&lt;/h4&gt;
+&lt;p&gt;在javascript是区分基本类型的string与对象类型的string（Number、Boolean与之类似）。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;使用字面量方式创建的字符串，为基本类型的string&lt;/li&gt;
+&lt;li&gt;使用&lt;code&gt;String()&lt;/code&gt;创建的字符串，为基本类型的string&lt;/li&gt;
+&lt;li&gt;使用&lt;code&gt;new String()&lt;/code&gt;的方式创建的字符串，为对象类型的string&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt; 1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 4
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 5
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 6
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 7
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 8
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 9
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;10
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;str1 = &amp;#34;javascript&amp;#34;
+str2 = String(&amp;#34;javascript&amp;#34;)
+str3 = new String(&amp;#34;javascript&amp;#34;)
+
+&amp;gt; typeof str1
+&amp;#34;string&amp;#34;
+&amp;gt; typeof str2
+&amp;#34;string&amp;#34;
+&amp;gt; typeof str3
+&amp;#34;object&amp;#34;
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;javascript会在合适的时候自动把基本类型的string转为对象类型的string，也就是说我们可以对基本类型string使用&lt;code&gt;String.prototype&lt;/code&gt;中的方法。这两者也可以进行显式转化。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt; 1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 4
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 5
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 6
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 7
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 8
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 9
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;10
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;// 基本类型-----&amp;gt;对象类型
+str1 = &amp;#34;javascript&amp;#34;
+str1 = new String(str1)
+&amp;gt; typeof str1
+&amp;#34;object&amp;#34;
+// 对象类型-----&amp;gt;基本类型
+str1 = new String(&amp;#34;javascript&amp;#34;)
+str1 = str1.valueOf()
+&amp;gt; typeof str1
+&amp;#34;string&amp;#34;
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;这两者用在&lt;code&gt;eval&lt;/code&gt;函数中时，结果有所区别：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;4
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;5
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;6
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;var s1 = &amp;#39;2 + 2&amp;#39;;
+var s2 = new String(&amp;#39;2 + 2&amp;#39;);
+&amp;gt; eval(s1)
+4
+&amp;gt; eval(s2)
+[String: &amp;#39;2 + 2&amp;#39;]   //这里还是返回的string对象
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;h4 id=&#34;null与undefined&#34;&gt;null与undefined&lt;/h4&gt;
+&lt;p&gt;&lt;code&gt;null&lt;/code&gt;与&lt;code&gt;undefined&lt;/code&gt;都表示“没有值(non-value)”的概念，如果严格区分：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;null&lt;/code&gt;表示空&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;undefined&lt;/code&gt;表示不存在。没有初始化的变量、函数中缺失的参数、函数没有显式return值时都为此值&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;在其他语言中，一般只用一个null来表示空值，javascript中为什么多了个undefined呢？这是历史原因造成的：&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;javascript采用了Java的语法，把类型分为了基本类型与对象类型，Java中用null来表示空对象，javascript想当然的继承了过来；在C语言中，null在转为数字时为0，javascript也采取同样的方式：&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;4
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;&amp;gt; Number(null)
+0
+&amp;gt; 5 + null
+5
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;blockquote&gt;
+&lt;p&gt;在javascript1.0时，还没有异常处理(exception handling)，对于一些异常情况（没有初始化的变量、调用函数时缺失的参数等），需要标明为一种特殊的值，&lt;code&gt;null&lt;/code&gt;本来是个很好的选择，但是Brendan Eich同时想避免下面两件事：&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;ul&gt;
+&lt;li&gt;这个特殊值不应该有引用的特性，因为那是对象特有的&lt;/li&gt;
+&lt;li&gt;这个特殊值不应该能转为0，因为这样不容易发现程序中的错误&lt;/li&gt;
+&lt;/ul&gt;
+&lt;blockquote&gt;
+&lt;p&gt;基于这两个原因，Brendan Eich选择了&lt;code&gt;undefined&lt;/code&gt;，它可以被强转为&lt;code&gt;NaN&lt;/code&gt;。&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;4
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;&amp;gt; Number(undefined)
+NaN
+&amp;gt; 5 + undefined
+NaN
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;两者在于JSON对象打交道时，结果也迥然不同：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt; 1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 4
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 5
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 6
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 7
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 8
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 9
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;10
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;&amp;gt; JSON.parse(null)
+null
+&amp;gt; JSON.parse(undefined)
+//Firfox SyntaxError: JSON.parse: unexpected character at line 1 column 1 of the JSON data
+//Chrome SyntaxError: Unexpected token u
+
+&amp;gt; JSON.stringify(null)
+&amp;#34;null&amp;#34;
+&amp;gt; JSON.stringify(undefined)
+undefined
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;h3 id=&#34;对象类型&#34;&gt;对象类型&lt;/h3&gt;
+&lt;p&gt;javascript作为一门&lt;a href=&#34;http://en.wikipedia.org/wiki/Scripting_language&#34;&gt;脚本语言&lt;/a&gt;，本身功能十分精简，很多功能（文件读写、网络等）都是由宿主环境提供。宿主环境与javascript语言的桥梁是对象，宿主环境通过提供一系列符合javascript语法的对象，提供各种各样的功能。&lt;/p&gt;
+&lt;p&gt;在&lt;a href=&#34;https://liujiacai.net/blog/2015/02/01/javascript-oop&#34;&gt;javascript面向对象编程&lt;/a&gt;这篇文章（如果你不知道prototype是什么，强烈建议看看这篇文章）里，我多次强调了&lt;code&gt;对象在javascript中就是一系列的键值对&lt;/code&gt;，就像Java中的HashMap一样，不过，javascript中对象的属性可以有一些描述符(property descriptor)，这在HashMap中是没有的。&lt;/p&gt;
+&lt;h4 id=&#34;属性描述符&#34;&gt;属性描述符&lt;/h4&gt;
+&lt;p&gt;属性描述符分为两类：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;数据描述符(data descriptor)，包含一系列boolean值，用以说明该属性是否允许修改、删除。&lt;/li&gt;
+&lt;li&gt;访问描述符(accessor descriptor)，包含get与set函数。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;这两种描述符都是对象，它们都拥有下面两个boolean属性：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;configurable 用以指定该描述符是否允许修改、删除。默认为false。&lt;/li&gt;
+&lt;li&gt;enumerable 用以指定在遍历对象（使用&lt;a href=&#34;https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/for...in&#34;&gt;for&amp;hellip;in循环&lt;/a&gt;或&lt;a href=&#34;https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/keys&#34;&gt;Object.keys方法&lt;/a&gt;）的属性时，是否访问该属性。默认为false。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;除了上面这两个共有属性外，数据描述符还有下面两个属性：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;value 用以指定该属性的值，默认为undefined&lt;/li&gt;
+&lt;li&gt;writable 用以指定该属性的值是否允许改变该属性的值，默认为false&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;访问描述符还有下面两个属性：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;get 用以指定访问该属性时的访问器(getter，本质是个函数)，该访问器的返回值为该属性的值。默认为undefined&lt;/li&gt;
+&lt;li&gt;set 用以指定访问该属性时的赋值器(setter，本质是个函数)，该赋值器的接受一个参数。默认为undefined&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;我们可以使用&lt;a href=&#34;https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/defineProperty&#34;&gt;Object.defineProperty&lt;/a&gt;来设置对象的属性描述符。例如：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;4
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;5
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;6
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;7
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;8
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;// using __proto__
+Object.defineProperty(obj, &amp;#39;key&amp;#39;, {
+  __proto__: null, // no inherited properties
+  value: &amp;#39;static&amp;#39;  // not enumerable
+                   // not configurable
+                   // not writable
+                   // as defaults
+});
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;通过上面这个例子可以看出，描述符具有继承的特点，我们这里显式的把描述符对象的&lt;code&gt;__proto__&lt;/code&gt;设为&lt;code&gt;null&lt;/code&gt;，就避免了从&lt;code&gt;Object.prototype&lt;/code&gt;中继承相应属性。当然我们也可以显式地设置描述符的所有属性：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;4
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;5
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;6
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;7
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;// being explicit
+Object.defineProperty(obj, &amp;#39;key&amp;#39;, {
+  enumerable: false,
+  configurable: false,
+  writable: false,
+  value: &amp;#39;static&amp;#39;
+});
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;这样的效果和第一段代码的效果是一样的。&lt;/p&gt;
+&lt;p&gt;下面再举一个访问描述符的例子：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;4
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;5
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;6
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;7
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;8
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;// Example of an object property added with defineProperty with an accessor property descriptor
+var bValue = 38;
+Object.defineProperty(obj, &amp;#39;key&amp;#39;, {
+  get: function() { return bValue; },
+  set: function(newValue) { bValue = newValue; },
+  enumerable: true,
+  configurable: true
+});
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;需要注意的是，不能混淆了访问描述器与数据描述器。下面这样写是错误的：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;4
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;5
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;6
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;7
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;8
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;// You cannot try to mix both:
+Object.defineProperty(obj, &amp;#39;conflict&amp;#39;, {
+  value: 0x9f91102,
+  get: function() { return 0xdeadbeef; }
+});
+// throws a TypeError: property descriptors must not specify a value
+// or be writable when a getter or setter has been specified
+
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;h2 id=&#34;typeof&#34;&gt;typeof&lt;/h2&gt;
+&lt;p&gt;如果想在运行时获知某变量的类型，可以使用typeof操作符。typeof的返回值如下表：&lt;/p&gt;
+&lt;center&gt;
+&lt;img src=&#34;http://img01.taobaocdn.com/imgextra/i1/581166664/TB2WufjbVXXXXX1XpXXXXXXXXXX_!!581166664.png&#34; alt=&#34;typeof-values&#34;/&gt;
+&lt;/center&gt;
+&lt;p&gt;其中有一处需要注意，那就是&lt;code&gt;typeof null == &amp;quot;object&amp;quot;&lt;/code&gt;，按照&lt;a href=&#34;http://www.ecma-international.org/ecma-262/5.1/#sec-4.3.2&#34;&gt;ECMAScript 5.1&lt;/a&gt;标准，&lt;code&gt;Null&lt;/code&gt;类型应该是个基本类型，为什么这里返回&lt;code&gt;object&lt;/code&gt;呢？原因是这样的：&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;在javascript 1.0中，javascript中的值是用一个类型标志（type tag）和一个实际值这样的结构表示的，对象的类型标志为0，null在C语言中表示NULL指针（0x00），所以null的类型标志就为0了。&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;h2 id=&#34;参考&#34;&gt;参考&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;http://speakingjs.com/es5/ch08.html#undefined_null&#34;&gt;《Speaking JavaScript》 Chapter 8. Values&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;http://javascript.crockford.com/survey.html&#34;&gt;A Survey of the JavaScript Programming Language&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/defineProperty&#34;&gt;Object.defineProperty&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String&#34;&gt;Standard built-in objects String&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/typeof&#34;&gt;typeof&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;http://www.2ality.com/2013/10/typeof-null.html&#34;&gt;The history of “typeof null”&lt;/a&gt; （需翻墙）&lt;/li&gt;
+&lt;/ul&gt;
+</description>
     </item>
     
     <item>
@@ -40,7 +1671,373 @@
       <pubDate>Sun, 01 Feb 2015 00:00:00 +0000</pubDate>
       
       <guid>https://liujiacai.net/blog/2015/02/01/javascript-oop/</guid>
-      <description>最近工作一直在用nodejs做开发，有了nodejs，前端、后端、脚本全都可以用javascript搞定，很是方便。但是javascript</description>
+      <description>&lt;p&gt;最近工作一直在用nodejs做开发，有了nodejs，前端、后端、脚本全都可以用javascript搞定，很是方便。但是javascript的很多语法，比如对象，就和我们常用的面向对象(object oriented programming)的编程语言不同；看某个javascript开源项目，也经常会看到使用this关键字，而这个this关键字在javascript中因上下文不同而意义不同；还有让人奇怪的原型链。这些零零碎碎的东西加起来就很容易让人不知所措，所以，有必要对javascript这门语言进行一下深入了解。&lt;/p&gt;
+&lt;p&gt;我这篇文章主要想说说如何在javascript中进行面向对象的编程，同时会讲一些javascript这门语言在设计之初的理念。下面让我们开始吧。
+首先强调一下，我们现在广泛使用的javascript都是遵循了&lt;a href=&#34;https://developer.mozilla.org/en-US/docs/Web/JavaScript/Language_Resources&#34;&gt;ECMAScript 5.1&lt;/a&gt;标准的，正在制定中的版本为6.0，这个版本变化很大，增加了很多新的语法与函数，大家可以去&lt;a href=&#34;https://developer.mozilla.org/en-US/docs/Web/JavaScript&#34;&gt;Mozilla Developer Network&lt;/a&gt;上查看。&lt;/p&gt;
+&lt;h2 id=&#34;设计理念&#34;&gt;设计理念&lt;/h2&gt;
+&lt;p&gt;javascript1.0 最初是由网景公司的&lt;a href=&#34;http://en.wikipedia.org/wiki/Brendan_Eich&#34;&gt;Brendan Eich&lt;/a&gt;在1995年5月花了&lt;a href=&#34;http://www.computer.org/csdl/mags/co/2012/02/mco2012020007.pdf&#34;&gt;十天搞出来的&lt;/a&gt;，Eich的目标是设计出一种即轻量又强大的语言，所以Eich充分借鉴了其他编程语言的特性，比如Java的语法(syntax)、Scheme的函数(function)、Self的原型继承(prototypal inheritance)、Perl的正则表达式等。
+其中值得一提的是，为什么继承借鉴了Self语言的原型机制而不是Java的类机制？首先我们要知道：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Self的原型机制是靠运行时的语义&lt;/li&gt;
+&lt;li&gt;Java的类机制是靠编译时的类语法&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Javascript1.0的功能相对简单，为了在今后不断丰富javascript本身功能的同时保持旧代码的兼容性，javascript通过改变运行时的支持来增加新功能，而不是通过修改javascript的语法，这就保证了旧代码的兼容性。这也就是javascript选择基于运行时的原型机制的原因。
+wikipedia这样描述到：JavaScript is classified as a &lt;a href=&#34;http://en.wikipedia.org/wiki/Prototype-based_programming&#34;&gt;prototype-based&lt;/a&gt; scripting language with &lt;a href=&#34;http://en.wikipedia.org/wiki/Dynamic_language&#34;&gt;dynamic typing&lt;/a&gt; and &lt;a href=&#34;http://en.wikipedia.org/wiki/First-class_functions&#34;&gt;first-class functions&lt;/a&gt;。这些特性使得javascript是一种&lt;a href=&#34;http://en.wikipedia.org/wiki/Multi-paradigm&#34;&gt;多范式&lt;/a&gt;的&lt;a href=&#34;http://en.wikipedia.org/wiki/Interpreter_%28computing%29&#34;&gt;解释性&lt;/a&gt;编程语言，支持&lt;a href=&#34;http://en.wikipedia.org/wiki/Object-oriented_programming&#34;&gt;面向对象&lt;/a&gt;,&lt;a href=&#34;http://en.wikipedia.org/wiki/Imperative_programming&#34;&gt;命令式(imperative)&lt;/a&gt;, &lt;a href=&#34;http://en.wikipedia.org/wiki/Functional_programming&#34;&gt;函数式(functional)&lt;/a&gt;编程风格。&lt;/p&gt;
+&lt;h2 id=&#34;对象&#34;&gt;对象&lt;/h2&gt;
+&lt;p&gt;在javascript中，除了&lt;code&gt;Undefined&lt;/code&gt;, &lt;code&gt;Null&lt;/code&gt;, &lt;code&gt;Boolean&lt;/code&gt;, &lt;code&gt;Number&lt;/code&gt;, &lt;code&gt;String&lt;/code&gt;这几个简单类型外，其他的都是对象。
+数字、字符串、布尔值这些简单类型都是不可变量，对象是可变的键值对的集合(mutable keyed conllections)，对象包括数组&lt;code&gt;Array&lt;/code&gt;、正则表达式&lt;code&gt;RegExp&lt;/code&gt;、函数&lt;code&gt;Function&lt;/code&gt;，当然对象&lt;code&gt;Object&lt;/code&gt;也是对象。
+对象在javascript中说白了就是&lt;code&gt;一系列的键值对&lt;/code&gt;。键可以是任意字符串，包括空串；值可以是任何值。在javascript中是没有类的概念(class-free)的，但是它有一个原型链(prototype linkage)。javascript对象通过这个链来实现继承关系。&lt;/p&gt;
+&lt;p&gt;javascript中有一些&lt;a href=&#34;https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects&#34;&gt;预定义对象&lt;/a&gt;，像是&lt;a href=&#34;https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object&#34;&gt;Object&lt;/a&gt;、&lt;a href=&#34;https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Function&#34;&gt;Function&lt;/a&gt;、&lt;a href=&#34;https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date&#34;&gt;Date&lt;/a&gt;、&lt;a href=&#34;https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number&#34;&gt;Number&lt;/a&gt;、&lt;a href=&#34;https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String&#34;&gt;String&lt;/a&gt;、&lt;a href=&#34;https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array&#34;&gt;Array&lt;/a&gt;等。&lt;/p&gt;
+&lt;h3 id=&#34;字面量literal&#34;&gt;字面量(literal)&lt;/h3&gt;
+&lt;p&gt;javascript中的每种类型的对象都可以采用&lt;code&gt;字面量(literal)&lt;/code&gt;的方式创建。
+对于Object对象，可以使用&lt;code&gt;对象字面量(Object literal)&lt;/code&gt;来创建，例如：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;4
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;5
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;6
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;var empty_object = {};//创建了一个空对象
+//创建了一个有两个属性的对象
+var stooge = {
+    &amp;#34;first-name&amp;#34;: &amp;#34;Jerome&amp;#34;,
+    &amp;#34;last-name&amp;#34;: &amp;#34;Howard&amp;#34;
+};
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;当然，也可以用&lt;code&gt;new Object()&lt;/code&gt;或&lt;code&gt;Object.create()&lt;/code&gt;的方式来创建对象。
+对于&lt;code&gt;Function&lt;/code&gt;、&lt;code&gt;Array&lt;/code&gt;对象都有其相应的字面量形式，后面会讲到，这里不再赘述。&lt;/p&gt;
+&lt;h3 id=&#34;原型链prototype-linkage&#34;&gt;原型链(prototype linkage)&lt;/h3&gt;
+&lt;p&gt;javascript中的每个对象都隐式含有一个&lt;code&gt;[[prototype]]&lt;/code&gt;属性，这是ECMAScript中的记法，目前各大浏览器厂商在实现自己的javascript解释器时，采用的记法是&lt;code&gt;__proto__&lt;/code&gt;，也就是说每个对象都隐式包含一个&lt;code&gt;__proto__&lt;/code&gt;属性。举个例子：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;4
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;var foo = {
+    x: 10,
+    y: 20
+};
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;foo这个对象在内存中的存储结构大致是这样的：&lt;/p&gt;
+&lt;center&gt;
+&lt;img src=&#34;http://img04.taobaocdn.com/imgextra/i4/581166664/TB2vFhwbVXXXXc7XpXXXXXXXXXX_!!581166664.png&#34; alt=&#34;basic-object&#34;/&gt;
+&lt;/center&gt;
+&lt;p&gt;当有多个对象时，通过&lt;code&gt;__proto__&lt;/code&gt;属性就能够形成一条原型链。看下面的例子：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt; 1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 4
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 5
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 6
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 7
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 8
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 9
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;10
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;11
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;12
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;13
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;14
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;15
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;16
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;17
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;var a = {
+    x: 10,
+    calculate: function (z) {
+        return this.x + this.y + z;
+    }
+};
+var b = {
+    y: 20,
+    __proto__: a
+};
+var c = {
+    y: 30,
+    __proto__: a
+};
+// call the inherited method
+b.calculate(30); // 60
+c.calculate(40); // 80
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;上面的代码在声明对象b、c时，指明了它们的原型为对象a（a的原型默认指向Object.prototype，Object.prototype这个对象的原型指向null），这几个对象在内存中的结构大致是这样的：&lt;/p&gt;
+&lt;center&gt;
+&lt;img src=&#34;http://img03.taobaocdn.com/imgextra/i3/581166664/TB2RwVEbVXXXXaCXpXXXXXXXXXX_!!581166664.png&#34; alt=&#34;prototype-chain&#34;/&gt;
+&lt;/center&gt;
+&lt;p&gt;这里需要说明一点，&lt;code&gt;__proto__&lt;/code&gt;不是ECMAScript的规定，而是由于在javascript早期，ECMAScript没有明确的说明如何访问一个对象的原型，所以各大实现商采用了约定俗成的&lt;code&gt;__proto__&lt;/code&gt;记法。
+在ECMAScript 3.1及以后的版本中，为内置对象&lt;code&gt;Object&lt;/code&gt;添加了访问设置、对象原型的方法：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/getPrototypeOf&#34;&gt;getPropertyOf()&lt;/a&gt;，用于获取对象的原型&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/create&#34;&gt;create()&lt;/a&gt;，在创建对象时设置对象的原型。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h4 id=&#34;__proto__-vs-prototype&#34;&gt;__proto__ vs prototype&lt;/h4&gt;
+&lt;p&gt;除了我们这里说的&lt;code&gt;__proto__&lt;/code&gt;属性，相信大家平常更常见的是&lt;code&gt;prototype&lt;/code&gt;属性。比如，Date对象中没有加几天的函数，那么我们可以这么做：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;Date.prototype.addDays = function(n) {
+    this.setDate(this.getDate() + n);
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;那么所有通过&lt;code&gt;new Date()&lt;/code&gt;得到的对象就拥有&lt;code&gt;addDays&lt;/code&gt;方法了（后面讲解继承是会解释原因）。那么&lt;code&gt;__proto__&lt;/code&gt;属性与&lt;code&gt;prototype&lt;/code&gt;属性有什么区别呢？&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;javascript的每个对象都有&lt;code&gt;__proto__&lt;/code&gt;属性，但是只有&lt;code&gt;函数对象&lt;/code&gt;有&lt;code&gt;prototype&lt;/code&gt;属性。&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;那么在函数对象中， 这两个属性的有什么区别呢？&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;code&gt;__proto__&lt;/code&gt;表示该函数对象的原型&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;prototype&lt;/code&gt;表示使用new来执行该函数时（这种函数一般成为构造函数，后面会讲解），新创建的对象的原型。例如：
+var d = new Date();
+d.&lt;strong&gt;proto&lt;/strong&gt; === Date.prototype; //这里为true
+Date.&lt;strong&gt;proto&lt;/strong&gt; === Object.&lt;strong&gt;proto&lt;/strong&gt;  //这里为true&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;看到这里，希望大家能够理解这两个属性的区别了。&lt;/p&gt;
+&lt;h4 id=&#34;instanceof&#34;&gt;instanceof&lt;/h4&gt;
+&lt;p&gt;instanceof在javascript中是个&lt;a href=&#34;https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Lexical_grammar#Keywords&#34;&gt;关键字&lt;/a&gt;，用法如下：&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;obj instanceof constructorFunction
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;用于检测&lt;code&gt;constructorFunction.prototype&lt;/code&gt;对象是否在&lt;code&gt;obj&lt;/code&gt;的&lt;code&gt;原型链&lt;/code&gt;中。
+如果我们自己实现类似于&lt;code&gt;instanceof&lt;/code&gt;的函数，可以这么做：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;4
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;5
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;6
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;7
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;8
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;function instanceOf(obj, constructorFunction) {
+    while (obj != null) {
+        if (obj === constructorFunction.prototype)
+            return true;
+        obj = Object.getPrototypeOf(obj);
+    }
+    return false;
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;下面看一个使用&lt;code&gt;instanceof&lt;/code&gt;的例子：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;4
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;5
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;6
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;7
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;8
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;function Car(make, model, year) {
+  this.make = make;
+  this.model = model;
+  this.year = year;
+}
+var mycar = new Car(&amp;#34;Honda&amp;#34;, &amp;#34;Accord&amp;#34;, 1998);
+mycar instanceof Car;    // true，因为mycar.__proto__ === Car.prototype
+mycar instanceof Object; // true，因为mycar.__proto__.__proto__ === Object.prototype
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;在javascript，原型和函数是最重要的两个概念，上面说完了原型，下面说说函数对象。&lt;/p&gt;
+&lt;h3 id=&#34;函数对象function&#34;&gt;函数对象Function&lt;/h3&gt;
+&lt;p&gt;首先，函数在javascript中无非也是个对象，可以作为value赋值给某个变量，唯一不同的是函数能够被执行。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;使用对象字面量方式创建的对象的&lt;code&gt;__proto__&lt;/code&gt;属性指向&lt;code&gt;Object.prototype&lt;/code&gt;(&lt;code&gt;Object.prototype&lt;/code&gt;的&lt;code&gt;__proto__&lt;/code&gt;属性指向&lt;code&gt;null&lt;/code&gt;)；&lt;/li&gt;
+&lt;li&gt;使用函数字面量创建的对象的&lt;code&gt;__proto__&lt;/code&gt;属性指向&lt;code&gt;Function.prototype&lt;/code&gt;(&lt;code&gt;Function.prototype&lt;/code&gt;对象的&lt;code&gt;__proto__&lt;/code&gt;属性指向&lt;code&gt;Object.prototype&lt;/code&gt;)。
+函数对象除了&lt;code&gt;__proto__&lt;/code&gt;这个隐式属性外，还有两个隐式的属性：&lt;/li&gt;
+&lt;/ul&gt;
+&lt;ol&gt;
+&lt;li&gt;函数的上下文(function’s context)&lt;/li&gt;
+&lt;li&gt;实现函数的代码(the code that implements the function’s behavior)&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;和对象字面量一样，我们可以使用&lt;code&gt;函数字面量(function literal)&lt;/code&gt;来创建函数。类似于下面的方式：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;4
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;//使用字面量方式创建一个函数，并赋值给add变量
+var add = function (a, b) {
+    return a + b;
+};
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;一个函数字面量有四个部分：&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;function关键字，必选项。&lt;/li&gt;
+&lt;li&gt;函数名，可选项。上面的示例中就省略了函数名。&lt;/li&gt;
+&lt;li&gt;由圆括号括起来的一系列参数，必选项。&lt;/li&gt;
+&lt;li&gt;由花括号括起来的一系列语句，必选项。该函数执行时将会执行这些语句。&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h4 id=&#34;函数调用与this&#34;&gt;函数调用与this&lt;/h4&gt;
+&lt;p&gt;一个函数在被调用时，除了声明的参数外，还会隐式传递两个额外的参数：&lt;code&gt;this&lt;/code&gt;与&lt;code&gt;arguments&lt;/code&gt;。
+this在OOP中很重要，this的值随着调用方式的不同而不同。javascript中共有四种调用方式：&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;
+&lt;p&gt;method invocation pattern。当函数作为某对象一个属性调用时，this指向这个对象。this赋值过程发生在函数调用时（也就是运行时），这叫做late binding&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;function invocation pattern。当函数不作为属性调用时，this指向全局对象（这里的全局对象依宿舍环境而异，在浏览器中，是window对象），这是个设计上的错误，正确的话，内部函数的this应该指向外部函数。可以通过在函数中定义一个变量来解决这个问题。&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt; var add = function(a, b) {return a+b;}
+ var obj = {
+     value: 3,
+     double: function() {
+         var self = this;//把this赋值给了self
+         this.value = add(self.value, self.value);
+     }
+ }
+ obj.double(); //obj.value现在为6
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;construct invocation pattern。javascript是一门原型继承语言，这也就意味着对象可以直接从其他对象中继承属性，没有类的概念。这和java中的继承不一样。但是javascript提供了一种类似与java创建对象的语法。当一个函数用new来调用时，this指向新创建的对象。这时的函数通常称为构造函数。&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;apply invocation pattern。使用函数对象的&lt;a href=&#34;https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Function/apply&#34;&gt;apply方法&lt;/a&gt;来执行时，this指向apply的第一个参数。&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;除了this外，函数在调用是额外传入的另一个参数是&lt;a href=&#34;https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Functions/arguments&#34;&gt;arguments&lt;/a&gt;。它是函数内部的一个变量，包含函数调用处的所有参数，甚至包含函数定义时没有的参数。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;4
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;5
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;6
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;7
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;8
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;var sum = function () {
+    var i, sum = 0;
+    for (i = 0; i &amp;lt; arguments.length; i += 1) {
+        sum += arguments[i];
+    }
+    return sum;
+};
+sum(4, 8, 15, 16, 23, 42); // 108
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;需要注意的是，这里的arguments不是一个数组，它只是一个有length属性的类数组对象(Array-like)，它并不拥有数组的其他方法。
+关于对象，最后说一下数组，javascript中的数组和平常编程中的数组不大一样。&lt;/p&gt;
+&lt;h3 id=&#34;数组对象array&#34;&gt;数组对象Array&lt;/h3&gt;
+&lt;p&gt;数组是一种在内存中线性分配的数据结构，通过下标计算出元素偏移量，从而取出元素。数组应该是一个快速存取的数据结构，但是在javascript中，数组不具备这种特性。
+数组在javascript中一个具有传统数组特性的对象，这种对象能够把数组下标转为字符串，然后把这个字符串作为对象的key，最后对取出对应该key的value（这又一次说明了对象在javascript中就是一系列键值对）。&lt;/p&gt;
+&lt;p&gt;虽然javascript中的数组没有传统语言中的数组那么快，但是由于javascript是弱类型的语言，所以javascript中的数组可以存放任何值。此外Array有很多实用的方法，大家可以去&lt;a href=&#34;https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array&#34;&gt;MDN Array&lt;/a&gt;查看。
+javascript也为数组提供了很方便的&lt;code&gt;字面量(Array Literal)&lt;/code&gt;定义方式：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;var arr = [1,2,3]
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;通过数组字面量创建的数组对象的&lt;code&gt;__proto__&lt;/code&gt;指向Array.prototype。&lt;/p&gt;
+&lt;h2 id=&#34;继承inheritance&#34;&gt;继承Inheritance&lt;/h2&gt;
+&lt;p&gt;在Java中，对象是某个类的实例，一个类可以从另一个类中继承。但是在基于原型链的javascript中，对象可以直接从另一个对象创建。&lt;/p&gt;
+&lt;p&gt;在上面讲解对象时，我们知道了在创建一个对象时，该对象会自动赋予一个&lt;code&gt;__proto__&lt;/code&gt;属性，使用对象&lt;code&gt;字面量(Literal)&lt;/code&gt;来创建对象时，javascript解释器自动为&lt;code&gt;__proto__&lt;/code&gt;赋值。当我们在javascript使用new操作符创建对象时，javascript解释器在调用构造函数时，会执行类似于下面的语句&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;     this.__proto__ = {constructor: this};
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;新创建的对象都会有一个&lt;code&gt;__proto__&lt;/code&gt;属性，这个属性有一个&lt;code&gt;constructor&lt;/code&gt;属性，并且这个属性指向这个新对象。举个例子：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;var d = new Date()
+d.__proto__.constructor === Date //这里为true
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;如果new不是一个操作符，而是一个函数的话，它的实现类似于下面的代码：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;4
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;5
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;6
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;7
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;8
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;Function.prototype.new =  function () {
+    // Create a new object that inherits from the constructor&amp;#39;s prototype.
+    var that = Object.create(this.prototype);
+    // Invoke the constructor, binding –this- to the new object.
+    var other = this.apply(that, arguments);
+    // If its return value isn&amp;#39;t an object, substitute the new object.
+    return (typeof other === &amp;#39;object&amp;#39; &amp;amp;&amp;amp; other) || that;
+};
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;之前也说了，基于原型的继承机制是根据运行时的语义决定的，这就给我们提供了很大的便利。比如，我们想为所有的Array添加一个map函数，那么我们可以这么做：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;4
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;5
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;6
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;7
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;Array.prototype.map = function(f) {
+    var newArr = [];
+    for(i=0; i&amp;lt;this.length; i++) {
+        newArr.push(f(this[i]));
+    }
+    return newArr;
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;因为所有的数组对象的&lt;code&gt;__proto__&lt;/code&gt;都指向Array.prototype对象，所以我们为这个对象增加方法，那么所有的数组对象就都拥有了这个方法。
+javascript解释器会顺着原型链查看某个方法或属性。如果想查看某对象的是否有某个属性，可以使用&lt;code&gt;Object.prototype.hasOwnProperty&lt;/code&gt;方法。&lt;/p&gt;
+&lt;h2 id=&#34;总结&#34;&gt;总结&lt;/h2&gt;
+&lt;p&gt;通过上面多次讲解，希望大家对&lt;code&gt;对象在javascript中就是一系列的键值对&lt;/code&gt;、&lt;code&gt;原型&lt;/code&gt;与&lt;code&gt;函数&lt;/code&gt;这三个概念有更加深刻的认识，使用javascript来写前端、后端与脚本。在&lt;a href=&#34;http://conf.reactjs.com/&#34;&gt;React.js 2015大会&lt;/a&gt;上，Facebook公布了即将开源的&lt;a href=&#34;https://github.com/facebook/react&#34;&gt;React Native&lt;/a&gt;，这意味着今后我们可以用javascript来写IOS、Android的原生应用了，这可真是&lt;code&gt;learn-once, write-anywhere&lt;/code&gt;。相信随着ECMAScript 6的发布，javascript这门语言还会有一系列翻天覆地的变化，Stay Tuned。:-)&lt;/p&gt;
+&lt;h2 id=&#34;参考&#34;&gt;参考&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;http://dmitrysoshnikov.com/ecmascript/javascript-the-core/&#34;&gt;JavaScript. The core&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;http://book.douban.com/subject/2994925/&#34;&gt;Javascript: The Good Parts&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;JQuery作者的 &lt;a href=&#34;http://ejohn.org/blog/objectgetprototypeof/&#34;&gt;Object.getPrototypeOf&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;JS 之父的 &lt;a href=&#34;https://brendaneich.com/2011/06/new-javascript-engine-module-owner/&#34;&gt;New JavaScript Engine Module Owner&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+</description>
     </item>
     
   </channel>

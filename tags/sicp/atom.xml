@@ -13,7 +13,212 @@
       <pubDate>Sat, 21 May 2016 00:00:00 +0000</pubDate>
       
       <guid>https://liujiacai.net/blog/2016/05/21/sicp-chapter5-summary/</guid>
-      <description>经过第四章元语言抽象的洗礼，我们已经能够深谙编译器内部的原理，核心就是eval-apply循环，只是说基于这个核心可以有各种延伸，像延迟求值</description>
+      <description>&lt;p&gt;经过第四章元语言抽象的洗礼，我们已经能够深谙编译器内部的原理，核心就是&lt;code&gt;eval-apply&lt;/code&gt;循环，只是说基于这个核心可以有各种延伸，像延迟求值、amb 不定选择求值、逻辑求值等等，有了这层的理解，我们应该能够透过各种花哨的&lt;a href=&#34;https://en.wikipedia.org/wiki/Syntactic_sugar&#34;&gt;语法糖&lt;/a&gt;，看出其本质来，像 Node.js 中的 Promise、 Python 中的 coroutine，都是 &lt;a href=&#34;https://en.wikipedia.org/wiki/Continuation&#34;&gt;continuation&lt;/a&gt; 的一种应用而已。&lt;/p&gt;
+&lt;p&gt;但是，我们还无法解释子表达式的求值怎样返回一个值，以便送给使用这个值的表达式，也无法解释为什么有些递归过程能产生迭代型的计算过程，而另一些递归过程却生产递归型的计算。就其原因，是因为我们所实现的求值器是 Scheme 程序，它继承并利用了基础系统的控制结构。要想进一步理解 Scheme 的控制结构，必须转到更低的层面，研究更多细节，而这些，就是第五章的主要内容。&lt;/p&gt;
+&lt;h2 id=&#34;寄存器机器的设计&#34;&gt;寄存器机器的设计&lt;/h2&gt;
+&lt;p&gt;为了探讨底层的控制结构，本章基于传统计算机的一步一步操作，描述一些计算过程，这类计算机称为寄存器机器，它的主要功能就是&lt;code&gt;顺序的&lt;/code&gt;执行一条条指令，操作一组存储单元。本章不涉及具体机器，还是研究一些 Scheme 过程，并考虑为每个过程设计一个特殊的寄存器机器。&lt;/p&gt;
+&lt;p&gt;第一步工作像是设计一种硬件体系结构，其中将：&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;开发一些机制支持重要程序结构，如递归，过程调用等&lt;/li&gt;
+&lt;li&gt;设计一种描述寄存器机器的语言&lt;/li&gt;
+&lt;li&gt;做一个 Scheme 程序来解释用这种语言描述的机器&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;寄存器机器包含&lt;code&gt;数据通路(寄存器和操作)&lt;/code&gt;和确定操作顺序的&lt;code&gt;控制器&lt;/code&gt;。书中以 gcd 算法为例介绍：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;4
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;(define (gcd a b)
+  (if (= b 0)
+    a
+    (gcd b (remainer a b))))
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;center&gt;
+&lt;img src=&#34;https://img.alicdn.com/imgextra/i4/581166664/TB280XDppXXXXXWXXXXXXXXXXXX_!!581166664.png&#34;  alt=&#34;GCD 数据通路&#34;/&gt;
+&lt;img src=&#34;https://img.alicdn.com/imgextra/i3/581166664/TB2S63.pXXXXXXXXpXXXXXXXXXX_!!581166664.png&#34; alt=&#34; GCD 控制器&#34;/&gt;
+&lt;/center&gt;
+&lt;p&gt;为了描述复杂的过程，书中采用如下的语言来描述寄存器机器：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;4
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;5
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;6
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;7
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;8
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;9
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;(controller
+  test-b
+    (test (op =) (reg a) (const 0))
+    (branch (label gcd-done))
+    (assign t (op rem) (reg a) (reg b))
+    (assign a (reg b))
+    (assign b (reg t))
+    (goto (label test-b))
+  gcd-done)
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;h3 id=&#34;子程序&#34;&gt;子程序&lt;/h3&gt;
+&lt;p&gt;直接带入更基本操作的结构，可能使控制器变得非常复杂，希望能够作出某种安排，维持机器的简单性，而且避免重复的结构，比如如果机器两次用GCD，最好公用一个 GCD 部件，这是可行的，因为任一时刻，只能进行一个 GCD 操作，只是输入输出的寄存器不一样而已。思路：&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;调用 GCD 代码前把一个寄存器(如 continue)设置为不同的值,在 GCD 代码的出口根据该寄存器跳到正确位置&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;具体代码与图示可参考：&lt;a href=&#34;https://github.com/jiacai2050/sicp/blob/master/2016-05/2015-05-12_subroutes.md&#34;&gt;2015-05-12_subroutes.md&lt;/a&gt;&lt;/p&gt;
+&lt;h3 id=&#34;采用堆栈实现递归&#34;&gt;采用堆栈实现递归&lt;/h3&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;4
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;(define (factorial n)
+  (if (= n 1)
+    1
+    (* n (factorial (- n 1)))))
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;表面看计算阶乘需要嵌套的无穷多部机器,但任何时刻只用一部。要想 用同一机器完成所有计算,需要做好安排,在遇到子问题时中断当前计算,解决子问题后回到中断的原计算。注意:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;进入子问题时的状态与处理原问题时不同(如 n 变成 n-1)&lt;/li&gt;
+&lt;li&gt;为了将来能继续中断的计算,必须保存当时状态(当时 n 的值)&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;控制问题:子程序结束后应该返回哪里？&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;continue 里保存返回位置,递归使用同一机器时也要用这个寄存 器,给它赋了新值就会丢掉当时保存其中准备返回的位置&lt;/li&gt;
+&lt;li&gt;为了能正确返回,调用前也需要把 continue 的值入栈&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;阶乘算法的具体解释与图示可参考：&lt;a href=&#34;https://github.com/jiacai2050/sicp/blob/master/2016-05/2016-05-16_recursion_stack.md&#34;&gt;2016-05-16_recursion_stack.md&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;这里比较难理解的是 fib 算法，因为这里涉及到两次递归调用：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt; 1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 4
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 5
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 6
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 7
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 8
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 9
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;10
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;11
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;12
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;13
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;14
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;15
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;16
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;17
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;18
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;19
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;20
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;21
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;22
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;23
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;24
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;25
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;26
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;27
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;28
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;29
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;30
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;31
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;32
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;33
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;34
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;35
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;36
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;37
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;38
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;(define (fib n)
+  (if (&amp;lt; n 2)
+    n
+    (+ (fib (- n 1))
+       (fib (- n 2)))))
+
+(controller
+  (assign continue (label fib-done))
+fib-loop
+  (test (op &amp;lt;) (reg n) (const 2))
+  (branch (label immediate-answer))
+  ;; set up to compute Fib(n-1)
+  (save continue)
+  (assign (continue (label afterfib-n-1))
+  (save n)                                ; save old value of n
+  (assign n (op -) (reg n) (const 1)))    ; clobber n to n-1
+  (goto (label fib-loop))                 ; perform recursive call
+afterfib-n-1                              ; upon return, val contains Fib(n-1)
+  (restore n)
+  (restore continue)
+  ;; set up to compute Fib(n-2)
+  (assign n (op -) (reg n) (const 2))
+  (save continue)
+  (assign continue (label afterfib-n-2))
+  (save val)                               ; save Fib(n-1)
+  (goto (label fib-loop))
+afterfib-n-2                               ; upon return, val contains Fib(n-2)
+  (assign n (reg val))                     ; n now contains Fib(n-2)
+  (restore val)                            ; val now contains Fib(n-1)
+  (restore continue)
+  (assign val (op +) (reg val) (reg n))    ; return to caller, answer is in val
+  (goto (reg continue))
+immediate-answer
+  (assign val (reg n))                     ; base case: Fib(n) = n
+  (goto (reg continue))
+fib-done)
+
+;; afterfib-n-1 中先把 continue 释放，然后又保存起来，中间什么操作也没有
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;&lt;a href=&#34;https://github.com/jiacai2050/sicp/blob/master/exercises/05/5.6.scm&#34;&gt;习题5.6&lt;/a&gt;、&lt;a href=&#34;https://github.com/jiacai2050/sicp/blob/master/exercises/05/5.11.md&#34;&gt;习题5.11&lt;/a&gt; 对这一算法进行了分析与修改，建议大家看看。&lt;/p&gt;
+&lt;h2 id=&#34;一个寄存器机器模拟器&#34;&gt;一个寄存器机器模拟器&lt;/h2&gt;
+&lt;p&gt;这是5.2小节的内容，主要是用一种寄存器机器语言（即上面描述 gcd、fib 的语言）描述的机器构造一个模拟器。这一模拟器是一个 Scheme 程序，采用第三章介绍的消息传递的编程风格，将模拟器封装为一个对象，通过给它发送消息来模拟运行。&lt;/p&gt;
+&lt;p&gt;这一模拟器的代码主要可以分为两部分：&lt;a href=&#34;https://github.com/jiacai2050/sicp/blob/master/exercises/05/lib/assemble.scm&#34;&gt;assemble.scm&lt;/a&gt;、&lt;a href=&#34;https://github.com/jiacai2050/sicp/blob/master/exercises/05/lib/machine.scm&#34;&gt;machine.scm&lt;/a&gt;，有需要的可以结合书中解释看看。&lt;/p&gt;
+&lt;p&gt;这里让我为之惊叹的一点是，本书作者采用之前一贯的风格，用 Scheme 实现了一台寄存器机器，和第四章中各种解释器一样，通过层层数据抽象，让你觉得计算机也没那么深不可测，也是可以通过基本过程构造出来的。&lt;/p&gt;
+&lt;h2 id=&#34;其他内容&#34;&gt;其他内容&lt;/h2&gt;
+&lt;p&gt;为了实现 Scheme 解释器,还需要考虑表结构的表示和处理（5.3节内容）：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;需要实现基本的表操作&lt;/li&gt;
+&lt;li&gt;实现作为运行基础的巧妙的存储管理机制 后面讨论有关的基础技术(可能简单介绍)&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;有了基本语言和存储管理机制之后,就可以做出一部机器（5.4节内容）,它能&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;实现第四章介绍的元循环解释器&lt;/li&gt;
+&lt;li&gt;而且为解释器的细节提供了清晰的模型&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;这一章的最后（5.5节内容）讨论和实现了一个编译器&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;把 Scheme 语言程序翻译到这里的寄存器机器语言&lt;/li&gt;
+&lt;li&gt;还支持解释代码和编译代码之间的连接,支持动态编译等&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;这里由于时间与精力的缘故，最后三小节没有进行细致的阅读，在将来需要时再回来阅读。&lt;/p&gt;
+&lt;h2 id=&#34;总结&#34;&gt;总结&lt;/h2&gt;
+&lt;p&gt;终于到了这一天，历时一年多，终于还是把这本书看完了，算是了了一个心结，大概在大三的时候就知道了这本书，算算到现在完整的看完，有四年时间了。在最近这一年中，这本书带给我了无数的灵感与启发，这种感觉真的无法描述，只有你亲自体会。&lt;/p&gt;
+&lt;p&gt;此时此刻印象最深的有两点：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;对现实世界中时间与空间的模拟，没有最优解，不管是延时求值的流还是封装属性的对象，都有其局限性。也可能是我们人类对世界的认识还不够。摘抄书中P219一段话：&lt;/li&gt;
+&lt;/ul&gt;
+&lt;blockquote&gt;
+&lt;p&gt;从本质上看，在并发控制中，任何时间概念都必然与通信有内在的密切联系。有意思的是，时间与通信之间的这种联系也出现在相对论里，在那里的光速（可能用于同步事件的最快信号）是与时间和空间有关的基本常量。在处理时间和状态时，我们在计算模型领域所遭遇的复杂性，事实上，可能就是物理世界中最基本的复杂性的一种反映。&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;ul&gt;
+&lt;li&gt;深刻认识了&lt;code&gt;计算&lt;/code&gt;二字的含义，明白了计算机的局限性（&lt;a href=&#34;https://github.com/jiacai2050/sicp/blob/master/exercises/04/4.15.md&#34;&gt;停机问题&lt;/a&gt;），并不是所有问题都有解的；&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;当然，并不是说看完这本书就是“武林高手”了，今后还是要在不断实践中总结、积累，成为一位真正的 hacker。&lt;/p&gt;
+&lt;p&gt;好了，今天写到这里，作为万里长城的一个终点。😊&lt;/p&gt;
+</description>
     </item>
     
     <item>
@@ -22,7 +227,407 @@
       <pubDate>Sat, 23 Apr 2016 00:00:00 +0000</pubDate>
       
       <guid>https://liujiacai.net/blog/2016/04/23/sicp-chapter4-summary/</guid>
-      <description>本书的前三章分别讨论了数据抽象、过程抽象、模块化三种程序设计的技术，这些都是编程的问题，一直采用的是 Scheme 作为编程语言。如果遇到的问题更复杂，或</description>
+      <description>&lt;p&gt;本书的前三章分别讨论了&lt;code&gt;数据抽象&lt;/code&gt;、&lt;code&gt;过程抽象&lt;/code&gt;、&lt;code&gt;模块化&lt;/code&gt;三种程序设计的技术，这些都是编程的问题，一直采用的是 Scheme 作为编程语言。如果遇到的问题更复杂，或者需要解决某领域的大量问题，有可能发现现实可用的语言(Lisp，或其他)都不够满意或不够方便，因此第四章主要就是讲述如何设计和实现一门新语言。&lt;/p&gt;
+&lt;p&gt;第四章首先介绍了一个解释器（本书中文翻译为“求值器”）最核心的部分（eval与apply），然后基于这个核心，做了一系列的扩展，下面让我们一起回顾总结下。&lt;/p&gt;
+&lt;h2 id=&#34;元语言抽象&#34;&gt;元语言抽象&lt;/h2&gt;
+&lt;p&gt;4.1 小节告诉我们&lt;code&gt;语言的解释器自身也是一个过程&lt;/code&gt;而已，送给它的输入是相应语言的表达式（即程序），它就会完成该表达式要求做的动作。所以我们完全可以用 Scheme 写出一个 Scheme 的解释器，学习求值器实现，有助于理解语言本身和语言实现中的问题。而且  Scheme 语言有强大的符号处理能力，特别适合用于做这种工作。&lt;/p&gt;
+&lt;p&gt;在阅读4.1章节之前，我用 Java 尝试实现了一个 Scheme 解释器 JCScheme，之前也写过&lt;a href=&#34;https://liujiacai.net/blog/2015/10/03/first-toy-scheme/&#34;&gt;文章&lt;/a&gt;介绍，最核心的就是下面两个过程：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;eval 在一个环境里的求值一个表达式&lt;/li&gt;
+&lt;li&gt;apply 将一个过程对象应用于一组实际参数&lt;/li&gt;
+&lt;/ul&gt;
+&lt;center&gt;
+    &lt;img src=&#34;https://img.alicdn.com/imgextra/i2/581166664/TB2KjMVfFXXXXbOXpXXXXXXXXXX_!!581166664.png&#34; alt=&#34;SICP-eval-apply&#34;/&gt;
+&lt;/center&gt;
+eval、apply 这两个规则描述了求值过程的核心部分，这是任何解释器的基本循环。在这一循环中
+&gt; 表达式在环境中的求值被规约到过程对实际参数的应用，而这种应用又被规约到新的表达式在新的环境中的求值，如此下去，直到下降到符号（其值可以在环境中找到）或者基本过程（它们可以直接应用）。
+&lt;p&gt;后面的 amb 解释器、查询语言的解释器都是在这个基本循环的基础上改造来的。&lt;/p&gt;
+&lt;h3 id=&#34;图灵机&#34;&gt;图灵机&lt;/h3&gt;
+&lt;p&gt;4.1.5 小节中，将程序看成一种抽象的机器的一个描述，按照这种观点，求值器可以看作一部非常特殊的机器，它要求以一部机器的描述作为输入，给定了一个输入后，求值器就能够规划自己的行为，模拟被描述机器的执行过程。&lt;/p&gt;
+&lt;center&gt;
+&lt;img src=&#34;https://img.alicdn.com/imgextra/i1/581166664/TB2PWTZnFXXXXaRXXXXXXXXXXXX_!!581166664.png&#34; alt=&#34; evaluator_machine&#34;/&gt;
+&lt;/center&gt;
+这里的深刻思想是：
+&gt; 任一求值器都能够模拟其他的求值器
+&lt;p&gt;这样，有关“原则上说什么可以计算（忽略掉时间与空间的实践性问题）”的概念就是与语言或者计算机无关了，它反映的是一个有关&lt;code&gt;可计算性&lt;/code&gt;的基本概念。图灵1936年的论文阐述了这个问题，并声称：&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;任何“有效过程”都可以描述为这种机器的一个程序&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;而后图灵实现了一台通用机器，即一台图灵机，其行为就像是所有图灵机程序的求值器。&lt;/p&gt;
+&lt;p&gt;这一求值器是违反直觉的，因为它是由一个相对简单的过程实现，却能去模拟可能比求值器本身还复杂的各种程序，通用求值器的存在是计算的一种深刻而美妙的性质。递归论是数理逻辑的一个分支，这一理论研究计算的逻辑极限，&lt;a href=&#34;https://book.douban.com/subject/1291204/&#34;&gt;《GEB》&lt;/a&gt;里也探讨了一些思想，有兴趣的可以把这本书加入书单。&lt;/p&gt;
+&lt;p&gt;其他领域中也有这种通用功能的东西，像电子书、音乐播放器等都属于“专用的通用设备”，计算机（一个编程语言就是一种抽象的计算机）比它们更进一步：它能模拟自己。&lt;/p&gt;
+&lt;p&gt;这里比较有意思的是&lt;a href=&#34;https://github.com/jiacai2050/sicp/blob/master/exercises/04/4.15.md&#34;&gt;习题4.15&lt;/a&gt;的停机问题，本小节所有解释器的代码可以参考&lt;a href=&#34;https://github.com/jiacai2050/sicp/blob/master/exercises/04/lib/main.scm&#34;&gt;main.scm&lt;/a&gt;。&lt;/p&gt;
+&lt;h3 id=&#34;jit&#34;&gt;JIT&lt;/h3&gt;
+&lt;p&gt;4.1.7小节中将语法分析与执行分开，这里的做法类似于高级语言的解释和编译：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;直接解释,就是一遍遍分析程序代码,实现其语义。例如最早的 BASIC 语言实现&lt;/li&gt;
+&lt;li&gt;编译把实现程序功能的工作分为两步:
+&lt;ul&gt;
+&lt;li&gt;通过一次分析生成一个可执行的程序&lt;/li&gt;
+&lt;li&gt;在此之后可以任意地多次执行这个程序&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;这里做的是从 Scheme 源程序(元循环解释器/求值器处理的“数据”)到 Scheme 可执行程序的翻译，这是一种 &lt;a href=&#34;https://en.wikipedia.org/wiki/Just-in-time_compilation&#34;&gt;Just In-time Translation，JIT(即时翻译)&lt;/a&gt;，目前成熟的Java虚拟机都采用这种技术来提高执行效率。在实际中应用,还需进一步考虑整体效率问题。&lt;/p&gt;
+&lt;h2 id=&#34;惰性求值&#34;&gt;惰性求值&lt;/h2&gt;
+&lt;p&gt;4.1 小节实现的求值器采用的应用序求值（过程应用之前完成对所有参数的求值），4.2 小节修改之前的求值器，使之能够按照正则序求值，也称为惰性求值。惰性求值的可以用来实现第三章介绍的流，而且也可以避免下面的问题：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;4
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;5
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;6
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;7
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;(define (try a b)
+  (if (= a 0)
+    1
+    b))
+
+(try 0 (/ 1 0))
+# 如果采用正则序，这里不会抱错，因为 try 函数中根本就没用的b的值
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;这里要做的修改不是很多，只是在过程的参数上包一层，加一个&lt;code&gt;trunk&lt;/code&gt;，真正需要计算时在求值，核心代码可以参考 &lt;a href=&#34;https://github.com/jiacai2050/sicp/blob/master/exercises/04/lib/trunk.scm&#34;&gt;trunk.scm&lt;/a&gt;，此外，处于性能方便的考虑，一般会对求过的参数进行缓存。&lt;/p&gt;
+&lt;p&gt;我自己实现的 JCScheme 也支持这种正则序求值，感兴趣的&lt;a href=&#34;https://github.com/jiacai2050/JCScheme/tree/normal-order&#34;&gt;参考&lt;/a&gt;。&lt;/p&gt;
+&lt;h2 id=&#34;amb-非确定性计算&#34;&gt;amb 非确定性计算&lt;/h2&gt;
+&lt;p&gt;amb 的名字来自 ambiguous(歧义,多义)，4.3小节在 Scheme 里扩充非确定性计算功能。非确定性计算里最关键的思想：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;允许一个表达式有多个可能的值&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;在求值这种表达式时,求值器可以自动选出一个值
+可能从可以选的值中任意选出一个。还需要维持与选择相关的轨迹(知道哪些元素已经选过,哪些没选过。在后续计算中要保证不出现重选的情况)&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;如果已做选择不能满足后面的要求,求值器就会回到有关的表里再 次选择,直至求值成功;或者所有选择都已用完时求值失败&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;非确定性计算的过程将通过求值器自动进行的搜索实现，选择和重新选择的方法和实际过程都隐藏在求值器的实现里,程序员不需要关心,不需要做任何与之相关的事情，这一修改的意义深远,语言扩充了,语义有重要改变。&lt;/p&gt;
+&lt;h3 id=&#34;非确定性计算与流处理&#34;&gt;非确定性计算与流处理&lt;/h3&gt;
+&lt;p&gt;非确定性求值和流处理有相似的地方，现在比较一下非确定性求值和流处理中时间的表现形式：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;流处理中,通过惰性求值,松解潜在的(有可能是无穷的)流和流元素 的实际产生时间之间的紧密联系&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;造成的假象是整个流似乎都存在&lt;/li&gt;
+&lt;li&gt;元素的产生并没有严格的时间顺序&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;非确定性计算的表达式表示对一批“可能世界”的探索&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;每个世界由一串选择确定&lt;/li&gt;
+&lt;li&gt;求值器造成的假相：时间好像能分叉&lt;/li&gt;
+&lt;li&gt;求值器保存着所有可能的执行历史&lt;/li&gt;
+&lt;li&gt;计算遇到死路时退回前面选择点转到另一分支,换一个探索空间&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3 id=&#34;continuation-继续&#34;&gt;continuation 继续&lt;/h3&gt;
+&lt;p&gt;“继续”是一种过程参数，它总是在过程的最后一步调用。带有“继续”参数的过程不准备返回，过程的最后一步是调用某个“继续”过程。“继续”是“尾调用”,调用过程的代码已经全部执行完毕。&lt;/p&gt;
+&lt;p&gt;amb 分析器产生的执行过程要求三个参数：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;一个环境&lt;/li&gt;
+&lt;li&gt;一个成功继续&lt;/li&gt;
+&lt;li&gt;一个失败继续&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;执行过程的体求值结束前的最后一步总是调用这两个过程之一&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;如果求值工作正常完成并得到结果,就调用由“成功继续”参数 得到的那个过程&lt;/li&gt;
+&lt;li&gt;如果求值进入死胡同,就调用“失败继续”参数过程&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;4
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;(lambda (env succeed fail)
+  ;; succeed is a (lambda (value fail) ...)
+  ;; fail is a (lambda () ...)
+...)
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;这里需要注意的是要恢复破坏性操作(如赋值等),必须设法保存恢复信息。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt; 1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 4
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 5
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 6
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 7
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 8
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 9
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;10
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;11
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;12
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;13
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;14
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;15
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;16
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;
+(define (analyze-assignment exp)
+  (let ((var (assignment-variable exp))
+        (vproc (analyze (assignment-value exp))))
+    (lambda (env succeed fail)
+      (vproc env
+             (lambda (val fail2)
+               (let ((old-value (lookup-variable var env)))
+                 (set-variable-value! var val env)
+                 (succeed &amp;#39;ok
+                          (lambda ()
+                            (set-variable-value! var
+                                                 old-value
+                                                 env)
+                            (fail2)))))
+             fail))))
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;amb 求值器的完整代码可以参考&lt;a href=&#34;https://github.com/jiacai2050/sicp/blob/master/exercises/04/lib/main-amb.scm&#34;&gt;main-amb.scm&lt;/a&gt;。&lt;/p&gt;
+&lt;h2 id=&#34;逻辑程序设计&#34;&gt;逻辑程序设计&lt;/h2&gt;
+&lt;p&gt;本书一开始就强调了：&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;数学处理说明式知识；计算机科学处理命令式知识&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;程序语言要求用算法的方式描述解决问题的过程，大多数程序语言要求用定义数学函数的方式组织程序：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;程序要描述“怎么做”的过程&lt;/li&gt;
+&lt;li&gt;所描述的计算有明确方向,从输入到输出&lt;/li&gt;
+&lt;li&gt;描述经计算的表达式,给出了从一些值算出结果的方法(和过程) �&lt;/li&gt;
+&lt;li&gt;定义过程描述如何从参数计算出结果&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;但是也有例外，第三章介绍的约束传递系统中的计算对象是约束关系,没有明确计算方向和顺序，它的基础系统要做很多工作以支持相应的计算。4.3小节的非确定性程序求值器里的表达式可有多个值,求值器设法根据表达式描述的关系找出满足要求的值。&lt;/p&gt;
+&lt;p&gt;逻辑程序设计可看作上面想法的推广，一个“是什么”的描述可能蕴涵许多“怎样做”的过程。考虑 append:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;4
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;(define (append x y)
+  (if (null? x)
+    y
+    (cons (car x) (append (cdr x) y))))
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;可认为,这个程序表达了两条规则:&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;对任何一个表 &lt;code&gt;y&lt;/code&gt;，空表与其拼接得到的表是 &lt;code&gt;y&lt;/code&gt; 本身&lt;/li&gt;
+&lt;li&gt;任何表 &lt;code&gt;u&lt;/code&gt;, &lt;code&gt;v&lt;/code&gt;, &lt;code&gt;y&lt;/code&gt;, &lt;code&gt;z&lt;/code&gt;，&lt;code&gt;(cons u v)&lt;/code&gt; 与 &lt;code&gt;y&lt;/code&gt; 拼接得到 &lt;code&gt;(cons u z)&lt;/code&gt; 的条件是 ￼&lt;code&gt;v&lt;/code&gt;与&lt;code&gt;y&lt;/code&gt;的拼接得到&lt;code&gt;z&lt;/code&gt;&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;append 的过程定义和上述两条规则都可以回答下面问题:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;找出&lt;code&gt;(a b)&lt;/code&gt;和&lt;code&gt;(c d)&lt;/code&gt;的append&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;�这两条规则还可以回答(但 append 过程不行):&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;找出一个表&lt;code&gt;y&lt;/code&gt;使&lt;code&gt;(a b)&lt;/code&gt;与它的拼接得到&lt;code&gt;(a b c d)&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;找出所有拼接起来将得到&lt;code&gt;(a b c d)&lt;/code&gt;的表&lt;code&gt;x&lt;/code&gt;和&lt;code&gt;y&lt;/code&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;在逻辑式程序语言里,可以写出与上面两条规则直接对应的表达式,求值器可以基于它得到上面各问题的解。但各种逻辑语言(包括本小节介绍的)都有缺陷,简单提供“做什么” 知识 有时会使求值器陷入无穷循环,或产生了不是用户希望的行为，这个领域最新的方向是&lt;a href=&#34;https://en.wikipedia.org/wiki/Constraint_programming&#34;&gt;constraint programming&lt;/a&gt;。&lt;/p&gt;
+&lt;h3 id=&#34;查询系统&#34;&gt;查询系统&lt;/h3&gt;
+&lt;p&gt;本系统所使用的语言为查询语言，该语言的三要素分别是：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;code&gt;基本元素&lt;/code&gt;，简单查询&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;(job ?persion (computer programmer))
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;code&gt;组合手段&lt;/code&gt;，复合查询&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;(and
+  (job ?persion (computer programmer))
+  (address ?persion ?where))
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;code&gt;抽象手段&lt;/code&gt;，规则&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;4
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;5
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;6
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;(rule ⟨conclusion⟩ ⟨body⟩)
+
+(rule (lives-near ?persion-1 ?persion-2)
+  (and (address ?persion-1 (?town . ?rest-1))
+       (address ?persion-2 (?town . ?rest-2))
+       (not (same ?persion-1 ?persion-2))))
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;可以认为一条规则表示了很大(甚至无穷大)的一集断言,其元素是 由 &lt;code&gt;&amp;lt;conclusion&amp;gt;&lt;/code&gt; 求出的所有满足 &lt;code&gt;&amp;lt;body&amp;gt;&lt;/code&gt; 的赋值。对简单查询,如果其中变量的某个赋值满足某查询模式,那么用这个赋值实例化模式得到的断言一定在数据库里但满足规则的断言不一定实际存在在数据库里(推导出的事实)。&lt;/p&gt;
+&lt;h3 id=&#34;将逻辑看作程序&#34;&gt;将逻辑看作程序&lt;/h3&gt;
+&lt;p&gt;规则可看作逻辑蕴涵式:若对所有模式变量的赋值能满足一条规则的体, 则它就满足其结论。可认为查询语言就是基于规则做逻辑推理。还是用 &lt;code&gt;append&lt;/code&gt; 为例：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;(rule (append-to-form () ?y ?y))
+(rule (append-to-form (?u . ?v) ?y (?u . ?z))
+  (append-to-form ?v ?y ?z))
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;有了上面的规则，可以做许多查询&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt; 1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 4
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 5
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 6
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 7
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 8
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 9
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;10
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;11
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;12
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;13
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;14
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;15
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;16
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;17
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;18
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;19
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;20
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;21
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;;;; Query input:
+(append-to-form (a b) (c d) ?z)
+;;; Query results:
+(append-to-form (a b) (c d) (a b c d))
+
+
+;;; Query input:
+(append-to-form (a b) ?y (a b c d))
+;;; Query results:
+(append-to-form (a b) (c d) (a b c d))
+
+
+;;; Query input:
+(append-to-form ?x ?y (a b c d))
+;;; Query results:
+(append-to-form () (a b c d) (a b c d))
+(append-to-form (a) (b c d) (a b c d))
+(append-to-form (a b) (c d) (a b c d))
+(append-to-form (a b c) (d) (a b c d))
+(append-to-form (a b c d) () (a b c d))
+
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;这些例子展示了不同方向的计算,正是前面提出希望解决的问题。&lt;/p&gt;
+&lt;h3 id=&#34;查询系统原理&#34;&gt;查询系统原理&lt;/h3&gt;
+&lt;p&gt;查询系统的组织围绕着两个核心操作：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;模式匹配(pattern match)&lt;/code&gt;，操作实现简单查询和复合查询&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;合一(unification)&lt;/code&gt;，是模式匹配的推广,用于实现规则&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3 id=&#34;逻辑程序设计和数理逻辑&#34;&gt;逻辑程序设计和数理逻辑&lt;/h3&gt;
+&lt;p&gt;查询语言的组合符对应于常用逻辑连接词，查询操作看起来也具有逻辑 可靠性(例如，and 查询要经过两个子成分处理等)
+但这种对应关系并不严格，因为查询语言的基础是求值器，其中隐含着控制结构和控制流程，是采用过程的方式解释逻辑语句。&lt;/p&gt;
+&lt;p&gt;这种隐含的控制结构我们有可能利用，例如,要找程序员的上司,下面两种写法都行:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;4
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;5
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;(and (job ?x (computer programmer))
+     (supervisor ?x ?y))
+
+(and (supervisor ?x ?y)
+     (job ?x (computer programmer)))
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;如果公司里的有关上司关系的事实比有关程序员的事实更多,第一种写法的查询效率更高。&lt;/p&gt;
+&lt;p&gt;逻辑程序设计的目标是开发一种技术,把计算问题分为“要计算什么”和 “怎样计算”两个相互独立的子问题,方法是:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;找出逻辑语言的一个子集,其
+&lt;ul&gt;
+&lt;li&gt;功能足够强,足以描述人们想考虑的某类计算&lt;/li&gt;
+&lt;li&gt;又不过分的强,有可能为它定义一种过程式的解释&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;实现一个求值器(解释器),执行对用这种逻辑子集写出的规则和 断言的解释(实现其语义,形式上是做推理)&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;上面提出的两方面性质保证了逻辑程序设计语言程序的有效性。&lt;/p&gt;
+&lt;p&gt;本小节的查询语言是这种想法的一个具体实施:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;查询语言是数理逻辑的一个可以过程式解释的子集&lt;/li&gt;
+&lt;li&gt;一个断言描述一个简单事实&lt;/li&gt;
+&lt;li&gt;一条规则表示一个蕴涵,能使规则体成立的情况都使结论成立&lt;/li&gt;
+&lt;li&gt;规则有自然的过程式解释:要得到其结论,只需确定其体成立&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3 id=&#34;not-问题&#34;&gt;not 问题&lt;/h3&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;4
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;5
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;(and (supervisor ?x ?y)
+     (not (job ?x (computer programmer))))
+
+(and (not (job ?x (computer programmer)))
+     (supervisor ?x ?y))
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;这两个查询会得到不同结果(与逻辑里的情况不同)：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;第一个查询找出所有与 &lt;code&gt;(supervisor ?x ?y)&lt;/code&gt; 匹配的条目，从得到的框架中删去 ?x 满足 &lt;code&gt;(job ?x (computer programmer))&lt;/code&gt; 的框架&lt;/li&gt;
+&lt;li&gt;第二个查询从初始框架流(只包含一个空框架)开始检查能否扩展 出与 &lt;code&gt;(job ?x (computer programmer))&lt;/code&gt; 匹配的框架。显然空框架可扩展，not 删除流中的空框架得到空流，查询最后返回空流&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;逻辑程序语言里的 not 反映的是一种“封闭世界假说”，认为所有知识都包含在数据库里,凡是没有的东西其 not 都成立。这显然不符合形式化的数理逻辑,也不符合人们的直观推理。&lt;/p&gt;
+&lt;p&gt;查询语言的完整代码，可以参考&lt;a href=&#34;https://github.com/jiacai2050/sicp/tree/master/exercises/04/lib/ql&#34;&gt;这里&lt;/a&gt;.&lt;/p&gt;
+&lt;h2 id=&#34;总结&#34;&gt;总结&lt;/h2&gt;
+&lt;p&gt;首先恭喜我“完成”第四章，算算大概用了4个月，太多不定因素了，不过还好自己找到了当初的感觉，坚持了下来。&lt;/p&gt;
+&lt;p&gt;这一章的内容很多，毕竟是设计一门语言，而且还介绍了两种大变种，把书上的代码调通就要花好久，不过也确实开了眼界，通过最基本的eval、apply 循环扩展出了 amb 非确定性求值器与逻辑语言求值器，其实这章的难度并不大，只是涉及的内容广而已。&lt;/p&gt;
+&lt;p&gt;通过看完这章，发现了很多本质性的东西，像 Node.js 里面的 callback、Python 里面的 generator 不都是 continuation 的糖衣嘛，JIT 也不过尔尔，这章更偏向的是元编程领域，通过 &lt;a href=&#34;https://en.wikipedia.org/wiki/Domain-specific_language&#34;&gt;DSL&lt;/a&gt; 来减轻业务代码的逻辑，想象如果语言本身就支持分布式事务，程序员要少写多少代码呢。&lt;/p&gt;
+</description>
     </item>
     
     <item>
@@ -31,7 +636,325 @@
       <pubDate>Sat, 26 Dec 2015 00:00:00 +0000</pubDate>
       
       <guid>https://liujiacai.net/blog/2015/12/26/sicp-chapter3-summary/</guid>
-      <description>历时三个月，终于把第三章看完了。这三月发生了太多的意外，本文不打算说了，后面在写 2015 年终总结时再来谈谈这三个月的事情。如今回过头来看看第三章的</description>
+      <description>&lt;p&gt;历时三个月，终于把第三章看完了。这三月发生了太多的意外，本文不打算说了，后面在写 &lt;a href=&#34;https://liujiacai.net/blog/2016/01/08/review-2015/#%E8%AF%BB%E4%B9%A6&#34;&gt;2015 年终总结&lt;/a&gt;时再来谈谈这三个月的事情。如今回过头来看看第三章的内容，好像也不怎么难，只是内容涉及的面稍微广一些而已，下面来回顾总结一下第三章。&lt;/p&gt;
+&lt;h2 id=&#34;主旨&#34;&gt;主旨&lt;/h2&gt;
+&lt;p&gt;第三章的标题为&lt;code&gt;模块化、对象和状态&lt;/code&gt;，主要讨论与状态有关的编程问题。前面两章，讨论的问题主要是：&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;如何组合基本过程和基本数据&lt;/li&gt;
+&lt;li&gt;如何构造各种复合对象(组合过程/数据)&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;抽象&lt;/strong&gt;在控制和处理程序复杂性中的重要作用&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;但对于程序设计而言，上面这三种手段还不够用，有效设计大型系统，还需要一些组织系统的原则，这体现在下面两方面：&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;只有一集高效算法，不足以构造出良好的大型系统&lt;/li&gt;
+&lt;li&gt;系统的功能分解，结构组织和管理与算法一样重要(或更甚之)&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;为了系统化地完成设计，特别需要一些模块化策略。模块化就是把复杂系统分解为一些边界清晰、易于独立理解的部分；每个部分的内部成分之间关系较密切，内聚力强;不同部分具有良 好的功能分离，相互之间的交互清晰、容易认识和处理；良好模块化分解出的部分可以分别设计，分别开发和维护。&lt;/p&gt;
+&lt;p&gt;假设构造一个系统的目标是希望模拟一个真实世界的系统，一种有效策略就是&lt;code&gt;基于被模拟系统的结构&lt;/code&gt;去设计程序的结构。这主要包括下面三个方面：&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;针对实际物理系统中的每个对象，构造一个对应的程序对象&lt;/li&gt;
+&lt;li&gt;针对实际系统里的每种活动，在计算系统里实现一种对应操作&lt;/li&gt;
+&lt;li&gt;让所开发的系统的活动比较直接地反映被模拟系统的活动&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;采用这种设计系统策略，有一个重要问题必须考虑：&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;真实世界的系统是变化的（相应的，人的认识也不断深入）&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;这些变化在人工系统里的反映，通常是需要在系统里增加新对象或新操作，或者需要修改已有对象和操作的行为。&lt;/p&gt;
+&lt;p&gt;为了有效完成模拟，我们希望构造出的模拟系统在遇到变化时，做到下面两点：&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;在修改时只需要局部做，不需要大范围改变程序&lt;/li&gt;
+&lt;li&gt;在扩充时只需简单加入对象或操作，局部修改/加入相关操作&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h2 id=&#34;设计策略&#34;&gt;设计策略&lt;/h2&gt;
+&lt;p&gt;本章针对上述目标，将讨论两种系统的组织策略：&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;把系统看成是由一批相互作用的对象组成
+&lt;blockquote&gt;
+&lt;p&gt;真实系统中的对象随着时间的进展不断变化，模拟它们的系统对象也吸引相应地变化&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;/li&gt;
+&lt;li&gt;把系统看作一种信号处理系统
+&lt;blockquote&gt;
+&lt;p&gt;关注流过系统的信息流&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h2 id=&#34;基于对象的设计&#34;&gt;基于对象的设计&lt;/h2&gt;
+&lt;p&gt;基于对象，需要关注计算对象可以怎样变化而又同时保持其标识。这是一种新的计算模型，带来许多本质性变化，包括有关计算的基本观点，基本操作，抽象的计算模型及其实现。&lt;/p&gt;
+&lt;h3 id=&#34;赋值&#34;&gt;赋值&lt;/h3&gt;
+&lt;p&gt;为了说清楚让一个计算对象具有随时间变化状态，贯穿本章的例子是：银行账号。一个账号对于我们系统设计中的一个对象，对同一个对象调用同一方法，返回的结果缺不一致。例如，假设开始时账户有100元钱，在不断调用“取钱”过程时，得到结果是不一样的。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;4
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;5
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;6
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;(withdraw 25)
+75
+(withdraw 25)
+50
+(withdraw 60)
+&amp;#34;Insufficient funds&amp;#34;
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;这样的计算模型如果使用第一章介绍的&lt;code&gt;替换计算模型&lt;/code&gt;，是不可能做到的，为此，本章引入了一新的计算模型，在该模型中，变量不在仅仅是某个值的名字，更准确的说，此时的变量标识了一个值的地址，这很像 C语言中的指针，面向对象中的值引用。&lt;/p&gt;
+&lt;h3 id=&#34;环境计算模型&#34;&gt;环境计算模型&lt;/h3&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt; 1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 4
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 5
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 6
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 7
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 8
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 9
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;10
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;(define (make-withdraw balance)
+  (lambda (amount)
+    (if (&amp;gt; amount balance)
+      &amp;#34;Insufficient&amp;#34;
+      (begin
+        (set! balance (- balance amount))
+        balance))))
+
+(define W1 (make-withdraw 100))
+(W1 50)
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;center&gt;
+&lt;img src=&#34;https://img.alicdn.com/imgextra/i2/581166664/TB2WwebiVXXXXcxXXXXXXXXXXXX_!!581166664.png&#34; alt=&#34;(define W1 (make-withdraw 100))的环境模型&#34;/&gt;
+&lt;img src=&#34;https://img.alicdn.com/imgextra/i1/581166664/TB2mo5iiVXXXXa.XXXXXXXXXXXX_!!581166664.png&#34; alt=&#34;(W1 50)的环境模型&#34;/&gt;
+&lt;/center&gt;
+&lt;p&gt;关于环境计算模型，核心点就两个：&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;过程声明时，其外围指针指向其运行时的环境&lt;/li&gt;
+&lt;li&gt;过程调用时，其外围指针指向声明时外围指针指向的那个环境&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;我自己尝试着用 Java 实现了一个 &lt;a href=&#34;https://github.com/jiacai2050/JCScheme&#34;&gt;Scheme 方言&lt;/a&gt;，其中对这个环境模型也进行了模拟，大家不清楚的可以看看我&lt;a href=&#34;https://liujiacai.net/blog/2015/10/03/first-toy-scheme/#%E4%BD%9C%E7%94%A8%E5%9F%9F&#34;&gt;这篇文章&lt;/a&gt;的介绍。&lt;/p&gt;
+&lt;h2 id=&#34;用变动的数据做模拟&#34;&gt;用变动的数据做模拟&lt;/h2&gt;
+&lt;p&gt;在前两章中，没有赋值的概念，那时对于一种数据结构，我们只需明确其&lt;code&gt;构造函数&lt;/code&gt;与&lt;code&gt;选择函数&lt;/code&gt;即可使用该数据结构，在之前两章中，我们介绍了“表”、“树”这两种数据结构，引入了赋值后，一个数据结构多了一种函数，即&lt;code&gt;修改函数&lt;/code&gt;，利用修改函数，3.3 小节介绍了“变动的表”、“队列”、“表格”三种新的数据结构。&lt;/p&gt;
+&lt;h3 id=&#34;变动的表&#34;&gt;变动的表&lt;/h3&gt;
+&lt;center&gt;
+&lt;img src=&#34;https://img.alicdn.com/imgextra/i3/581166664/TB2f4qciVXXXXcIXXXXXXXXXXXX_!!581166664.png&#34; alt=&#34;(cons (list &#39;a &#39;b) (list &#39;a &#39;b)) 的盒模型&#34;/&gt;
+&lt;/center&gt;
+&lt;p&gt;变动的表这一数据结构，主要是借助&lt;code&gt;set!&lt;/code&gt;，实现了&lt;code&gt;set-car!&lt;/code&gt;与&lt;code&gt;set-cdr!&lt;/code&gt;，进而可以实现变动的表，其中比较有意思的是&lt;a href=&#34;https://github.com/jiacai2050/sicp/blob/master/exercises/03/3.19.md&#34;&gt;习题3.19&lt;/a&gt;，让我们在&lt;code&gt;O(1)&lt;/code&gt;空间复杂度检查一个表中是否包含环，这也是面试题中经常出现的一道，大家一定要掌握。基本思路就是&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;设置两个指针，一个一次走一步，另一个一次走两步，然后如果两个指针相等，那么就说明有环存在。&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;更进一步，如果一个表中有环的存在，如何找出那个环的交叉点（即如何找出下图中的&lt;code&gt;m&lt;/code&gt;点）。如果不清楚，可以参考我&lt;a href=&#34;https://github.com/jiacai2050/sicp/blob/master/exercises/03/3.19.md&#34;&gt;习题3.19&lt;/a&gt; 的解答。&lt;/p&gt;
+&lt;center&gt;
+&lt;img src=&#34;https://img.alicdn.com/imgextra/i1/581166664/TB2kxxRiVXXXXXmXFXXXXXXXXXX_!!581166664.png&#34; alt=&#34;环交叉点检测&#34;/&gt;
+&lt;/center&gt;
+&lt;h3 id=&#34;队列&#34;&gt;队列&lt;/h3&gt;
+&lt;center&gt;
+![带首尾指针的队列](https://img.alicdn.com/imgextra/i3/581166664/TB27OhWiVXXXXcjXpXXXXXXXXXX_!!581166664.png)
+&lt;/center&gt;
+&lt;p&gt;队列是一个“先进先出”的数据结构，这里主要是引入首尾指针的思想来加速对队列末端的访问。队列的实现可以参考我 Github 库的&lt;a href=&#34;https://github.com/jiacai2050/sicp/blob/master/exercises/03/lib/queue.scm&#34;&gt;/exercises/03/lib/queue.scm&lt;/a&gt;。
+其中&lt;a href=&#34;https://github.com/jiacai2050/sicp/blob/master/exercises/03/3.23.md&#34;&gt;习题3.23&lt;/a&gt;让我们实现一双向链表，一种很实用的队列的变种，大家一定要自己做一下。&lt;/p&gt;
+&lt;h3 id=&#34;表格&#34;&gt;表格&lt;/h3&gt;
+&lt;p&gt;这里的表格和我们Java中的Map、Python中的dict类型比较类似。&lt;/p&gt;
+&lt;center&gt;
+    &lt;img src=&#34;https://img.alicdn.com/imgextra/i1/581166664/TB2G54UiVXXXXcNXpXXXXXXXXXX_!!581166664.png&#34; alt=&#34;二维表&#34;/&gt;
+&lt;/center&gt;
+&lt;p&gt;其中比较有意思对是&lt;a href=&#34;https://github.com/jiacai2050/sicp/blob/master/exercises/03/3.25.md&#34;&gt;习题3.25&lt;/a&gt;，让我们推广一维表格、二维表格的概念，实现任意多个关键码的表格，比较有趣。&lt;/p&gt;
+&lt;h3 id=&#34;数字电路的模拟器&#34;&gt;数字电路的模拟器&lt;/h3&gt;
+&lt;p&gt;这是本章一个比较实际的例子，其背景是&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;数字系统（像计算机）都是通过连接一些简单元件构造起来的，这些元件单独看起来功能都很简单，它们连接起来形成的网络就可能产生非常复杂的行为。&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;center&gt;
+&lt;img src=&#34;https://img.alicdn.com/imgextra/i2/581166664/TB2O48ZiVXXXXcnXpXXXXXXXXXX_!!581166664.png&#34; alt=&#34;半加器电路&#34;/&gt;
+&lt;/center&gt;
+&lt;p&gt;从上面这个半加器可以看出&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;由于各个门部件延迟的存在，使得输出可能在不同的时间产生，有关数字电路的设计的许多困难都源于此。&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;这里的模拟器主要包含下面两部分：&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;构造电路的基本构件，像反门、与门、或门&lt;/li&gt;
+&lt;li&gt;传递数字信号的连线&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;除了上面两部分，为了模拟门部件延时的效果，本系统引入待处理表。这三部分都是用Scheme的过程实现，用内部状态表示该对象的改变，具体代码可以参考&lt;a href=&#34;https://github.com/jiacai2050/sicp/blob/master/exercises/03/lib/simulator.scm&#34;&gt;simulator.scm&lt;/a&gt;。&lt;/p&gt;
+&lt;p&gt;其中比较有意思的是&lt;a href=&#34;https://github.com/jiacai2050/sicp/blob/master/exercises/03/3.31.md&#34;&gt;习题3.31&lt;/a&gt;，大家可以好好想想。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;4
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;(define (accept-action-procedure! proc)
+  (set! action-procedures (cons proc action-procedures))
+  ; 这里将 proc 加入后，立即执行了 proc，为什么？ 见习题3.31
+  (proc))
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;h3 id=&#34;约束的传播&#34;&gt;约束的传播&lt;/h3&gt;
+&lt;p&gt;本章另一个比较实用的例子，之前我们的过程都是单向，我们只能通过一个过程的输入获得其输出，但是这里给我们展示了如何构建一个约束系统，是的我们可以从任意方向求过程的未知数的值。&lt;/p&gt;
+&lt;center&gt;
+&lt;img src=&#34;https://img.alicdn.com/imgextra/i1/581166664/TB2jEGbiVXXXXXDXpXXXXXXXXXX_!!581166664.png&#34; alt=&#34;9C = 5(F-32) 形成的约束网络&#34;/&gt;
+&lt;/center&gt;
+&lt;p&gt;在讲解这个实例时，3.3.5小节引入一新语言的设计，这种语言将使我们可以基于各种关系进行工作。&lt;/p&gt;
+&lt;p&gt;我们在第一章里面就知道了，任何一门语言都必须提供三种机制：&lt;code&gt;基本表达形式&lt;/code&gt;、&lt;code&gt;组合的方法&lt;/code&gt;与&lt;code&gt;抽象的方法&lt;/code&gt;。针对本系统的语言的基本元素就是各种&lt;code&gt;基本约束&lt;/code&gt;，像&lt;code&gt;adder&lt;/code&gt;、&lt;code&gt;multiplier&lt;/code&gt;、&lt;code&gt;constant&lt;/code&gt;。用 Scheme 过程来实现基本约束也就自动地为该新语言提供了一种复合对象的抽象方式。&lt;/p&gt;
+&lt;p&gt;整个约束系统，我个人觉得主要是理解&lt;code&gt;process-forget-value&lt;/code&gt;过程中为什么要调用&lt;code&gt;process-new-value&lt;/code&gt;，这是串联起整个约束系统很重要的一步。书上是这么解释的：&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;只所以需要这一步，是因为还可能有些连接器仍然有自己的值（也就是说，某个连接器过去所拥有的值原来就不是由当前对象设置的）&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;4
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;5
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;6
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;7
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;; adder 中 process-forget-value 的实现
+(define (process-forget-value)
+  (forget-value! sum me)
+  (forget-value! a1 me)
+  (forget-value! a2 me)
+  ; TODO 为什么需要理解执行 process-new-value
+  (process-new-value))
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;整个约束系统的代码可以在&lt;a href=&#34;https://github.com/jiacai2050/sicp/blob/master/exercises/03/lib/propagation.scm&#34;&gt;propagation.scm&lt;/a&gt;找到。&lt;/p&gt;
+&lt;h2 id=&#34;并发时间是一个本质问题&#34;&gt;并发，时间是一个本质问题&lt;/h2&gt;
+&lt;p&gt;这一小节主要讲解引入&lt;code&gt;赋值&lt;/code&gt;这一行为后，并发程序可能出现的问题，其实这里的东西我们在平常的编程中多多少少有些了解，主要是如何保证操作的原子性。&lt;/p&gt;
+&lt;center&gt;
+&lt;img src=&#34;https://img.alicdn.com/imgextra/i3/581166664/TB2lzajiVXXXXcHXXXXXXXXXXXX_!!581166664.png&#34; alt=&#34;Peter与Paul同时取同一个账户的一种场景&#34;/&gt;
+&lt;/center&gt;
+保证操作的原子性，这里解释了一种方式——串行化组（serializer），其实就是我们 Java 里面的 synchronized 的关键字的功能。
+保证一个对象的原子性还比较好解决，但是保证多个对象间交互的原子性就比较麻烦了，书上用从一个账户向另一个账户转账这个例子说明了这种情况。
+```
+(define (serialized-exchange account1 account2)
+  (let ((serializer1 (account1 &#39;serializer))
+        (serializer2 (account2 &#39;serializer)))
+    ((serializer1 (serializer2 exchange)))
+      account1
+      account2))
+```
+该例子完整代码可以参考[serialized_exchange.scm](https://github.com/jiacai2050/sicp/blob/master/exercises/03/lib/serialized_exchange.scm)。
+&lt;p&gt;更进一步，如果保证 n 对象间交互的原子性呢？这应该就是现在比较热门的一领域：分布式系统中，如何保证数据的一致性，后面有精力可以看看看业界使用最广泛的 &lt;a href=&#34;http://stackoverflow.com/questions/3662995/explaining-apache-zookeeper&#34;&gt;zookeeper 的实现原理&lt;/a&gt;。&lt;/p&gt;
+&lt;p&gt;书上进一步扩展，讲述了并发问题与物理学的联系。有种发现一世界未解之谜的感觉，摘抄如下：&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;从本质上看，在并发控制中，任何时间概念都必然与通信有内在的密切联系。有意思的是，时间与通信之间的这种联系也出现在相对论里，在那里的光速（可能用于同步事件的最快信号）是与时间和空间有关的基本常量。在处理时间和状态时，我们在计算模型领域所遭遇的复杂性，事实上，可能就是物理世界中最基本的复杂性的一种反映。&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;h2 id=&#34;流&#34;&gt;流&lt;/h2&gt;
+&lt;p&gt;流是另一种模拟现实物理世界的设计策略，其核心思想就是用数学概念上的函数来表示一现实物体的改变，比如对象X，可以用&lt;code&gt;X(t)&lt;/code&gt;来表示，如果我们想集中关心的是一个个时刻的x，那么就可以将它看作一个变化的量。如果关注的是这些值的整个时间史，那么就不需要强调其中的变化——这一函数本身是没有改变的。&lt;/p&gt;
+&lt;p&gt;这里流，较之前的表而言，主要是引入&lt;code&gt;force&lt;/code&gt;、&lt;code&gt;delay&lt;/code&gt;两个过程，将其延时求值。有了延时求值，我们就可以做很多之前不能做的事情，比如实现一个表示所有正整数的无穷流&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;4
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;5
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;6
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;7
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;8
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;9
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;; 第一种方式
+(define (integers-starting-from n)
+  (cons-stream n (integers-starting-from (+ n 1))))
+(define integers (integers-starting-from 1))
+; 第二种方式，隐式定义
+(define ones (cons-stream 1 ones))
+(define (add-streams s1 s2)
+  (stream-map + s1 s2))
+(define integers2 (cons-stream 1 (add-streams ones integers2)))
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;h3 id=&#34;流计算模式的使用&#34;&gt;流计算模式的使用&lt;/h3&gt;
+&lt;p&gt;流方法极富有启发性，因为借助于它去构造系统时，所用的模块划分方式可以与采用赋值，围绕着状态变量组织系统的方式不同。例如，我们可以将整个的时间序列作为有关的目标，而不是去关注状态变量在各个时刻的值。这将使我们更方便地组合与比较来自不同时刻的状态的组合。&lt;/p&gt;
+&lt;h4 id=&#34;将迭代操作表示为流操作&#34;&gt;将迭代操作表示为流操作&lt;/h4&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt; 1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 4
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 5
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 6
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 7
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 8
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 9
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;10
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;11
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;12
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;13
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;14
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;15
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;16
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;17
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;; 求解一个数的平方
+(define (sqrt-stream x)
+  (define guesses
+    (cons-stream 1.0
+                 (stream-map (lambda (guess) (sqrt-improve guess x))
+                             guesses)))
+  guesses)
+; 由 π/4 = 1- 1/3 + 1/5 - 1/7 + ..... 计算 π 的值
+(define (pi-summands n)
+  (cons-stream (/ 1.0 n)
+               (stream-map - (pi-summands (+ n 2)))))
+(define (partial-sums s)
+  (cons-stream (stream-car s)
+               (add-streams (stream-cdr s)
+                            (partial-sums s))))
+(define pi-stream
+  (scale-stream (partial-sums (pi-summands 1)) 4))  
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;h4 id=&#34;序对的无穷流&#34;&gt;序对的无穷流&lt;/h4&gt;
+&lt;center&gt;
+  &lt;img src=&#34;https://img.alicdn.com/imgextra/i4/581166664/TB2UTipiVXXXXa5XXXXXXXXXXXX_!!581166664.png&#34; alt=&#34;序对(i,j)，并且i&lt;=j&#34;/&gt;
+&lt;/center&gt;
+这里主要是生产序对`(i,j)`，并且`i&lt;=j`
+```
+(define (pairs s t)
+  (cons-stream
+    (list (stream-car s) (stream-car t))
+    (interleave
+      (stream-map (lambda (x) (list (stream-car s) x))
+                  (stream-cdr t))
+      (pairs (stream-cdr s) (stream-cdr t)))))
+```
+这里比较有意思的是[习题3.66](https://github.com/jiacai2050/sicp/blob/master/exercises/03/3.66.md)，让我们计算某序对在流中的位置，这题感觉需要将强的数学功底。
+&lt;h4 id=&#34;将流作为信号&#34;&gt;将流作为信号&lt;/h4&gt;
+&lt;center&gt;
+&lt;img src=&#34;https://img.alicdn.com/imgextra/i2/581166664/TB2KcaeiVXXXXXtXpXXXXXXXXXX_!!581166664.png&#34; alt=&#34;将积分过程看作信号处理系统&#34;/&gt;
+&lt;/center&gt;
+这里充分利用流当作某系统的输入信号，使得这个系统不断运转下去。
+&lt;h3 id=&#34;流的弊端&#34;&gt;流的弊端&lt;/h3&gt;
+&lt;center&gt;
+&lt;img src=&#34;https://img.alicdn.com/imgextra/i4/581166664/TB2o7KviVXXXXarXXXXXXXXXXXX_!!581166664.png&#34; alt=&#34;一个合用账户，通过合并两个交易请求流的方式模拟&#34;/&gt;
+&lt;/center&gt;
+这里还是用两个用户同时访问一个账户为例。处理的麻烦之处在于如何**归并**两个请求流。这里并不能简单交替地从两个请求流取一个地方式合并，因为两个用户访问账户的频率可能不一样。这正好是在并发中不得不去处理的同一个约束条件，在那里我们发现需要引进显式同步，以保证在并发处理具有状态的对象的过程中，各个事件时按照“正确”顺序发生的。这样，虽然这里试图支持函数式的风格，但在需要归并来自不同主体的输入时，又要重新引入函数式风格中致力于消除的同一个问题。
+&lt;h2 id=&#34;总结&#34;&gt;总结&lt;/h2&gt;
+&lt;p&gt;本章一开始就提出了其目标，那就是构造一些计算模型，使其结构能够符合我们对于试图去模拟的真实世界的看法。我们学到了两种方式：&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;将这一世界模拟为一集相互分离的、受时间约束的、具有状态的相互交流的对象&lt;/li&gt;
+&lt;li&gt;将它模拟为单一的、无时间也无状态的统一体&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;每种方式都具有强有力的优势，但就其自身而言，有没有一种方式能够完全令人满意。如何整合这两个系统，是现在一重要难题。&lt;/p&gt;
+</description>
     </item>
     
     <item>
@@ -40,7 +963,92 @@
       <pubDate>Wed, 21 Oct 2015 00:00:00 +0000</pubDate>
       
       <guid>https://liujiacai.net/blog/2015/10/21/programming-guide/</guid>
-      <description>来我们这个实验室里读研的学生可能自从来到这里的第一天就觉得自己的命运很苦逼。他们读本科时主修的是机械设计、制造以及自动化之类的专业，毕业时的</description>
+      <description>&lt;p&gt;来我们这个实验室里读研的学生可能自从来到这里的第一天就觉得自己的命运很苦逼。他们读本科时主修的是机械设计、制造以及自动化之类的专业，毕业时的简历上也顶多是写写擅长 MS Word、PowerPoint、UGNX、AutoCAD 之类的应用软件。他们有限的学习生涯里，怎么也不会想到来到这里竟然要首先重新学习 C 语言，然后还要学 C++，接下来还要学习 Python 或 Lua 什么的，而且竟然还不让用 Windows，只能用连个 QQ 都没有并且经常出故障的 Linux……&lt;/p&gt;
+&lt;p&gt;在他们心里，编程似乎并不是多么有趣的事，所以他们就觉得编程很难。对此我有同感，大家都会玩的 Windows 里的挖雷与纸牌那样的小游戏，还有很多人会打的麻将，还有围棋，这些事我觉得也挺难的。&lt;/p&gt;
+&lt;p&gt;我曾经告诉他们，如果不会编程，那么他们就很难解决自己的研究方向上的那些问题，因此也就不可能写出有价值的论文，不可能顺利的毕业拿到学位，不可能找到很好的工作……这种功利性的『威胁』，对于有些人会有点效用，但是如果没有能力让他们自发的对编程产生足够的兴趣，这对于任何一个『好为人师』的人而言都是一种莫名其妙的羞辱。&lt;/p&gt;
+&lt;p&gt;现在我试着去告诉他们，编程不仅不难，而且会很有趣，其中充满着值得深思的东西，而这些深思对于我们人生也会产生许多增益。于是，就有了这篇文章。&lt;/p&gt;
+&lt;h2 id=&#34;编程是什么&#34;&gt;编程是什么&lt;/h2&gt;
+&lt;p&gt;无论你是不是程序猿，每一天你都在编程，每一天你都被编程。编程，就是设计一些步骤，组织这些步骤，让这些步骤在当前环境中正确的运行，最终得出自己想要的结果。&lt;/p&gt;
+&lt;p&gt;你的每一天都是在起床、喝水、吃饭、工作、上厕所、娱乐、睡觉等步骤的有序组织下运转的，你活在这个程序中，同时你在这个程序中为改善自己的生活而制定各种计划并努力去实现。&lt;/p&gt;
+&lt;p&gt;机械设计，其实比编程还要编程。所谓的机械零件，就是数据结构。所谓的传动机制，就是应用程序接口（API）。所谓发动机，就是程序的内核。你将零件装配好，通过传动机制将它们接驳到发动机上，于是你就创造出来一部机器，通上电或者打着火，就可以让它运转起来。&lt;/p&gt;
+&lt;p&gt;编程比机械设计来的更为简单，你不需要经常给自己所编写的程序添加润滑油，也不需要去对每个数据结构进行复杂的力学分析，更不需要关注这些数据结构是否严丝合缝的相互配合，至少目前的计算机软件工程是这个样子的，它不像机械工程学科那样以坚实的物理定律为基础。机械的结构与运行规律总是可计算、可分析的，而软件的结构与运行过程却充满着太多不严格的环节。这种不严格，却给我们营造了一个可以发挥天赋或工科实践经验的空间。显然，即使软件工程存在着各种不严格，但是我们却能够通过编程模拟出机械工程的一切。事实上也是如此，现代的机械工程领域，软件已经无处不在。&lt;/p&gt;
+&lt;p&gt;机械设计有很多精妙的『算法』，像缝纫机、枪械、发动机之类的机构，设计它们其实要比计算机世界里的算法设计难得多，而且这些机构对人类文明的发展往往能够产生巨大的推动作用。希望你不要因此爱上机械设计……学会编程，你会对机械设计的理解更为深刻。因为编程是将『设计』本身作为一种智力活动而对待的。&lt;strong&gt;你可以将机械工程领域的那些智力活动应用于编程，也可以将编程中的智力活动应用到任何设计之中。&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;
+  &lt;img src=&#34;http://segmentfault.com/img/bVqpCM&#34; alt=&#34;&#34;&gt;
+
+&lt;/p&gt;
+&lt;p&gt;正如 SICP 一书的序言所言，教育者、将军、营养学家、心理学家以及父母们，他们做规划，而士兵、学生以及某些社群则被规划。克服大型的问题，要经过一系列的规划，其中大部分规划会运作于现实之中，因为这些规划总是与迫切处理的问题息息相关。若将规划这件事情本身作为一项智力活动来欣赏或研究，那么就必须转到计算机编程上面来。你需要阅读与编写计算机程序，而且要大量的做。程序是怎样的，它们的功能是什么，这些不太重要，重要的是它们的性能如何，它们之间能否精巧的相互配合从而构造更大规模的程序。&lt;/p&gt;
+&lt;h2 id=&#34;入门书&#34;&gt;入门书&lt;/h2&gt;
+&lt;p&gt;学习编程之前，应该先问自己一个问题：我为什么要学习编程？不要打我……我知道你们是被逼着去学习编程的，那就不妨被逼着思考『我为什么要学习编程？』。&lt;/p&gt;
+&lt;p&gt;如果不知道答案，也没有关系。反正这个问题与学习编程也没有太大关系。其实，我们已经做了非常多的不需要回答为什么的事了。我们连『我们为何而存在』这样的问题都不知道答案，却依然糊里糊涂的活到了现在。&lt;/p&gt;
+&lt;p&gt;先推荐几本入门书以及阅读它们的方法，因为学习编程最不需要的方法就是将一本讲编程的书从头读到尾……编程不是考试，它是基于现实生活的创造。这种创造是渐进的，你在创造之初可能也无法预料到结果会是如何，这是任何创造性活动的基本属性。&lt;/p&gt;
+&lt;p&gt;我推荐的第一本书是《计算机程序的构造和解释》，英文名是《Structure and Interpretation of Computer Programs》，简称 SICP。英语阅读能力好的同学，可以看英文版。中文阅读能力好的同学，可以看中文译本，裘宗燕老师的文字素养与翻译的严谨程度是可赞的。这本书的阅读，建议分以下三个阶段：&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;阅读前两章，第一章是讲计算过程的抽象方法，第二章是将基本的数据的抽象方法。这两章的内容涵盖了软件世界的『九年制义务教育』的全部内容，所用的教学语言也是非常成熟且设计精巧的 Scheme 语言的一个很小的子集。学习这两章内容的过程中，可以穿插着阅读《Teach Yourself Scheme in Fixnum Days》的前 10 章，这份 Scheme 教程也有一份中文译本。SICP 的习题，即使不去做，也应该把题目看一下，动脑子想一想，判断一下能不能做得出来。这些习题，在网络上很容易找到答案。&lt;/li&gt;
+&lt;li&gt;复习 C 语言，教材用 Kernighan 与 C 语言之父 Ritchie 合写的那本《C 程序设计语言》即可。这个阶段的设置，主要是面向我们实验室内部。因为我们实验室里的同学在本科阶段通常是要修 C 语言这门课的，但是当时他们可能并未真正从学习编程的角度去学习，现在可以通过第一阶段基于 Scheme 语言建立的编程观念去重新认识一下 C 语言，只有这样方能理解 C 语言的优点与缺点，并且去思考如何充分发挥 C 的优势，然后用 Scheme 来弥补 C 的不足。借助 GNU Guile 2，很容易实现 C 与 Scheme 复合编程。这个过程可以穿插阅读 Kernighan 写的《程序设计实践》。&lt;/li&gt;
+&lt;li&gt;阅读 SICP 的第 3 章，然后再找一本讲 C++ 的书，比如 C++ 世界中非常有名但我不以为然的砖书《C++ Primer》，只学习基于类的数据抽象以及面向对象编程部分即可。这个阶段，SICP 的第三章阐述了面向对象编程与函数式编程两种方法。从 SICP 中获得的面向对象编程，可以在 C++ 的学习中得到进一步一些强化，至于函数式编程方法，可以假装自己已经知悉，留待日后需要时再作打算。最后，记得将《Teach Yourself Scheme in Fixnum Days》剩下的内容看完。&lt;/li&gt;
+&lt;/ol&gt;
+&lt;blockquote&gt;
+&lt;p&gt;C++ 的入门书，我更推荐《C++ Without Fear》，中文译本叫《好学的 C++》，现在应该是第 2 版。之所以不推荐大家认为是 C++ 四书五经之一的《C++ Primer》，是因为我总觉得它像一本事无巨细的案头手册，比较适合那些已经有了编程经验甚至 C++ 经验的程序猿阅读。我心目中真正好的教材应该像小说那样，由一条或多条逻辑主线延展而成，这种教材对于非科班出身的人尤为重要。&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;对于大部分编程任务而言，上述书所涉及的知识已经足够用了，而且上面的这几本书也是非常耐读的书，只要你不是那么着急的将它们读完，它们总是很有趣。我很喜欢 SICP 与《程序设计实践》这两本书，因为太喜欢了，所以一直都不舍得把它们读完。&lt;/p&gt;
+&lt;h2 id=&#34;让实践有些难度&#34;&gt;让实践有些难度&lt;/h2&gt;
+&lt;p&gt;书是要看的，但是看书的过程中最好开动你的双手。所以，你不应该停下来问自己：为何要学习编程？&lt;/p&gt;
+&lt;p&gt;我希望总有一天，你能给自己找到一个答案，那就是你想写一个 XXX 程序。这个程序至少应该对你是有用，亦即它的主要功能不与你的系统里的其他程序存在着重复。如果你能明确这一点，那么你所创造的程序就有了意义，你的学习就有了意义。&lt;/p&gt;
+&lt;p&gt;为何要学习编程？因为你要创造一些从来没有的软件，而且它能够帮助你做一些你认为是很重要的事！凡是你认为重要的事，对于很多人而言，很有可能也是很重要的，因此你所创造的东西就可以帮助更多的人，这意味着会有一些你可能不认识的人需要你，这就是你的价值所在。&lt;/p&gt;
+&lt;p&gt;编程的实践，应该将它作为探索未知世界的智力活动，应该从书中跳出来，将自己从那些示例中获得的经验用于解决现实中的问题。如果你觉得，现实中根本不存在什么问题需要你去解决。那么……请你回答一下『你为何而存在』这个问题吧。&lt;/p&gt;
+&lt;p&gt;看书，是从前人正确的经验中学习。实践，是从自己的失败中学习。既然决定要实践了，所以还是给自己找一些比较难走的路走走看吧，让失败多一些，让失败早一些。&lt;/p&gt;
+&lt;p&gt;以我个人比较感兴趣的几个东西为例，可以写一个基于 &lt;a href=&#34;http://segmentfault.com/a/1190000003779240&#34;&gt;TeX&lt;/a&gt; 的现代&lt;a href=&#34;http://garfileo.is-programmer.com/2012/7/7/cweb-none-definitive-tutorial-for-chinese.34433.html&#34;&gt;文学编程&lt;/a&gt;语言，通过它不仅可以历练编程能力，也会对编译原理中的语法分析环节有一些实际的认识。也可以尝试去写一个三维几何库，能够完成凸包、Delaunay剖分以及 Voronoi 图等计算，不求大而全，只求小而精，以后漫长的时间里可以慢慢的去改进它。还可以去找一个自己喜欢的开源项目，去阅读它的源代码，了解它所用的项目构建系统，分析项目结构，试着去修改它的代码……我现在最感兴趣的是 LuaTeX。&lt;/p&gt;
+&lt;h2 id=&#34;问题是最重要的&#34;&gt;问题是最重要的&lt;/h2&gt;
+&lt;p&gt;假如你已经有了非常多次的实践上的失败，并且你已经大致掌握了 Scheme 与 C/C++ 这样的语言，那么每年学一门新的语言，这并非难事。可能你会对网络上经常发生的语言之战觉得奇怪。&lt;/p&gt;
+&lt;p&gt;是问题决定了语言，是问题决定了编程范式，是问题决定了信仰。如果你能很明确的认识到这些，那么你就不会陷入某种语言宗教的泥淖之中。对于许多事都是如此……搞机械的人，也经常信仰 UGNX，CATIA，PROE 这些『宗教』的……&lt;/p&gt;
+&lt;p&gt;如果非要给自己找一种信仰，那么&lt;strong&gt;我信仰我的存在就是为了解决问题的。&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;如果在我用的 Linux 系统上做一些自动化程度高一些的维护任务，我不会厌憎佶屈聱牙的 Bash 脚本，而是非常欣赏它像胶水一样快速的将几个本来是独立运行的程序连接起来替我完成复杂的任务。&lt;/p&gt;
+&lt;p&gt;如果我要临时的做一些文本处理工作，我可以用 python 3，因为它对 UTF-8 支持的挺好，而且字符串库功能齐备。如果只是进行一些文本的替换，emacs 或 sed 之类现成的工具也够用了。&lt;/p&gt;
+&lt;p&gt;如果我要写一个严肃的程序，严肃到了它的生命可能要很久，那我会选择一门成熟稳定的语言来实现它，即使用 C，我也不会烦弃它的繁琐的代码，我会尽力凝练程序中要实现的功能。&lt;/p&gt;
+&lt;p&gt;人生中本来就面临着许多选择，但是非常多的人在选择之前并未认真的去考察自己面对的问题。&lt;/p&gt;
+&lt;p&gt;不过，对问题本身的考察，需要一套基本的工具集。没有听诊器、手术刀或 X 光，再厉害的医生也无法分析人体的内部发生了什么。对于编程而言，我认为上述我推荐的书中所涉及的知识已经足够用来洞察软件世界的各种问题了，以此为基础，我们只需再保持心态的开放，随时汲取所需的知识就可以了。例如，虽然上述几本书没有一本是讲 Web 开发的，但是如果你熟悉 Scheme，就可以发现 JavaScript、HTML 5、CSS 3 之类的语言并没有超出 Scheme 的范畴，你可以很快的就掌握它们。&lt;/p&gt;
+&lt;h2 id=&#34;算法&#34;&gt;算法&lt;/h2&gt;
+&lt;p&gt;解决问题需要算法。既然编程无处不在，那么算法也是无处不在的。但是，如果随便拿起一本讲算法的书，随便一本，可能都会让你觉得头昏脑胀。也许你会担心，连算法的书都看不懂，还怎么写程序？&lt;/p&gt;
+&lt;p&gt;当初我刚学习编程的时候，写过二十四点、汉诺塔、八皇后、俄罗斯方块之类的小程序。后来，在现实的项目里，也写过堆排序、快速排序、矩阵的 LU 与 SVD 分解、无向连通图的最小生成树及最短路径之类的程序。但是现在，随便拿一个让我去实现，我还是不得不去翻书看懂算法，然后再去写程序……&lt;/p&gt;
+&lt;p&gt;我想说的是，如果你正在阅读一本讲算法的书，书里有些算法或它的示例是你一时无法看懂的，可以跳过去。很多专门讲算法的书里，充斥着心智游戏。如果你无法将自己代入到这些游戏的情境中，这个游戏的玩法自然就是不明了的。现在看起来，这是很自然的事，然而当初我却一遍又一遍的怀疑自己的智商，特别是看到网络上很多人像喝白开水一样的谈论着这些心智游戏，我一度怀疑，我不适合做编程方面的事。&lt;/p&gt;
+&lt;p&gt;幸好，这个世界足够稳定，以至于我们不需要了解相对论与量子力学也能够很好的生活下去。大部分人，连牛顿力学都不需要了解……算法也是这样，特别是现在已经存在了相当多的实现，例如几乎任何一种编程语言的标准库中都提供一维数据的快速排序算法的实现。基本上，只要是对现实中的问题非常重要的算法，你总是能够找到它们的既有实现，取而用之。&lt;/p&gt;
+&lt;p&gt;当你走在街上，那些高高矗立恢宏建筑，建筑工人建造它们的过程中可曾用了极高心智的技术？编程，本质上也是如此，工程经验的重要性大于心智。甚至在编程中，过多的运用心智，反而会适得其反。&lt;/p&gt;
+&lt;p&gt;我不是说学习算法没有必要，我只是强调不要被一时难以理解的算法挡住你。你天生就拥有一些无比强大的算法，它们是穷举、贪婪与分治，还有最强大的『演化』与『神经网络』。那些专门讲算法的书，只不过是是了很蹩脚的语言、符号以及示例将你天生的直觉刻画出来而已。只要你在现实中遇到问题，你总是能够找到求解这个问题的方法，而不是只有读懂了某本讲算法的书你才能解决这个问题。&lt;/p&gt;
+&lt;p&gt;很多算法书，都是我看不懂的。它们的第一章就是让我复习数学归纳法，第二章就是让我学习算法的时间与空间复杂度分析……而我属于对数学缺乏直觉的人，对我而言，这些书的唯一价值就是故意不让我去读它。即使是我心目中的大神 Knuth 的传世之作《计算机编程艺术》，它唯一的目的似乎就是让我觉得我不是搞艺术的。&lt;/p&gt;
+&lt;p&gt;很久之后，我在学校图书馆闲逛的时候，发现了&lt;a href=&#34;http://book.douban.com/subject/1232071/&#34;&gt;《如何求解问题：现代启发式方法》&lt;/a&gt;这本书，翻了翻，就开始叹息，为什么一开始不知道这本书？&lt;/p&gt;
+&lt;h2 id=&#34;增强对计算机的理解&#34;&gt;增强对计算机的理解&lt;/h2&gt;
+&lt;p&gt;有时间与精力可以阅读一些专业性强一些的计算机理论的书籍，譬如操作系统原理、编译原理、算法与数据结构之类。看不懂太专业的书，或者没那么多时间和精力，可以看看计算机科学的一些科普著作。有本《通灵芯片》值得一看，薄薄的小册子，三五天的业余时间就可以看完。有本《编码：隐匿在计算机软硬件背后的语言》，算是《通灵芯片》的加强版，也值得一看。有一本《深入理解计算机系统》，以程序员的视角来看计算机的软硬件系统，也是一本很好的书，不过就是要读完它，需要一些耐心与时间，所以没必要一次性看完。也可以继续将 SICP 的第四、五章看完。&lt;/p&gt;
+&lt;p&gt;虽然你的编程技能不会因为读了这些讲述计算机原理的书而突飞猛进，但是这些书可以让你理解你的程序是在一个什么样的世界里运行的。虽然你不知道自己为何而存在，但是你知道这个程序为何而存在。你不仅知道它为何而存在，还知道它怎样存在，并且也知道怎样让它更好的存在。这样，也就没必要在那些所谓的『XXX 箴言』、『XXX 之道』、『XXX 之禅』的书籍上浪费你有限的生命。&lt;/p&gt;
+&lt;p&gt;有时间，也可以复习一下《黑客帝国》，它的导演虽然不是程序猿，但胜似程序猿。看完黑客帝国，也可以看看 Steven Levy 写的《黑客：计算机革命的英雄》。从技术层面跃迁到人文层面，也许那时你会对自己的人生有着更为深刻的认识。计算机，是人类为自己创造出来的最好的一面镜子。我们现在没有能力了解自身，但是我们可以制造与发展计算机来逐步了解自己。&lt;/p&gt;
+&lt;h2 id=&#34;思考生命&#34;&gt;思考生命&lt;/h2&gt;
+&lt;p&gt;懂编程就像懂其他任何一门技艺一样，没什么了不起，因为任何技艺都不会比你的生命更复杂，它甚至不如路边已经被你视而不见的野草复杂。生命，本身就是一个非常奇妙的东西，它的诞生即偶然又必然。整个生命体系只要略微有一点点误差，我可能就不会诞生于世。当我确认我已经存在于这个世上了，但是我又不知道我为何而存在。&lt;/p&gt;
+&lt;p&gt;如果每个人都思考过『我为何而存在』这个问题，那么就意味着对于这个问题的思考，我们不是自发的，而是被迫的。这个问题，自我们诞生以来就像烙印一样存在于每个人的思想里。这个问题是人类的终极问题，我们所解决的一切问题最终都会指向它。我们为这个问题而生。不仅仅是为了自己去回答这个问题而生，还要为他人回答这个问题而创造生存条件。他人，包括我们的家人，也包括我们的朋友以及那些我们并不不认识的人。&lt;/p&gt;
+&lt;p&gt;我们努力赚钱，是为了过更好的生活么？似乎并非如此，生活条件的富足，似乎仅仅是为了我们去思考『我们为何而存在』而创造一个更好的环境。即使是世界上最穷的人，也会自问，我为何而存在，上苍为何如此待我之类的问题。在这个问题面前，富人与穷人是绝对平等的。我们看见美女，可能会怦然心动，追而娶之，是为了一段美好的爱情么？也许美色是一种诱惑，用于保证人类能够继续繁衍生息，以便继续思考那个终极问题；即使是出于爱情，也极有可能是因为你爱的人对于你回答『我为何而存在』这个问题具有增益作用。&lt;/p&gt;
+&lt;p&gt;一切的生物，皆为命而生，这就是生命。生，是一种可变并且可自我繁衍的状态。只要有一种事物，它的状态是可变的，而且这种状态在保持自身变化的过程中能够产生新的可变且可繁衍的状态，那么它就有『生』。那么命是什么？汉字的『命』，字形上有点儿『一个人一生都在叩问』的意思……我们在叩问什么，或许正是『我为何而存在』这个问题。&lt;/p&gt;
+&lt;p&gt;苏格拉底说他的存在是为了『认识自己』，但这似乎不是答案，只是一个过程。在&lt;a href=&#34;http://segmentfault.com/a/1190000003869521&#34;&gt;『泛型与闭包』&lt;/a&gt;，我之所以感慨『每一个人，都像是一个闭包』，是觉得如果我们是程序里的一个函数，我们自身似乎永远也无法知道自己的运行结果是什么。这种想法有点宿命论的意味，但是每个人的诞生又充满着偶然，我们的生存活动似乎并不受创造者的影响，或者创造者无意于去干扰我们的活动，因此在生活中我们经常觉得自己有自由意志。&lt;/p&gt;
+&lt;p&gt;如果我们即是被创造的，又有一定的自由意志，那么苏格拉底或许就是对的，创造者试图创造我们的目的就是让我们去『认识自己』。我们虽然并不知道我们的生命终止之时会产生什么样的『计算结果』，但是兴许创造者可以理解这些结果。同时，我们有积极生活的自由，也有消极颓废的自由，我们可以将认识自己作为终极问题去探索的自由，也有完全不配合这位创造者而自杀的自由。还有一种可能，创造者已经不存在，整个宇宙系统也许只是一个被遗弃的废墟，或者他只是在机器之前打了个盹……&lt;/p&gt;
+&lt;p&gt;很容易发现，将问题上溯到原点，再从原点演化到现在，不难得出苏格拉底式的结论。既然我们还活着，既然我们在问自己存在的意义，那么答案就自然指向了『认识自己』。生命对我而言只是个过程。在这个过程中，我唯一能观测的并非世界的变化，而是我自身的变化。至于我自身的状态的变化是已经发生过了，现在只是回放，还是正在发生，这显得非常的不重要，因为我们无法跳出这种状态的变化。这可能也是为什么 OOP 比 FP 更容易理解的根本原因。&lt;/p&gt;
+&lt;p&gt;这个世界有许许多多的工作，似乎没有任何一种工作能像编程这样激发我对生命开始思考。&lt;/p&gt;
+&lt;h2 id=&#34;从其他领域寻找答案&#34;&gt;从其他领域寻找答案&lt;/h2&gt;
+&lt;p&gt;为了寻找终极问题的答案，有必要阅读一些哲学、物理、生物之类的书籍。人类数千年的文明，『我为何而存在』这个问题也已经被思考了数千年。既然我们此刻所处的系统还在运行着，那就说明答案并未真正出现。但是，在决定自己去思考这个问题之前，看看过去的时代里的有智慧的人是如何思考的，这是一个必须的过程。人类对这个问题的所有思考过程是伴随着自身的繁衍生息不断的传递下去的。&lt;/p&gt;
+&lt;p&gt;也许你该看点哲学类的书。如果从未想过去看哲学的书，我推荐一本 14 岁的少男少女就应该阅读的《苏菲的世界》，你不要打我。罗素的那本《西方哲学史》虽然出自他个人的视角，但是显然我们对哲学的理解也很难达到他那样的高度，鉴于我们也不是打算去在哲学上有所成就，《西方哲学史》足够我们看的了。我不认为这个世界上真正存在『正确』的哲学。&lt;/p&gt;
+&lt;p&gt;复习物理。《费恩曼物理学讲义》第一卷就很好，人类所能感知到的这个世界，费恩曼像讲故事一样的差不多一网打尽了。如果连费曼的书都看不懂，不妨看看《时间的形状》+《量子物理史话》，它们是近年来在相对论及其之后的物理学方面中国人写的非常优秀的科普书。还有一本是我大学时经常看的《从一到无穷大》，虽然年代已颇为久远，但依然不失为极好的物理科普著作。&lt;/p&gt;
+&lt;p&gt;生物学，这门课在中学时是我最讨厌的课程之一。因为我实在是看不懂书里的插图，乡村中学连个显微镜与真实的标本都没有，所以长期以来，我一直都是个生物盲。很多常见的花草树木鸟兽虫鱼，我连它们的名字都叫不上来，更不要说它们具体属于哪个门纲目科属种了。但是有一本生物学的书我还是能看懂的——《漫画玩转遗传学》，这是本非常好的遗传学科普书。当时我是因为学习遗传算法而买来的，结果从它从第一页开始就把我的眼睛抓住了。&lt;/p&gt;
+&lt;p&gt;但是，很诚恳的说，这些书都读完，我还是不知道『我为何而存在』这个问题的答案，但是我对编程有了更多的思考。特别是最近，量子力学将基本粒子的运动归结为概率问题的思想，这对于我一直致力去解决的一个问题有很大的启发。&lt;/p&gt;
+&lt;h2 id=&#34;这些书你都看过么&#34;&gt;这些书你都看过么？&lt;/h2&gt;
+&lt;p&gt;都看过，但是有一些没有看完。有些书是看完了，但是时间久了，有些遗忘，一直想找点时间再重读一遍。&lt;/p&gt;
+&lt;p&gt;有些书是因为实在太好，不忍心一下都看完。这样说，有些矫情，但事实就是如此。像《费恩曼物理学讲义》，虽然有着物理学界小飞侠之称的费恩曼已经将深邃的物理学变成了我能够读懂的人类语言，但是一方面我不是专业研究物理学的人，我没有必要赶进度似的将他的书彻底读完，另一方面是一旦读完了，我就会惋惜，它不会再有第二季……我打算将费恩曼的这三卷物理学讲义留给我今后的时间里慢慢的去看，我也可以把这些知识讲给我的儿子听。&lt;/p&gt;
+&lt;p&gt;有些书对我而言是因为太难，即使我觉得已经看完了，但过一段时间发现，跟没看过是一样的。这些书，我也只能归类为没有看完的书。&lt;/p&gt;
+&lt;p&gt;凡是我看的书，都是我认为在书中所涉及的方向上，作者比我走的更为深远。但是我也不会自卑，因为他们现在已经没法走了……&lt;/p&gt;
+&lt;h2 id=&#34;后记&#34;&gt;后记&lt;/h2&gt;
+&lt;p&gt;本文写于一个深秋又寂寞的下午，目的只是为我的小伙伴们学习编程指出一条道路。从 SICP 开始，可能有许多人觉得不靠谱，但是考虑到这些小伙伴一个一个都是研究生，考研期间经过了高数、线代、概率以及英语的『洗礼』，研一也会修数值分析与矩阵分析这两门数学课。即使他们以前从未接触过编程，但是他们的情况，SICP 还是挺适合他们的。如果他们连 SICP 的前三章都搞不定，这只能说明他们连 MIT 大一的学生都不如了……这或许不是他们的悲哀，而是这个国家的悲哀。&lt;/p&gt;
+&lt;p&gt;对于我不知道底细又打算学编程的同学，这篇文章可能不会太靠谱，所以我只能在题目中写上『不负责任』。不过，文章中出现的这些书，我觉得还都是挺不错的，有时间看一下，应该不是浪费时间。&lt;/p&gt;
+&lt;h2 id=&#34;出处&#34;&gt;出处&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;http://segmentfault.com/a/1190000003873192&#34;&gt;http://segmentfault.com/a/1190000003873192&lt;/a&gt; by &lt;a href=&#34;http://segmentfault.com/u/garfileo&#34;&gt;garfileo&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+</description>
     </item>
     
     <item>
@@ -49,7 +1057,167 @@
       <pubDate>Sun, 20 Sep 2015 00:00:00 +0000</pubDate>
       
       <guid>https://liujiacai.net/blog/2015/09/20/sicp-chapter2-summary/</guid>
-      <description>到今天为止终于把第二章看完了，相比于第一章，感觉难点少了些，这章主要是通过大量例子（主要有图形语言、区间运算、符号求导、集合的表示、通用型算</description>
+      <description>&lt;p&gt;到今天为止终于把第二章看完了，相比于第一章，感觉难点少了些，这章主要是通过大量例子（主要有图形语言、区间运算、符号求导、集合的表示、通用型算术运算）来熟悉构造数据抽象的相关技能。下面来回顾总结一下第二章。&lt;/p&gt;
+&lt;h2 id=&#34;数据抽象的意义&#34;&gt;数据抽象的意义&lt;/h2&gt;
+&lt;p&gt;在第一章中，只是进行了一些数值演算，这是比较简单的数据，并没有体现出数据抽象的意义，本章一开始就通过有理数的运算这个例子引出了数据抽象的意义。
+数据抽象的基本思想，就是设法构造出一些使用复合数据对象的程序，使它们可以像操作数值等简单数据类型一样操作“抽象数据”。通过构造复合数据（与构造复合过程类似）可以达到下面的效果：&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;降低程序间的耦合度&lt;/li&gt;
+&lt;li&gt;提高设计的模块性&lt;/li&gt;
+&lt;li&gt;增强语言表达能力，为处理计算问题提供更多手段和方法。&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;第二章主要围绕下面两个部分展开：&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;如何构造复合数据对象（通过数据组合）&lt;/li&gt;
+&lt;li&gt;如何处理复合数据对象&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;其他一些细节点还包括：&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;复合数据如何支持以“匹配和组合”方式工作的编程接口&lt;/li&gt;
+&lt;li&gt;通过定义数据抽象,进一步模糊“过程”和“数据”的差异&lt;/li&gt;
+&lt;li&gt;符号表达式的处理,这种表达式的基本部分是符号而不是数 通用型(泛型)操作,使同样操作可能用于不同的数据&lt;/li&gt;
+&lt;li&gt;数据制导（导向/驱动）的程序设计,方便新数据类的加入&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h3 id=&#34;过程抽象与数据抽象&#34;&gt;过程抽象与数据抽象&lt;/h3&gt;
+&lt;p&gt;一个过程描述了一类计算的模式,又可以作为元素用于实现其他(更复 杂的)过程。因此过程是一种抽象——过程抽象。过程抽象的优势在于：&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;屏蔽计算的实现细节,可以用任何功能/使用形式合适的过程取代&lt;/li&gt;
+&lt;li&gt;规定了使用方式,使用方只依赖于抽象的使用方式约定&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;数据抽象的情况类似。
+一个数据抽象实现一类数据所需的所有功能,又像基本数据元素一样可以作为其他数据抽象的元素。主要优势：&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;屏蔽一种复合数据的实现细节&lt;/li&gt;
+&lt;li&gt;提供一套抽象操作,使用组合数据的就像是使用基本数据&lt;/li&gt;
+&lt;li&gt;数据抽象的接口(界面)包括两类操作:构造函数和选择函数。构造函数基于一些参数构造这类数据,选择函数提取其内容&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;后面将说明（在第三章😊）,如果需要支持基于状态的程序设计，那么就需要增加另外 一类变动操作（mutation，修改操作）。&lt;/p&gt;
+&lt;h2 id=&#34;数据抽象的语言支持&#34;&gt;数据抽象的语言支持&lt;/h2&gt;
+&lt;p&gt;一般来说，实现数据抽象，编程语言需要提供下面三种机:&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;粘合机制，支持把一组数据对象组合成一个整体（通过闭包实现）&lt;/li&gt;
+&lt;li&gt;操作定义机制，定义针对组合数据的操作（通过scheme内置的define实现）&lt;/li&gt;
+&lt;li&gt;抽象机制，屏蔽实现细节，使组合数据能像简单数据一样使用（通过数据导向的程序设计风格实现）&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;处理复合数据的一个关键概念是&lt;code&gt;闭包&lt;/code&gt;，这里的闭包概念来自&lt;a href=&#34;https://en.wikipedia.org/wiki/Abstract_algebra&#34;&gt;抽象代数&lt;/a&gt;，指的是&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;通过数据对象组合起来得到的结果，还可以通过同样的操作再进行再次组合。&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;这个概念和我们在JavaScript等现代编程语言中的概念（一种为表示带有自由变量的过程而用的实现技术）不一样，要注意区分。&lt;/p&gt;
+&lt;h3 id=&#34;序对pair&#34;&gt;序对pair&lt;/h3&gt;
+&lt;p&gt;Scheme的基本复合结构称为“序对”，序对本身也是数据对象,可以用于构造更复杂的数据对象（也就是表，list）。例如&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;4
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;5
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;6
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;7
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;8
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;(define x (cons 3 4))
+(define y (cons 5 6))
+(define z (cons x y))
+; 注意理解序对pair 与表list 的区别
+(define x (cons 1 2))
+(define y (list 1 2))
+(cdr x)  ; 2
+(cdr y)  ; (2)
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;常规过程性语言都没有内部的表数据类型，但是我们在算法与数据结构课上，一般都用C语言实现过各种表（单向双向链表，环形链表等）结构，C++的标准STL库的list，Java集合框架中的List。&lt;/p&gt;
+&lt;p&gt;表及其相关概念是从 Lisp 开始开发，现已经成为很多技术的基础：&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;动态存储管理已经成为日常编程工作的基本支持&lt;/li&gt;
+&lt;li&gt;链表的定义和使用是常用技术（想想Java 中你用了多少次ArrayList吧）&lt;/li&gt;
+&lt;li&gt;有关表的使用和操作,以及各种操作的设计和实现,都可以从Lisp的表结构学习许多东西&lt;/li&gt;
+&lt;li&gt;基于map、reduce的hadoop&lt;/li&gt;
+&lt;li&gt;高阶表操作对分解程序复杂性很有意义&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h3 id=&#34;序对的操作&#34;&gt;序对的操作&lt;/h3&gt;
+&lt;p&gt;由于序对是构造复杂数据对象的基础，所有掌握序对的操作也就显得尤为重要，在学习这些操作时，我们可以感受到函数式编程的奇妙。
+废话不多说，直接看代码&lt;a href=&#34;https://github.com/jiacai2050/sicp/blob/master/exercises/02/lib/list.scm&#34;&gt;list.scm&lt;/a&gt;看代码吧。&lt;/p&gt;
+&lt;h2 id=&#34;数据导向-vs-消息传递&#34;&gt;数据导向 vs. 消息传递&lt;/h2&gt;
+&lt;p&gt;这两种方式是本章着重接受的两种数据抽象方式，分别对象函数式编程（数据导向）与面向对象编程（消息传递），具体辨析可参考&lt;a href=&#34;https://github.com/jiacai2050/sicp/blob/master/exercises/02/2.76.md&#34;&gt;习题2.76&lt;/a&gt;。&lt;/p&gt;
+&lt;h2 id=&#34;示例&#34;&gt;示例&lt;/h2&gt;
+&lt;p&gt;由于本章大部分内容都是用具体例子来讲解，下面我就再一一回顾遍。大部分内容都在我Github的读书笔记中，这里相当于个索引，具体例子可参考给出的相应链接😊。&lt;/p&gt;
+&lt;h3 id=&#34;有理数运算&#34;&gt;有理数运算&lt;/h3&gt;
+&lt;p&gt;通过这里例子，引入数据抽象的意义。具体代码见&lt;a href=&#34;https://github.com/jiacai2050/sicp/tree/master/exercises/02/lib/rational.scm&#34;&gt;rational.scm&lt;/a&gt;。&lt;/p&gt;
+&lt;p&gt;介绍完这个例子后，书上提出了一个重要的问题，“什么是数据”，在有理数运算这个例子，中我们能看到的就是一个构造函数&lt;code&gt;make-rat&lt;/code&gt;，两个选择函数&lt;code&gt;numer&lt;/code&gt;与&lt;code&gt;demon&lt;/code&gt;。首先我们要明确，并不是任意三个过程都能构成有理数的实现，需要满足&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;(make-rat (numer x) (denom x)) = x
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;任意满足这一条件的三个函数，都能作为有理数表示的基础。
+一般来说，一种数据对象的构造函数和选择函数都要满足一定条件。scheme中底层的数据结构序对也满足这一特点。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;(car (cons a b)) = a
+(cdr (cons a b)) = b
+(cons (car x)(cdr x)) = x  ;有前提,x 必须是序对
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;h4 id=&#34;church数&#34;&gt;Church数&lt;/h4&gt;
+&lt;p&gt;&lt;a href=&#34;https://github.com/jiacai2050/sicp/blob/master/exercises/02/2.06.scm&#34;&gt;习题2.06&lt;/a&gt;引出Church数，完全用过程实现整数算术系统，关于这一点，推荐大家看我之前写的&lt;a href=&#34;https://liujiacai.net/blog/2014/10/12/lambda-calculus-introduction/&#34;&gt;编程语言的基石——Lambda calculus&lt;/a&gt;，绝对能够颠覆你的思维。&lt;/p&gt;
+&lt;h3 id=&#34;区间运算&#34;&gt;区间运算&lt;/h3&gt;
+&lt;p&gt;见相应的习题解答，推荐看&lt;a href=&#34;https://github.com/jiacai2050/sicp/blob/master/exercises/02/2.14_2.16.md&#34;&gt;习题2.14_2.16&lt;/a&gt;&lt;/p&gt;
+&lt;h3 id=&#34;八皇后问题&#34;&gt;八皇后问题&lt;/h3&gt;
+&lt;center&gt;
+&lt;img src=&#34;https://img.alicdn.com/imgextra/i3/581166664/TB23LNQfFXXXXckXXXXXXXXXXXX_!!581166664.png&#34; alt=&#34;八皇后示意图&#34;/&gt;    
+&lt;/center&gt;
+&lt;p&gt;经典的问题，参考&lt;a href=&#34;https://github.com/jiacai2050/sicp/blob/master/exercises/02/2.42_2.43.md&#34;&gt;习题2.42&lt;/a&gt;。&lt;/p&gt;
+&lt;h3 id=&#34;图形语言&#34;&gt;图形语言&lt;/h3&gt;
+&lt;center&gt;
+    &lt;img src=&#34;https://img.alicdn.com/imgextra/i3/581166664/TB2lhtEfFXXXXaRXpXXXXXXXXXX_!!581166664.png&#34; alt=&#34;图形语言&#34;/&gt;
+&lt;/center&gt;
+这个示例比较好玩，设计了一个图形语言，基本的元素painter用一过程表示，进一步模糊过程与数据的区别。参考相关习题，推荐[2.44](https://github.com/jiacai2050/sicp/blob/master/exercises/02/2.44_2.45.md)、[2.49](https://github.com/jiacai2050/sicp/blob/master/exercises/02/2.49.md)。
+你可以看到，把painter用过程实现后，相关操作（flip-vert、besides等）变得何其简单。
+&lt;h3 id=&#34;huffman编码树&#34;&gt;Huffman编码树🌲&lt;/h3&gt;
+&lt;center&gt;
+    &lt;img src=&#34;https://img.alicdn.com/imgextra/i4/581166664/TB2Uy8RfFXXXXcEXXXXXXXXXXXX_!!581166664.png&#34; alt=&#34;一个Huffman的例子&#34;/&gt;
+&lt;/center&gt;
+又一经典算法，一定要看，推荐[练习2.69](https://github.com/jiacai2050/sicp/blob/master/exercises/02/2.69.scm)，学习如果构造一个Huffman编码树。
+&lt;h3 id=&#34;复数的表示&#34;&gt;复数的表示&lt;/h3&gt;
+&lt;center&gt;
+    &lt;img src=&#34;https://img.alicdn.com/imgextra/i2/581166664/TB213J7fFXXXXXOXXXXXXXXXXXX_!!581166664.png&#34; alt=&#34;复数的表示&#34;/&gt;
+&lt;/center&gt;
+这种主要是用直角坐标与极坐标两种形式表示复数，用带标志的数据，实现了数据导向的设计风格。
+&lt;p&gt;两种坐标的实现，参考代码&lt;a href=&#34;https://github.com/jiacai2050/sicp/blob/master/exercises/02/lib/generic_arithmetic.scm&#34;&gt;lib/generic_arithmetic.scm&lt;/a&gt;&lt;/p&gt;
+&lt;h3 id=&#34;通用型算术包的实现&#34;&gt;通用型算术包的实现&lt;/h3&gt;
+&lt;center&gt;
+    &lt;img src=&#34;https://img.alicdn.com/imgextra/i4/581166664/TB2GYJSfFXXXXcFXXXXXXXXXXXX_!!581166664.png&#34; alt=&#34;通用型算术包&#34;/&gt;
+&lt;/center&gt;
+这一示例基本在前面有理数与复数的基础上，定义了统一的接口（add、sub等）来操作`scheme-number`、`rational`与`complex`三种类型的数据。
+&lt;p&gt;参考&lt;a href=&#34;https://github.com/jiacai2050/sicp/blob/master/exercises/02/lib/complex_number.scm&#34;&gt;lib/complex_number.scm&lt;/a&gt;&lt;/p&gt;
+&lt;h3 id=&#34;符号代数多项式算术&#34;&gt;符号代数——多项式算术&lt;/h3&gt;
+&lt;center&gt;
+    &lt;img src=&#34;https://img.alicdn.com/imgextra/i3/581166664/TB2_HRVfFXXXXbzXXXXXXXXXXXX_!!581166664.png&#34; alt=&#34;多边形的继承性（强制的难点）&#34;/&gt;
+&lt;/center&gt;
+本章最后一个例子，难度比之前通用型算术包要大，因为不同类型的数据间操作需要“强制（coercion）”，而强制就需要一定的规则，实际编程中这种规则可能很复杂，所有这里需要注意的细节点比较多。
+&lt;p&gt;从“强制”引出的问题可以看出强类型语言的劣势，现在像python、javascript等弱类型的语言这么火，很大程序上就是由于弱类型语言的编译器把“强制”的工作给做了，程序员根本不用去关心。当然，如果所有“强制”工作都让编译器去做，也是不合适的，具体如何选择，就需要综合多种因素了。
+我本身经验还不是很丰富，就不乱说了，如果你有这方面的亲身体会，可以留言，我会及时更新😊。&lt;/p&gt;
+&lt;p&gt;代码实现参考&lt;a href=&#34;https://github.com/jiacai2050/sicp/blob/master/exercises/02/lib/poly.scm&#34;&gt;lib/poly.scm&lt;/a&gt;与&lt;a href=&#34;https://github.com/jiacai2050/sicp/blob/master/exercises/02/2.92.md&#34;&gt;习题2.92&lt;/a&gt;。&lt;/p&gt;
+&lt;h3 id=&#34;扩充练习有理函数&#34;&gt;扩充练习：有理函数&lt;/h3&gt;
+&lt;p&gt;经过前面多项式算术的习题，我基本已经败下阵来了，实在是吸收消化不了了，改日再战😂。&lt;/p&gt;
+&lt;h2 id=&#34;总结&#34;&gt;总结&lt;/h2&gt;
+&lt;p&gt;这一次看第二章，陆陆续续用了2个月，基本上耗费平时下班＋周末双休的时间，收获还是挺大的。
+不过由于本章习题量有些大，而且一开始像一些基础的过程&lt;code&gt;put&lt;/code&gt;、&lt;code&gt;get&lt;/code&gt;都没有，所以自己只是随便写写，没法运行，所以前面看的不好，这章习题之简的联系很紧密，前面没做好，后面只能呵呵了。&lt;/p&gt;
+&lt;p&gt;有一段时间让这些题弄的很烦，一点不想做，还好我这时候分散了下注意力，看了些其他的东西，像java集合框架的一些代码、the little schemer第九章的Y算子推导（虽然还没看懂），由于带着放松心情看的，遇到不懂的地方我就跳过去，没有深究，基本上达到了放松的目的。之后在网上把那些基础的过程都实现出来，再去做那些习题就顺多了。&lt;/p&gt;
+&lt;p&gt;这一章的内容，我之前多多少少了解过，所以大部分内容看起来还是比较顺畅的，就是习题多了点，由于当初给自己定的目标，所以还是慢慢的把所有习题（有理函数的除外）做了一遍。还是一点就是做后面的题时，忘了前面的知识点，需要平时没事多去翻翻，毕竟现在还达不到烂熟于心的地步。&lt;/p&gt;
+&lt;p&gt;下周一小组内再过一遍，向着第三章进军了。⛽️&lt;/p&gt;
+</description>
     </item>
     
     <item>
@@ -58,7 +1226,128 @@
       <pubDate>Sat, 18 Jul 2015 00:00:00 +0000</pubDate>
       
       <guid>https://liujiacai.net/blog/2015/07/18/sicp-chapter1-summary/</guid>
-      <description>最近两个月除了工作之外，业余时间一直在研习sicp这本经典书。关于这本书的讨论有很多，像老赵写过SICP的书托，我觉得与其讨论这本书有没有读</description>
+      <description>&lt;p&gt;最近两个月除了工作之外，业余时间一直在研习sicp这本经典书。关于这本书的讨论有&lt;a href=&#34;https://www.google.com/?gws_rd=ssl#newwindow=1&amp;amp;safe=active&amp;amp;q=must+read+book+sicp&#34;&gt;很多&lt;/a&gt;，像老赵写过SICP的&lt;a href=&#34;http://blog.zhaojie.me/2009/07/recommended-reading-2-sicp.html&#34;&gt;书托&lt;/a&gt;，我觉得与其讨论这本书有没有读的价值，不如花上些，随手翻翻，如果感兴趣，就读下去；否则直接忽略即可。计算机理论发展到了现在，有&lt;a href=&#34;http://stackoverflow.com/questions/1711/what-is-the-single-most-influential-book-every-programmer-should-read&#34;&gt;太多太多经典&lt;/a&gt;需要我们去读了，恐怕我们这一辈子都无法读完，为什么不找你感兴趣的来读呢？&lt;/p&gt;
+&lt;p&gt;我这次建了个&lt;a href=&#34;https://github.com/jiacai2050/sicp&#34;&gt;Github库&lt;/a&gt;来记录课后每一道习题与平时的所感所悟，希望对后面阅读sicp的同胞们有所帮助。&lt;/p&gt;
+&lt;p&gt;废话不多说了，趁着上周刚看完第一章，现在进行一下总结。&lt;/p&gt;
+&lt;h2 id=&#34;本章主旨--构造过程抽象&#34;&gt;本章主旨&amp;ndash;构造过程抽象&lt;/h2&gt;
+&lt;p&gt;我们在进行程序设计时，接触到的无非就是两类东西：&lt;code&gt;数据&lt;/code&gt;与&lt;code&gt;操作数据的过程&lt;/code&gt;。本章只处理简单的数值数据，将注意力集中在过程的构造。本书采用lisp方言scheme进行教学，之所以选择lisp，是因为：&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;计算过程的lisp描述（称为过程）本身又可以作为lisp的数据来表示和操作。&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;现在许多威力强大的程序设计技术，都依赖于填平在“被动的”数据和“主动的”过程之间的传统划分。鉴于lisp可以将过程作为数据进行处理的灵活性，使它成为探索这些技术最方便的现存语言之一。&lt;/p&gt;
+&lt;h2 id=&#34;程序设计的基本要素&#34;&gt;程序设计的基本要素&lt;/h2&gt;
+&lt;p&gt;一个强有力的编程语言，应该提供下面三种机制，编程者利用它们来组织自己有关计算过程的思想：&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;基本表达式形式&lt;/li&gt;
+&lt;li&gt;组合机制&lt;/li&gt;
+&lt;li&gt;抽象机制&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;scheme使用前缀表示法，这和我们平常的编程语言不一样，需要适应。&lt;/p&gt;
+&lt;p&gt;本小节依此讲解了下面知识：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;基本的表达式，环境和变量&lt;/li&gt;
+&lt;li&gt;组合式的求值&lt;/li&gt;
+&lt;li&gt;过程的定义&lt;/li&gt;
+&lt;li&gt;复合过程求值的替换模型（应用序与正则序）&lt;/li&gt;
+&lt;li&gt;条件表达式和谓词&lt;/li&gt;
+&lt;li&gt;过程抽象&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;概念本身比较简单，我们需要明确下面几个点：&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;表达式求值过程就是表达式语义的实现&lt;/li&gt;
+&lt;li&gt;代换模型给出了过程定义和过程应用的一种语义
+&lt;blockquote&gt;
+&lt;p&gt;很多 Scheme 过程的行为可以用这个模型描述
+后面会看到,更复杂的过程需要用扩充的语义模型（像一些语法糖衣）&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;/li&gt;
+&lt;li&gt;代换模型只是为了帮助直观理解过程应用的行为
+&lt;blockquote&gt;
+&lt;p&gt;它并没有反映解释器的实际工作过程
+实际解释器的情况后面讨论，基于环境实现&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;/li&gt;
+&lt;li&gt;本课程要研究解释器工作过程的一组模型
+&lt;blockquote&gt;
+&lt;p&gt;代换模型最简单,容易理解,但不足以解释所有的实际程序
+其局限性是不能解释带有可变数据的程序
+后面将介绍更精细的模型&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;无论是 C 还是 Scheme,都没规定运算对象的求值顺序。这意味着 假定它们采用某种特殊顺序都是不正确且不可靠的。所以我们不要写只有按特定求值顺序才能得到所需结果的表达式!&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;//C 语言里依赖于求值顺序的表达式，这里的输出依赖于编译器的实现，与语言本身无关
+m = n++ + ++n;
+printf(&amp;#34;%d, %d&amp;#34;, n, n++);
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;本小节以牛顿法求平方根展示了如何通过简单的过程构造复杂的过程。关于牛顿法的代码及优化方案我&lt;a href=&#34;https://github.com/jiacai2050/sicp/blob/master/05/2015-05-19.md&#34;&gt;git笔记&lt;/a&gt;中找到。&lt;/p&gt;
+&lt;h2 id=&#34;过程与它们所产生的问题&#34;&gt;过程与它们所产生的问题&lt;/h2&gt;
+&lt;p&gt;本小节主要讲解了下面几个概念：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;过程的内部定义与块结构（上面的牛顿法我已经使用）&lt;/li&gt;
+&lt;li&gt;分析过程（静态、动态）产生的计算过程（动态，行为）&lt;/li&gt;
+&lt;li&gt;计算过程的类型
+&lt;blockquote&gt;
+&lt;p&gt;线性递归
+线性迭代
+树形递归&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;/li&gt;
+&lt;li&gt;计算的代价&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;本小节主要是熟悉过程，知道常见过程的分类，以及能够明确各种过程所占用的资源。&lt;/p&gt;
+&lt;p&gt;这里有意思的是&lt;a href=&#34;https://github.com/jiacai2050/sicp/blob/master/exercises/01/1.19.md&#34;&gt;习题1.19&lt;/a&gt;，通过矩阵相乘的方式来算斐波那契数，大家可以去了解下。&lt;/p&gt;
+&lt;p&gt;###找零钱&lt;/p&gt;
+&lt;p&gt;关于这个题目我在git库上的笔记已经有了比较详细的介绍，这里不再赘述。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://github.com/jiacai2050/sicp/blob/master/05/2015-05-21-count-change-recurisve.md&#34;&gt;题目描述与递归的解法&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://github.com/jiacai2050/sicp/blob/master/05/2015-05-24-count-change-iterative.md&#34;&gt;迭代解法的讨论&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;时空复杂度分析可参考&lt;a href=&#34;https://github.com/jiacai2050/sicp/blob/master/exercises/01/1.14.md&#34;&gt;习题1.14&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3 id=&#34;求素数&#34;&gt;求素数&lt;/h3&gt;
+&lt;p&gt;这里求素数有两种解法，分别是：&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;寻找因子，代码参考&lt;a href=&#34;https://github.com/jiacai2050/sicp/blob/master/exercises/01/1.22.scm&#34;&gt;习题1.22&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;费马检查，代码参考&lt;a href=&#34;https://github.com/jiacai2050/sicp/blob/master/exercises/01/1.24.scm&#34;&gt;习题1.24&lt;/a&gt;&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;这里比较有意思的是&lt;a href=&#34;https://github.com/jiacai2050/sicp/blob/master/exercises/01/1.28.scm&#34;&gt;习题1.28&lt;/a&gt;，这道题介绍了一种费马检测的不会被欺骗的变形，称为Miller-Rabin检查。
+到现在我还不知道为什么MR检查不会被欺骗，感觉应该是和费马定量等价的，无非就是等式两边同时除以了a而已。后面想明白后，我会再即时更新。&lt;/p&gt;
+&lt;p&gt;除了上面两个外，本章还用了下面两个例子：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://github.com/jiacai2050/sicp/blob/master/05/2015-05-28.md&#34;&gt;求幂&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;最大公约数&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;4
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;(definee (gcd a b)
+  (if (= b 0)
+    a
+    (gcd b (remainder a b))))
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;h2 id=&#34;用高阶函数过抽象&#34;&gt;用高阶函数过抽象&lt;/h2&gt;
+&lt;p&gt;这一小节可算是第一章的重点，在这小节里，过程既可以作为参数传给过程，又可以作为过程的返回值，通过不断抽象，得到一系列高阶过程，前面的牛顿法，&lt;a href=&#34;https://github.com/jiacai2050/sicp/blob/master/07/2015-07-06.md&#34;&gt;不定点&lt;/a&gt;都可以轻松用高阶过程来实现。&lt;/p&gt;
+&lt;p&gt;这里主要是做相应的习题来巩固自己的理解，如果你是第一次接触高阶函数，我相信你一定会大喊：“还能这么玩呀”!&lt;/p&gt;
+&lt;h2 id=&#34;总结&#34;&gt;总结&lt;/h2&gt;
+&lt;p&gt;经过2个月的时间陆陆续续把这第一章看完，现在过了2周再来写这篇总结，效果还是蛮好的，很多东西一下就能够回想起来，不过也发现之前的漏洞，一些点当时没深究，放下了也就没有然后了。这次总结发现了些，这个周末一定补充上。&lt;/p&gt;
+&lt;p&gt;如果你也在读sicp，希望你能坚持下去，让我们一起享受编程的奥妙。&lt;/p&gt;
+&lt;p&gt;PS：在写这篇总结时，在简书上我找到这么一篇文章&lt;a href=&#34;http://www.jianshu.com/p/fe89c4b6bd28&#34;&gt;仍距遥远，知易行难&lt;/a&gt;，不知该作者的功力有多深厚才能有这么深的见解。
+世界这么大， 让我们抓紧从SICP开始行动起来吧。&lt;/p&gt;
+</description>
     </item>
     
   </channel>

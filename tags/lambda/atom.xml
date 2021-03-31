@@ -13,7 +13,407 @@
       <pubDate>Mon, 22 Feb 2016 00:00:00 +0000</pubDate>
       
       <guid>https://liujiacai.net/blog/2016/02/22/recursion-without-name/</guid>
-      <description>递归 作为计算机科学中很重要的一个概念，应用范围非常广泛。比较重要的数据结构，像树、图，本身就是递归定义的。 比较常见的递归算法有阶乘、斐波那契</description>
+      <description>&lt;p&gt;&lt;a href=&#34;https://en.wikipedia.org/wiki/Recursion_%28computer_science%29&#34;&gt;递归&lt;/a&gt; 作为计算机科学中很重要的一个概念，应用范围非常广泛。比较重要的数据结构，像树、图，本身就是递归定义的。
+比较常见的递归算法有&lt;code&gt;阶乘&lt;/code&gt;、&lt;code&gt;斐波那契数&lt;/code&gt;等，它们都是在定义函数的同时又引用本身，对于初学者来说也比较好理解，但是如果你对编程语言，特别是函数式语言，有所研究，可能就会有下面的疑问：&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;一个函数在还没有定义完整时，为什么能够直接调用的呢？&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;这篇文章主要是解答上面这个问题。阅读下面的内容，你需要有些函数式编程的经验，为了保证你能够比较愉快的阅读本文，你至少能看懂&lt;code&gt;前缀表达式&lt;/code&gt;。相信读完本文后，你将会对编程语言有一全新的认识。
+本文所有演示代码有&lt;code&gt;Scheme&lt;/code&gt;、&lt;code&gt;JS&lt;/code&gt;两个版本。&lt;/p&gt;
+&lt;h2 id=&#34;问题描述&#34;&gt;问题描述&lt;/h2&gt;
+&lt;p&gt;下面的讲解以&lt;code&gt;阶乘&lt;/code&gt;为例子：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt; 1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 4
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 5
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 6
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 7
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 8
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 9
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;10
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;11
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;12
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;13
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;14
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;; Scheme
+(define (FACT n)
+  (if (= n 0)
+    1
+    (* n (FACT (- n 1)))))
+
+; JS
+var FACT = function(n) {
+    if (n == 0) {
+        return 1;
+    } else {
+        return n * FACT(n-1);
+    }
+}    
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;上面的阶乘算法比较直观，这里就不再进行解释了。重申下我们要探究的问题&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;&lt;code&gt;FACT&lt;/code&gt; 这个函数为什么在没有被定义完整时，就可以调用了呢？&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;h2 id=&#34;问题分析&#34;&gt;问题分析&lt;/h2&gt;
+&lt;p&gt;解决一个新问题，常见的做法就是类比之前解决的问题。我们要解决的这个问题和求解下面的等式很类似：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;    2x = x + 1
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;在等号两边都出现了&lt;code&gt;x&lt;/code&gt;，要想解决这个问题，最简单的方式就是将等号右边的&lt;code&gt;x&lt;/code&gt;移到左边即可。这样就知道&lt;code&gt;x&lt;/code&gt;是什么值了。&lt;/p&gt;
+&lt;p&gt;但是我们的问题比这个要复杂些了，因为我们这里需要用&lt;code&gt;if&lt;/code&gt;、&lt;code&gt;n&lt;/code&gt;、&lt;code&gt;*&lt;/code&gt;、&lt;code&gt;-&lt;/code&gt;这四个符号来表示&lt;code&gt;FACT&lt;/code&gt;，可以这么类比是因为一个程序无非就是通过一些具有特定语意的符号（编程语言规定）构成的。&lt;/p&gt;
+&lt;p&gt;再进一步思考，&lt;code&gt;FACT&lt;/code&gt; 需要用四个符号来表示，这和我们求解多元方程组的解不是很像嘛：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;    x + y = 3
+    x - y = 1
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;为了求解上面方程组，一般可以转为下面的形式：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;    x = 3 - y
+    y = x - 1
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;即&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;    (x, y) = T (x, y)
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;其中的&lt;code&gt;T&lt;/code&gt;为一个转换，在线性代数其实就是个矩阵，根据矩阵&lt;code&gt;T&lt;/code&gt;的一些性质，我们可以判定&lt;code&gt;(x ,y)&lt;/code&gt;是否有解，以及解的个数。&lt;/p&gt;
+&lt;p&gt;对比此，我们可以把问题转化为下面的形式：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;    FACT = F (FACT)
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;上面的&lt;code&gt;F&lt;/code&gt;为某种转换，在这里其实就是个需要一个函数作为参数并且返回一个函数的函数。如果存在这么个&lt;code&gt;F&lt;/code&gt;函数，那么我们就可以通过求解&lt;code&gt;F&lt;/code&gt;的&lt;a href=&#34;https://zh.wikipedia.org/wiki/%E4%B8%8D%E5%8A%A8%E7%82%B9&#34;&gt;不动点&lt;/a&gt;来求出&lt;code&gt;FACT&lt;/code&gt;了。&lt;/p&gt;
+&lt;p&gt;但这里有个问题，即便我们知道了&lt;code&gt;F&lt;/code&gt;的存在，我们也无法确定其是否存在不动点，以及如果存在，不动点的个数又是多少？&lt;/p&gt;
+&lt;p&gt;计算机科学并不像数学领域有那么多可以套用的定理。&lt;/p&gt;
+&lt;h2 id=&#34;寻找转换函数-f&#34;&gt;寻找转换函数 F&lt;/h2&gt;
+&lt;p&gt;证明&lt;code&gt;F&lt;/code&gt;是否存在是个比较难的问题，不在本文的讨论范围内，这涉及到&lt;a href=&#34;https://en.wikipedia.org/wiki/Denotational_semantics&#34;&gt;Denotational semantics&lt;/a&gt;领域的知识，感兴趣的读者可以自己去网上查找相关资料。&lt;/p&gt;
+&lt;p&gt;这里直接给出&lt;code&gt;FACT&lt;/code&gt;对应的函数&lt;code&gt;F&lt;/code&gt;的定义：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt; 1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 4
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 5
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 6
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 7
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 8
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 9
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;10
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;11
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;12
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;13
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;14
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;15
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;16
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;17
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;18
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;19
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;; Scheme
+(define F
+  (lambda (g)
+    (lambda (n)
+      (if (= n 0)
+        1
+        (* n (g (- n 1)))))))
+
+; JS
+var F = function(g) {
+    return function(n) {
+        if (n == 0) {
+            return 1;
+        } else {
+            return x * g(n-1);
+        }
+  }
+}
+
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;可以看到，对比递归版本的&lt;code&gt;FACT&lt;/code&gt;变动不大，就是把函数内&lt;code&gt;FACT&lt;/code&gt;的调用换成了参数&lt;code&gt;g&lt;/code&gt;而已，其实我们常见的递归算法都可以这么做。&lt;/p&gt;
+&lt;h2 id=&#34;寻找转换函数-f-的不动点&#34;&gt;寻找转换函数 F 的不动点&lt;/h2&gt;
+&lt;p&gt;找到了转换函数&lt;code&gt;F&lt;/code&gt;后，下一步就是确定其不动点了，而这个不动点就是我们最终想要的&lt;code&gt;FACT&lt;/code&gt;。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;    FACT = (F (F (F ...... (F FACT) ...... )))
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;假设我们已经知道了&lt;code&gt;FACT&lt;/code&gt;非递归版本了，记为&lt;code&gt;g&lt;/code&gt;，那么&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;4
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;5
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;E0 = (F g)      这时(E0 0) 对应 (FACT 0)得值，这时用不到 g
+E1 = (F E0)     这时(E1 0)、(E1 1)分别对应(FACT 0)、(FACT 1)的值
+E2 = (F E1)     这时(E2 0)、(E2 1)、(E2 2)分别对应(FACT 0)、(FACT 1)、(FACT 2)的值
+.....
+En = (F En-1)   这时....(En n)分别对应.... (FACT n)的值
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;可以看到，我们在求出&lt;code&gt;(FACT n)&lt;/code&gt;时完全没有用到初始的&lt;code&gt;g&lt;/code&gt;，换句话说就是&lt;code&gt;g&lt;/code&gt;的取值不影响我们计算&lt;code&gt;(FACT n)&lt;/code&gt;。
+那么我们完全可以这么定义&lt;code&gt;FACT&lt;/code&gt;：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;    FACT = (F (F (F ...... (F 1) ...... )))
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;可惜，我们不能这么写，我们必须想个办法表示无穷。在函数式编程中，最简单的无穷循环是：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt; 1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 4
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 5
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 6
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 7
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 8
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 9
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;10
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;; Scheme
+((lambda (x) (x x))
+  (lambda (x) (x x)))
+
+; JS
+(function (x) {
+    return x(x);
+})(function(x) {
+    return x(x);
+});
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;基于此，我们就得到函数式编程中一重要概念 &lt;a href=&#34;https://zh.wikipedia.org/wiki/%E4%B8%8D%E5%8A%A8%E7%82%B9%E7%BB%84%E5%90%88%E5%AD%90&#34;&gt;Y 算子&lt;/a&gt;，关于 Y 算子的严格推导，可以在参考这篇文章 &lt;a href=&#34;http://mvanier.livejournal.com/2897.html&#34;&gt;The Y combinator (Slight Return)&lt;/a&gt;，这里直接给出：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt; 1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 4
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 5
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 6
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 7
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 8
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 9
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;10
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;11
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;12
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;13
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;14
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;15
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;16
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;17
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;; Scheme
+(define Y
+  (lambda (f)
+    ((lambda (x) (f (x x))
+      (lambda (x) (f (x x)))))))
+
+(define FACT (Y F))
+
+; JS
+var Y = function(f) {
+    return (function(x) {
+        return f(x(x));
+    })(function(x) {
+        return f(x(x));
+    });
+}
+var FACT = Y(F);
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;这样我们就得到的&lt;code&gt;FACT&lt;/code&gt;了，但这里得到的&lt;code&gt;FACT&lt;/code&gt;并不能在&lt;code&gt;Scheme&lt;/code&gt;或&lt;code&gt;JS&lt;/code&gt;解释器中运行，因为就像上面说的，这其实是个死循环，如果你把上面代码拷贝到解释器中运行，一般可以得到下面的错：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;RangeError: Maximum call stack size exceeded
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;h2 id=&#34;正则序-vs-应用序&#34;&gt;正则序 vs. 应用序&lt;/h2&gt;
+&lt;p&gt;为了得到能够在&lt;code&gt;Scheme&lt;/code&gt;或&lt;code&gt;JS&lt;/code&gt;解释器中可以运行的代码，这里需要解释复合函数在调用时传入参数的两种求值策略：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;正则序（Normal Order），完全展开而后归约求值。惰性求值的语言采用这种顺序。&lt;/li&gt;
+&lt;li&gt;应用序（Applicative Order），先对参数求值而后应用。我们常用的大部分语言都采用应用序。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;举个简单的例子：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt; 1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 4
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 5
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 6
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 7
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 8
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 9
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;10
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;11
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;12
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;13
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;14
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;15
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;16
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;17
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;18
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;19
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;20
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;21
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;22
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;; Scheme
+(define (p)
+  (p))
+
+(define (test x y)
+  (if (= x 0)
+    0
+    y))
+(test 0 (p))
+
+; JS
+var p = function() {
+    return (p);
+}
+var test = function(x, y) {
+    if(x == 0) {
+        return 0;
+    } else {
+        return y;
+    }
+}
+test(0, (p));
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;上面这个例子，采用应用序的语言会产生死循环；而采用正则序的语言可以正常返回&lt;code&gt;0&lt;/code&gt;，因为&lt;code&gt;test&lt;/code&gt;的第二个参数只有在&lt;code&gt;x&lt;/code&gt;不等于0时才会去求值。&lt;/p&gt;
+&lt;p&gt;我们上面给出的&lt;code&gt;var FACT = Y(F)&lt;/code&gt;在正则序的语言中是可行的，因为&lt;code&gt;Y(F)&lt;/code&gt;中的返回值只有在真正需要时才进行求值，而在&lt;code&gt;F&lt;/code&gt;中，&lt;code&gt;n&lt;/code&gt;等于0时是不需要对&lt;code&gt;g(n-1)&lt;/code&gt;进行求值的，所以这时&lt;code&gt;Y(F)(5)&lt;/code&gt;就能够正常返回&lt;code&gt;120&lt;/code&gt;了。&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;如果你觉得上面这段话很绕，一时不能理解，这样很正常，我也是花了很久才弄明白，你可以多找些惰性求值的文章看看。&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;为了能够得出在应用序语言可用的&lt;code&gt;FACT&lt;/code&gt;，我们需要对上面的&lt;code&gt;Y&lt;/code&gt;做进一步处理。思路也很简单，为了不立即求值表达式，我们可以在其外部包一层函数，假设这里有个表达式&lt;code&gt;p&lt;/code&gt;：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;4
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;5
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;6
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;; Scheme
+(define lazy_p
+  (lambda () p))
+
+; JS
+var lazy_p = function() { return p; }
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;这时如果想得到&lt;code&gt;p&lt;/code&gt;的值，就需要&lt;code&gt;(lazy_p)&lt;/code&gt;才可以得到了。基于这个原理，下面给出最终版本的&lt;code&gt;Y 算子&lt;/code&gt;：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt; 1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 4
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 5
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 6
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 7
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 8
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 9
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;10
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;11
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;12
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;13
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;14
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;15
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;16
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;17
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;18
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;19
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;20
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;21
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;; Scheme
+(define Y
+  (lambda (f)
+    ((lambda (x) (x x))
+     (lambda (x) (f (lambda (y) ((x x) y)))))))
+
+(define FACT (Y F))
+(FACT 5)   ;===&amp;gt; 120
+
+; JS
+ var Y = function(f) {
+     return function(x) {
+         return x(x)
+     }(function (x) {
+         return f(function(y) {
+             return x(x)(y)
+         })
+     })
+ }
+ var FACT = Y(F)
+ FACT(5)   ;===&amp;gt; 120
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;好了，到现在为止，我们已经得到了可以在&lt;code&gt;Scheme&lt;/code&gt;或&lt;code&gt;JS&lt;/code&gt;解释器中运行&lt;code&gt;FACT&lt;/code&gt;了，可以看到，这里面没有使用函数名也实现了递归方式求阶乘。
+本文一开始给出的&lt;code&gt;FACT&lt;/code&gt;版本在解释器内部也会转换为这种形式，这也就解释了本文所提出的问题。&lt;/p&gt;
+&lt;h2 id=&#34;总结&#34;&gt;总结&lt;/h2&gt;
+&lt;p&gt;本文大部分内容由 SICP 4.1 小节延伸而来，写的相对比较粗糙，很多点都没有展开讲的原因是我自己也还没理解透彻，为了不误导大家，所以这里就省略了（后面理解的更深刻后再来填坑😊）。希望感兴趣的读者能够自己去搜索相应知识点，相信肯定会受益匪浅。&lt;/p&gt;
+&lt;p&gt;最后，希望这篇文章对大家理解编程语言有一些帮助。有什么不对的地方请留言指出。&lt;/p&gt;
+</description>
     </item>
     
     <item>
@@ -22,7 +422,367 @@
       <pubDate>Sun, 12 Oct 2014 00:00:00 +0000</pubDate>
       
       <guid>https://liujiacai.net/blog/2014/10/12/lambda-calculus-introduction/</guid>
-      <description>Lambda calculus我们一般称为λ演算，最早是由邱奇（Alonzo Church，图灵的博导）在20世纪30年代引入，当时的背景是解决函数可计算</description>
+      <description>&lt;p&gt;Lambda calculus我们一般称为&lt;a href=&#34;http://en.wikipedia.org/wiki/Lambda_calculus&#34;&gt;λ演算&lt;/a&gt;，最早是由&lt;a href=&#34;http://en.wikipedia.org/wiki/Alonzo_Church&#34;&gt;邱奇（Alonzo Church，图灵的博导）&lt;/a&gt;在20世纪30年代引入，当时的背景是解决&lt;a href=&#34;http://en.wikipedia.org/wiki/Computable_function&#34;&gt;函数可计算的本质&lt;/a&gt;性问题，初期λ演算成功的解决了在可计算理论中的&lt;a href=&#34;http://en.wikipedia.org/wiki/Entscheidungsproblem&#34;&gt;判定性问题&lt;/a&gt;，后来根据&lt;a href=&#34;http://en.wikipedia.org/wiki/Church%E2%80%93Turing_thesis&#34;&gt;Church–Turing thesis&lt;/a&gt;，证明了λ演算与图灵机是等价的。&lt;/p&gt;
+&lt;p&gt;好了，经过上边简单的介绍，大家应该对λ演算有了初步印象。下面我将重点介绍λ演算的具体内容，并且阐述λ演算是如何奠基了我们现在常用的编程语言（如：Java、python、Lisp等）。&lt;/p&gt;
+&lt;h2 id=&#34;λ演算的语法与求值&#34;&gt;λ演算的语法与求值&lt;/h2&gt;
+&lt;h3 id=&#34;语法syntax&#34;&gt;语法(syntax)&lt;/h3&gt;
+&lt;p&gt;因为λ演算研究的是函数的本质性问题，所以形式极其简单：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;    E = x           variables
+      | λx. E       function creation(abstraction)
+      | E1 E2       function application           
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;上面的E称为λ-表达式(expressions)或λ-terms，它的值有三种形式：&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;变量(variables)。&lt;/li&gt;
+&lt;li&gt;函数声明或抽象(function creation/abstraction)。需要注意是的，函数中&lt;strong&gt;有且仅有&lt;/strong&gt;一个参数。在λx. E中，x是参数，E是函数体&lt;/li&gt;
+&lt;li&gt;函数应用(function application)。也就是我们理解的函数调用，但官方术语就叫函数应用，本文后面也会采用“应用”的叫法。&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h4 id=&#34;λ表达式例子&#34;&gt;λ表达式例子&lt;/h4&gt;
+&lt;p&gt;上面就是λ演算的语法了，很是简单吧。下面看几个例子：&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;恒等函数
+&lt;code&gt;λx.x&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;一个返回恒等函数的函数
+&lt;code&gt;λy. (λx.x)&lt;/code&gt;
+可以看到，这里的y参数直接被忽略了&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;在使用λ演算时，有一些惯例需要说一下：&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;函数声明时，函数体尽可能的向右扩展。什么意思呢，举个例子大家就明白了&lt;/li&gt;
+&lt;/ol&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;λx.x λy.x y z 应该理解为 λ x. (x (λy. ((x y) z)))
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;ol start=&#34;2&#34;&gt;
+&lt;li&gt;函数应用时，遵循左结合。在举个例子：
+x y z 应该解释为 (x y) z&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h4 id=&#34;currying带有多个参数的函数&#34;&gt;Currying带有多个参数的函数&lt;/h4&gt;
+&lt;p&gt;从上面我们知道，λ演算中函数只有一个参数，那两个参数的函数的是不是就没法表示了呢，那λ演算的功能也太弱了吧，这就是λ的神奇之处，函数在本质上只需要一个参数即可。如果想要声明多个参数的函数，通过currying技术即可。下面来说说currying。
+&lt;code&gt;λx y. (+ x y)----&amp;gt;λx. (λ y. + x y)&lt;/code&gt;
+上面这个转化就叫currying，它展示了，我们如何实现加法（这里假设+这个符号已经具有相加的功能，后面我们会讲到如何用λ表达式来实现这个+的功能）。
+其实就是我们现在意义上的闭包——你调用一个函数，这个函数返回另一个函数，返回的函数中存储保留了调用函数的变量。currying是闭包的鼻祖。
+如果用Python来表示就是这样的东西：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;4
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;def add(x):
+    return lambda y: x+y
+
+add(4)(3) //return 7   
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;如果用函数式语言clojure来表示就是：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;4
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;(defn add [x]
+  (fn [y] (+ x y)))
+
+((add 4) 3) ;return 7
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;h3 id=&#34;求值evaluation&#34;&gt;求值(evaluation)&lt;/h3&gt;
+&lt;p&gt;在λ演算中，有两条求值规则：&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;Alpha equivalence( or conversion )&lt;/li&gt;
+&lt;li&gt;Beta reduction&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h4 id=&#34;alpha-equivalence&#34;&gt;Alpha equivalence&lt;/h4&gt;
+&lt;p&gt;这个比较简单也好理解，就是说λx.x与λy.y是等价的，并不因为换了变量名而改变函数的意义。
+简单并不说这个规则不重要，在一些变量覆盖的场合很重要，如下这个例子：
+&lt;code&gt;λx. x (λx. x)&lt;/code&gt;如果你这么写的话，第二个函数定义中的x与第一个函数定义中的x重复了，也就是在第二个函数里把第一个的x给覆盖了。
+如果改为&lt;code&gt;λx. x (λy. y)&lt;/code&gt;就不会有歧义了。&lt;/p&gt;
+&lt;h4 id=&#34;beta-reduction&#34;&gt;Beta reduction&lt;/h4&gt;
+&lt;p&gt;这个规则是λ演算中函数应用的重点了。一句话来解释就是，把参数应用到函数体中。举一个例子：
+有这么一个函数应用&lt;code&gt;(λx.x)(λy.y)&lt;/code&gt;，在这里把&lt;code&gt;(λy.y)&lt;/code&gt;带入前面函数的x中，就能得到最终的结果&lt;code&gt;(λy.y)&lt;/code&gt;，这里传入一个函数，然后又返回一个函数，这就是最终的结果。&lt;/p&gt;
+&lt;h4 id=&#34;求值顺序&#34;&gt;求值顺序&lt;/h4&gt;
+&lt;p&gt;考虑下面这个函数应用&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;    (λ y. (λ x. x) y) E
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;有两种计算方法，如下图
+&lt;img src=&#34;http://img04.taobaocdn.com/imgextra/i4/581166664/TB2fQf6aFXXXXa2XXXXXXXXXXXX_!!581166664.png&#34; alt=&#34; evaluation-order&#34;/&gt;
+可以先计算内层的函数调用再计算外层的函数调用，反之也可。
+根据&lt;a href=&#34;http://en.wikipedia.org/wiki/Church%E2%80%93Rosser_theorem&#34;&gt;Church–Rosser定理&lt;/a&gt;，这两种方法是等价的，最终会得到相等的结果，如上图最后都得到了E。
+但如果我们要自己实现一种语言，就有可能必选二选其一，于是有了下面两种方式：&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;Call by Value(Eager Evaluation及早求值)
+也就是上图中的inner，这种方式在函数应用前，就计算函数参数的值。如：&lt;/li&gt;
+&lt;/ol&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;4
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;    (λy. (λx. x) y) ((λu. u) (λv. v)) ---&amp;gt;
+    (λy. (λx. x) y) (λv. v)  ---&amp;gt;
+    (λx. x) (λv. v)  ---&amp;gt;
+    λv. v
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;ol start=&#34;2&#34;&gt;
+&lt;li&gt;Call by Name (Lazy Evaluation惰性求值)
+也就是上图中的outer，这种方式在函数应用前，不计算函数参数的值，直到需要时才求值。如：&lt;/li&gt;
+&lt;/ol&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;4
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;    (λy. (λx. x) y) ((λu. u) (λv. v)) ---&amp;gt;
+    (λx. x) ((λu. u) (λv. v)) ---&amp;gt;
+    (λu. u) (λv. v) ---&amp;gt;
+    λv. v
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;值得一提的是，Call by Name这种方式在我们目前的语言中，只有函数式语言支持。&lt;/p&gt;
+&lt;h2 id=&#34;λ演算与编程语言的关系&#34;&gt;λ演算与编程语言的关系&lt;/h2&gt;
+&lt;p&gt;在λ演算中只有函数（变量依附于函数而有意义），如果要用纯λ演算来实现一门编程语言的话，我们还需要一些数据类型，比如boolean、number、list等，那怎么办呢？
+λ的强大又再一次展现出来，所有的数据类型都能用函数模拟出来，秘诀就是
+&lt;code&gt;不要去关心数据的值是什么，重点是我们能对这个值做什么操作&lt;/code&gt;，然后我们用合法的λ表达式把这些操作表示出来即可。&lt;/p&gt;
+&lt;p&gt;听上去很些云里雾里，但看了我下面的讲解以后，你会发现，编程语言原来还可以这么玩，希望我能把这部分讲清楚些，个人感觉这些东西太funny了 :-)&lt;/p&gt;
+&lt;p&gt;好了，我们先从最简单——boolean的开始。&lt;/p&gt;
+&lt;h3 id=&#34;编码boolean&#34;&gt;编码Boolean&lt;/h3&gt;
+&lt;p&gt;Ask：我们能对boolean值做什么？
+Answer：我们能够进行条件判断，二选其一。&lt;/p&gt;
+&lt;p&gt;好，知道了能对boolean的操作，下面就用λ表达式来定义它：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;    true = λx. λy. x
+    false = λx. λy. y
+    if E1 then E2 else E3 = E1 E2 E3
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;来简单解释一下，boolean就是这么一个函数，它有两个参数（通过currying实现），返回其中一个。下面看个例子：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;    if true then u else v 可以写成   
+    (λx. λy. x) u v ---&amp;gt; (λy. u) v ---&amp;gt; u
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;哈哈，很神奇吧，更精彩的还在后头呢，继续&lt;/p&gt;
+&lt;h3 id=&#34;编码pair&#34;&gt;编码pair&lt;/h3&gt;
+&lt;p&gt;这里简单解释下pair，其实就是序列对，如(1 2)、(hello world)，这些就是pair，只有两个元素，但不要小看了pair，我们用的list就是通过pair连接起来形成的。&lt;/p&gt;
+&lt;p&gt;Ask：我们能对pair做什么？
+Answer：我们能够选择pair中的任意一个元素&lt;/p&gt;
+&lt;p&gt;好，知道了能对pair的操作，下面就用λ表达式来定义它：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;    mkpair x y = λb. (b x y)
+    fst p      = p true
+    snd p      = p false
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;这里用到了true与false的编码。解释一下：
+pair就是这么一个函数，参数是一个boolean值，根据这个参数确定返回值。还是看例子：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;    fst (mkpair x y)---&amp;gt;(mkpair x y) true---&amp;gt;true x y---&amp;gt;x   
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;这样我们就能取到pair的第一个元素了。很好玩吧，下面的更有趣，继续&lt;/p&gt;
+&lt;h3 id=&#34;编码number&#34;&gt;编码number&lt;/h3&gt;
+&lt;p&gt;这里讲的number是指的自然数。&lt;/p&gt;
+&lt;p&gt;Ask：我们能对number做什么？
+Answer：我们能够依次遍历这些数字&lt;/p&gt;
+&lt;p&gt;好，知道了能对number的操作，下面就用λ表达式来定义它：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;4
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;    0 = λf. λs. s
+    1 = λf. λs. f s
+    2 = λf. λs. f (f s)
+    ......
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;解释一下，利用currying，我们知道上面的定义其实相当于一个具有两个参数的函数：一个函数f，另一个是起始值s，然后不断应用f实现遍历数字的操作。先不要管为什么这么定义，看了下面我们如何定义加法乘法的例子你应该就会豁然开朗了：
+首先我们需要定义一个后继函数(The successor function)&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;    succ n = λf. λs. f (n f s)
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;然后，就可以定义加法与乘法了&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;    add n1 n2 = n1 succ n2
+    mult n1 n2 = n1 (add n2) 0
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;只看定义要想弄懂应该还是有些困难，下面看个具体的例子：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;4
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;5
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;6
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;7
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;add 0 = (λn1. λn2. n1 succ n2) 0  // 这里直接根据上面 add 定义进行展开
+ 
+-------将 0 带入 n1，可得--------&amp;gt;
+λn2. 0 succ n2 = λn2. (λf. λs. s) succ n2 
+ 
+-------将 succ 带入 f，n2 带入 s，可得--&amp;gt;
+λn2. n2 = λx. x
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;我第一次看这个例子有个疑问，add不是两个参数吗，你怎么就加一个0呢？其实还是currying没理解好，两个参数的函数内部不也是用一个参数的函数来表示的嘛，如果只传递一个参数，那么我们就知道还会返回一个函数，本例中就是&lt;code&gt;λx. x&lt;/code&gt;，这是恒等函数，也就是说加 0 ,相当于什么也没加，还是本身。&lt;/p&gt;
+&lt;p&gt;哈哈，看来也不过如此嘛，如果你能看到这里，说明你已经对lambda掌握的差不多了。下面再来看个“难点”的例子——&lt;code&gt;1+1&lt;/code&gt;：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;4
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;    add 1 1 ---&amp;gt;
+    1 succ 1 ---&amp;gt;
+    succ 1 ---&amp;gt;
+    λf. λs. f (f s) ---&amp;gt; 2
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;最后一个例子，&lt;code&gt;2*2&lt;/code&gt;：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt; 1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 4
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 5
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 6
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 7
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 8
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 9
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;10
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;    mult 2 2 ---&amp;gt;
+    2 (add 2) 0 ---&amp;gt;
+    (add 2) ((add 2) 0) ---&amp;gt;
+    2 succ (add 2 0) ---&amp;gt;
+    2 succ (2 succ 0) ---&amp;gt;
+    succ (succ (succ (succ 0))) ---&amp;gt;
+    succ (succ (succ (λf. λs. f (0 f s)))) ---&amp;gt;
+    succ (succ (succ (λf. λs. f s))) ---&amp;gt;
+    succ (succ (λg. λy. g ((λf. λs. f s) g y)))
+    succ (succ (λg. λy. g (g y))) ---&amp;gt;......---&amp;gt; λg. λy. g (g (g (g y))) = 4
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;不要一看到这么多步骤就吓跑了，原则很简单，就是不断进行函数应用，需要注意的就是这里的2、0不再是单纯的数字了，它是从具有两个参数的函数，如果你应用时只传入一个参数，说明它还会返回一个函数。&lt;/p&gt;
+&lt;p&gt;不管怎样，如果你已经看到了这里，我希望你能把上面这个乘法的例子看懂，就是不断进行函数应用而已，没什么东西，我觉得难点在于思维的转化，因为以前都很理所当然认为2×2=4了，而不知道这么简单的计算后面的本质性东西，通过这个例子，希望大家能明确一点：&lt;code&gt;值是什么不重要，重要的是我们能对这个值进行的操作&lt;/code&gt;。&lt;/p&gt;
+&lt;p&gt;最后再来一个收尾菜：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;    如果想要判断一个数字是否为0，可以这么定义                
+    iszero n = n (λb. false) true        
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;h2 id=&#34;λ-演算与图灵机&#34;&gt;λ-演算与图灵机&lt;/h2&gt;
+&lt;p&gt;本文一开始就说明了，λ-演算与图灵机是等价，这里简单说下我对图灵机的理解：&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;在一个不限时间、不限资源的前提下，图灵机通过前进、后退、跳转、输出1或0这四个简单的命令，在一条无限长的纸带上执行事先编好的程序。&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;根据目前的证明，图灵机是宇宙间最强大的机器（理想中的），我们现有的计算机都没有超过图灵机。&lt;/p&gt;
+&lt;p&gt;如果说一个语言是图灵完备的，就是说，世界上任何可计算性问题，它都能解决。&lt;/p&gt;
+&lt;p&gt;我们现有的命令式语言，如C、Java等就是以图灵机为基础的。如果说这些语言图灵完备，需要具有以下两个特征：&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;有if、goto语句（或while、for之类的循环语句）&lt;/li&gt;
+&lt;li&gt;能够进行赋值操作（也就是改变内存状态）&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;与图灵机对应，λ-演算的直接影响是函数式编程语言，如lisp、Haskell等，如果说这些函数式语言图灵完备，需要有以下两个特征：&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;能够进行函数抽象（也就是函数定义）&lt;/li&gt;
+&lt;li&gt;能够进行函数应用（也就是函数调用）&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;鉴别一个语言是不是函数式的标准是：这个语言能否在运行时创建函数，如果能，就是函数式语言。&lt;/p&gt;
+&lt;h2 id=&#34;总结&#34;&gt;总结&lt;/h2&gt;
+&lt;p&gt;通过上面长篇大论（希望你能抽时间看完），我们用一些无意义符号表达了我们已经熟知的一些概念，这就是λ演算的精髓之处，通过一套形式化的规则来描述这些东西，要知道，这里面的很多东西我们现如今想当然的接受了，但如何让笨重的计算机来理解这个世界呢，这就需要这些形式化的规则来指导了。&lt;/p&gt;
+&lt;p&gt;我这里介绍的lambda calculus并不完全，只是其中的一部分，像&lt;a href=&#34;http://en.wikipedia.org/wiki/Lambda_calculus#Recursion_and_fixed_points&#34;&gt;递归&lt;/a&gt;这个重要的东西就没说，大家凭借兴趣再自己去看吧，我觉得我这篇文章就是个砖头，希望能引出大家的宝玉就好。&lt;/p&gt;
+&lt;p&gt;我们现在的编程语言趋向于多范式化，像python、ruby的兴起就说明了这点。
+因为纯函数式语言不能改变变量状态，这个恐怕在很多场合不适用吧。
+纯OO也不好，因为我们大多数程序员，都是用OO的语言来写过程式的程序，看看大家有多Helper类，Util类就明白了。&lt;/p&gt;
+&lt;p&gt;有了对 lambda 的认识后，就可以尝试下一个主题了——Y 算子，下面给出我觉得讲解的最好的一篇文章：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;http://shellfly.org/blog/2015/01/07/yi-the-y-combinator-slight-return/&#34;&gt;(译) The Y combinator (Slight Return)&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;最后，推荐王垠的一篇文章，以飨读者：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;http://geek.csdn.net/news/detail/3603&#34;&gt;面向对象编程和函数式编程的问题出在哪里？&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+</description>
     </item>
     
   </channel>
