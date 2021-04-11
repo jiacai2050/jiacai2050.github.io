@@ -24,7 +24,7 @@
 
 
 
-<meta name="generator" content="Hugo 0.81.0 with theme even" />
+<meta name="generator" content="Hugo 0.79.0 with theme even" />
 
 
 <link rel="canonical" href="https://liujiacai.net/blog/2014/08/06/cdh-yarn-ha-kerberos/" />
@@ -36,7 +36,7 @@
 
 
 
-<link href="/sass/main.min.24f64ae1eb89951aa146cbb31238f141b5994462fa2362bbd7bae8c71e0359cc.css" rel="stylesheet">
+<link href="/sass/main.min.c7bc1becf36bcf6a9ebd25d2947e43a2eb745ddb0c9a32b43126fd7fa460c351.css" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
 <link rel="stylesheet" href="/css/jiacai.css">
 
@@ -44,15 +44,19 @@
 <meta property="og:title" content="Yarn的安全模式与高可靠性安装总结" />
 <meta property="og:description" content="最近几天又重新把cdh的安全模块与高可靠性模块重新搭建了一遍，这次用是的目前最新的5.1.0的tar包安装，以前把MRv1搭建了好，这次主要是熟悉安装过程，并且把YARN的安全模块与HA模块成功搭建起来。遇到的错误还是不少，安装过程也是废了我好几天，现在想想很多错误都比较典型，现在此记录下我搭建过程中遇到的错误与心得，一方面为自己以后查阅，另一方面希望也能对遇到同样问题的人有所启发。" />
 <meta property="og:type" content="article" />
-<meta property="og:url" content="https://liujiacai.net/blog/2014/08/06/cdh-yarn-ha-kerberos/" /><meta property="article:section" content="post" />
-<meta property="article:published_time" content="2014-08-06T22:36:08&#43;08:00" />
-<meta property="article:modified_time" content="2020-12-04T22:35:59&#43;08:00" />
-
+<meta property="og:url" content="https://liujiacai.net/blog/2014/08/06/cdh-yarn-ha-kerberos/" />
+<meta property="article:published_time" content="2014-08-06T22:36:08+08:00" />
+<meta property="article:modified_time" content="2020-12-04T22:35:59+08:00" />
 <meta itemprop="name" content="Yarn的安全模式与高可靠性安装总结">
-<meta itemprop="description" content="最近几天又重新把cdh的安全模块与高可靠性模块重新搭建了一遍，这次用是的目前最新的5.1.0的tar包安装，以前把MRv1搭建了好，这次主要是熟悉安装过程，并且把YARN的安全模块与HA模块成功搭建起来。遇到的错误还是不少，安装过程也是废了我好几天，现在想想很多错误都比较典型，现在此记录下我搭建过程中遇到的错误与心得，一方面为自己以后查阅，另一方面希望也能对遇到同样问题的人有所启发。"><meta itemprop="datePublished" content="2014-08-06T22:36:08&#43;08:00" />
-<meta itemprop="dateModified" content="2020-12-04T22:35:59&#43;08:00" />
+<meta itemprop="description" content="最近几天又重新把cdh的安全模块与高可靠性模块重新搭建了一遍，这次用是的目前最新的5.1.0的tar包安装，以前把MRv1搭建了好，这次主要是熟悉安装过程，并且把YARN的安全模块与HA模块成功搭建起来。遇到的错误还是不少，安装过程也是废了我好几天，现在想想很多错误都比较典型，现在此记录下我搭建过程中遇到的错误与心得，一方面为自己以后查阅，另一方面希望也能对遇到同样问题的人有所启发。">
+<meta itemprop="datePublished" content="2014-08-06T22:36:08+08:00" />
+<meta itemprop="dateModified" content="2020-12-04T22:35:59+08:00" />
 <meta itemprop="wordCount" content="3822">
-<meta itemprop="keywords" content="hadoop," /><meta name="twitter:card" content="summary"/>
+
+
+
+<meta itemprop="keywords" content="hadoop," />
+<meta name="twitter:card" content="summary"/>
 <meta name="twitter:title" content="Yarn的安全模式与高可靠性安装总结"/>
 <meta name="twitter:description" content="最近几天又重新把cdh的安全模块与高可靠性模块重新搭建了一遍，这次用是的目前最新的5.1.0的tar包安装，以前把MRv1搭建了好，这次主要是熟悉安装过程，并且把YARN的安全模块与HA模块成功搭建起来。遇到的错误还是不少，安装过程也是废了我好几天，现在想想很多错误都比较典型，现在此记录下我搭建过程中遇到的错误与心得，一方面为自己以后查阅，另一方面希望也能对遇到同样问题的人有所启发。"/>
 
@@ -644,7 +648,7 @@ Caused by: GSSException: No valid credentials provided (Mechanism level: Server 
 
 
 
-<script type="text/javascript" src="/js/main.min.c99b103c33d1539acf3025e1913697534542c4a5aa5af0ccc20475ed2863603b.js"></script>
+<script type="text/javascript" src="/js/main.min.c12618f9a600c40bd024996677e951e64d3487006775aeb22e200c990006c5c7.js"></script>
 
 
 <script type="application/javascript">

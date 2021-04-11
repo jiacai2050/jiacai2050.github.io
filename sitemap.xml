@@ -2,6 +2,48 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   
   <url>
+    <loc>https://liujiacai.net/</loc>
+    <lastmod>2021-04-11T23:04:44+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://liujiacai.net/post/</loc>
+    <lastmod>2021-04-11T23:04:44+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://liujiacai.net/tags/prometheus/</loc>
+    <lastmod>2021-04-11T23:04:44+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://liujiacai.net/blog/2021/04/11/prometheus-storage-engine/</loc>
+    <lastmod>2021-04-11T23:04:44+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://liujiacai.net/tags/</loc>
+    <lastmod>2021-04-11T23:04:44+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://liujiacai.net/tags/tsdb/</loc>
+    <lastmod>2021-04-11T23:04:44+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
     <loc>https://liujiacai.net/categories/</loc>
     <lastmod>2021-03-13T10:00:18+08:00</lastmod>
     <changefreq>weekly</changefreq>
@@ -11,27 +53,6 @@
   <url>
     <loc>https://liujiacai.net/tags/emacs/</loc>
     <lastmod>2021-03-08T21:50:12+08:00</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  
-  <url>
-    <loc>https://liujiacai.net/</loc>
-    <lastmod>2021-03-13T10:00:18+08:00</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  
-  <url>
-    <loc>https://liujiacai.net/post/</loc>
-    <lastmod>2021-03-13T10:00:18+08:00</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  
-  <url>
-    <loc>https://liujiacai.net/tags/</loc>
-    <lastmod>2021-03-13T10:00:18+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
@@ -52,13 +73,6 @@
   
   <url>
     <loc>https://liujiacai.net/tags/database/</loc>
-    <lastmod>2021-01-27T20:04:08+08:00</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  
-  <url>
-    <loc>https://liujiacai.net/tags/tsdb/</loc>
     <lastmod>2021-01-27T20:04:08+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
