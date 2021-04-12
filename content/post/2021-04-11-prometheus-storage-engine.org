@@ -4,7 +4,7 @@
 #+CATEGORIES[]:
 Prometheus 作为云原生时代的时序数据库， 是当下最流行的监控平台之一，尽管其整体架构一直没怎么变，但其底层的存储引擎却演进了几个版本，感兴趣的读者可参考 [[https://tech.ipalfish.com/blog/2020/03/31/the-evolution-of-prometheus-storage-layer/][Prometheus 存储层的演进]]。本文主要介绍 Prometheus V2 版本的存储格式细节，以及查询是如何定位到符合条件的数据，旨在通过本文的分析，对 Prometheus 的存储引擎有更深入了解。
 
-注意：本文并不会涉及到查询的解析与函数求值过程。
+说明：本文并不会涉及到查询的解析与函数求值过程。代码分析基于 [[https://github.com/prometheus/prometheus/tree/v2.25.2][v2.25.2]] 版本。
 
 * 背景知识
 ** 时序特点
@@ -55,7 +55,7 @@ metric     labels                        value timesample
 #+CAPTION: 倒排索引工作示意图
 [[https://img.alicdn.com/imgextra/i3/581166664/O1CN01Bzbt3A1z6A3Q7J1Gl_!!581166664.jpg]]
 
-在一次查询中，会对涉及到的 label 分别求对应的 postings lists（即时间线集合），然后根据 filter 类型进行集合运算即可。
+在一次查询中，会对涉及到的 label 分别求对应的 postings lists（即时间线集合），然后根据 filter 类型进行集合运算，最后根据运算结果得出的时间线，去查相应数据即可。
 * V2 磁盘存储格式
 ** 数据格式
 #+begin_src
@@ -163,7 +163,9 @@ for _, fn := range files {
     bs = append(bs, realByteSlice(f.Bytes()))
 }
    #+end_src
-- block 对应的索引信息，主要是倒排索引。由于单个 label 对应的 Postings 可能会非常大，Prometheus 不是全量加载，而是每隔 32 个加载，来减轻内存压力。并且保证第一个与最后一个一定被加载，查询时采用类似跳表的方式。
+- block 对应的索引信息，主要是倒排索引。由于单个 label 对应的 Postings 可能会非常大，Prometheus 不是全量加载，而是每隔 32 个加载，来减轻内存压力。并且保证第一个与最后一个一定被加载，查询时采用类似跳表的方式进行 posting 定位。
+
+ 下面代码为 DB 启动时，读入 postings 的逻辑：
    #+begin_src go
 // For the postings offset table we keep every label name but only every nth
 // label value (plus the first and last one), to save memory.
@@ -190,6 +192,65 @@ ReadOffsetTable(r.b, r.toc.PostingsTable, func(key []string, _ uint64, off int) 
 
 if lastKey != nil {
     r.postings[lastKey[0]] = append(r.postings[lastKey[0]], postingOffset{value: lastKey[1], off: lastOff})
+}
+
+#+end_src
+下面代码为根据 label 查询 postings 的逻辑，完整可见 index 的 [[https://github.com/prometheus/prometheus/blob/bda05a23ada314a0b9806a362da39b7a1a4e04c3/tsdb/index/index.go#L1555][Postings 方法]]：
+#+begin_src go
+e, ok := r.postings[name] // name 为 label key
+if !ok || len(values) == 0 { // values 为当前需要查询的 label values
+	return EmptyPostings(), nil
+}
+
+res := make([]Postings, 0, len(values))
+skip := 0
+valueIndex := 0
+for valueIndex < len(values) && values[valueIndex] < e[0].value {
+	// Discard values before the start.
+	valueIndex++
+}
+for valueIndex < len(values) {
+	value := values[valueIndex]
+
+	// 用二分查找，找到当前 value 在 postings 中的位置
+	i := sort.Search(len(e), func(i int) bool { return e[i].value >= value })
+	if i == len(e) {
+		// We're past the end.
+		break
+	}
+	if i > 0 && e[i].value != value {  // postings 中没有该 value，需要用前面一个来在文件中搜索
+		// Need to look from previous entry.
+		i--
+	}
+	// Don't Crc32 the entire postings offset table, this is very slow
+	// so hope any issues were caught at startup.
+	d := encoding.NewDecbufAt(r.b, int(r.toc.PostingsTable), nil)
+	d.Skip(e[i].off)
+
+	// Iterate on the offset table.
+	var postingsOff uint64 // The offset into the postings table.
+	for d.Err() == nil {
+		// ... skip 逻辑省略
+		v := d.UvarintBytes()       // Label value.
+		postingsOff = d.Uvarint64() // Offset.
+		for string(v) >= value {
+			if string(v) == value {
+				// Read from the postings table.
+				d2 := encoding.NewDecbufAt(r.b, int(postingsOff), castagnoliTable)
+				_, p, err := r.dec.Postings(d2.Get())
+				res = append(res, p)
+			}
+			valueIndex++
+			if valueIndex == len(values) {
+				break
+			}
+			value = values[valueIndex]
+		}
+		if i+1 == len(e) || value >= e[i+1].value || valueIndex == len(values) {
+			// Need to go to a later postings offset entry, if there is one.
+			break
+		}
+	}
 }
 #+end_src
 * 内存结构
@@ -301,7 +362,7 @@ func (it *intersectPostings) Next() bool {
 * 总结
 通过上文的分析，大体上把 Prometheus 的存储结构以及查询流程分析了一遍，还有些细节没再展开去介绍，比如为了节约内存使用，label 使用了字典压缩，但这并不妨碍读者理解其原理。
 
-此外，Prometheus 默认 2 小时一个 Block 对大时间范围查询不友好，因此其后台会对定期 chunk 文件进行 compaction，合并后的文件大小为 =min(31d, retention_time * 0.1)= ，相关细节后面有机会再单独介绍吧。
+此外，Prometheus 默认 2 小时一个 Block 对大时间范围查询不友好，因此后台会对定期 chunk 文件进行 compaction，合并后的文件大小为 =min(31d, retention_time * 0.1)= ，相关细节后面有机会再单独介绍吧。
 * 参考
 - [[https://my.oschina.net/alchemystar/blog/4985328][Prometheus时序数据库-数据的查询]]
 - [[https://my.oschina.net/alchemystar/blog/4965684][Prometheus时序数据库-磁盘中的存储结构]]
