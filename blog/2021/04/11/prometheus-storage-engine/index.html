@@ -23,7 +23,7 @@
 
 
 
-<meta name="generator" content="Hugo 0.79.0 with theme even" />
+<meta name="generator" content="Hugo 0.81.0 with theme even" />
 
 
 <link rel="canonical" href="https://liujiacai.net/blog/2021/04/11/prometheus-storage-engine/" />
@@ -35,7 +35,7 @@
 
 
 
-<link href="/sass/main.min.c7bc1becf36bcf6a9ebd25d2947e43a2eb745ddb0c9a32b43126fd7fa460c351.css" rel="stylesheet">
+<link href="/sass/main.min.24f64ae1eb89951aa146cbb31238f141b5994462fa2362bbd7bae8c71e0359cc.css" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
 <link rel="stylesheet" href="/css/jiacai.css">
 
@@ -43,19 +43,15 @@
 <meta property="og:title" content="Prometheus 存储引擎分析" />
 <meta property="og:description" content="Prometheus 作为云原生时代的时序数据库， 是当下最流行的监控平台之一，尽管其整体架构一直没怎么变，但其底层的存储引擎却演进了几个版本，感兴趣的读者可参考" />
 <meta property="og:type" content="article" />
-<meta property="og:url" content="https://liujiacai.net/blog/2021/04/11/prometheus-storage-engine/" />
-<meta property="article:published_time" content="2021-04-11T22:42:54+08:00" />
-<meta property="article:modified_time" content="2021-04-11T23:04:44+08:00" />
+<meta property="og:url" content="https://liujiacai.net/blog/2021/04/11/prometheus-storage-engine/" /><meta property="article:section" content="post" />
+<meta property="article:published_time" content="2021-04-11T22:42:54&#43;08:00" />
+<meta property="article:modified_time" content="2021-04-12T20:17:39&#43;08:00" />
+
 <meta itemprop="name" content="Prometheus 存储引擎分析">
-<meta itemprop="description" content="Prometheus 作为云原生时代的时序数据库， 是当下最流行的监控平台之一，尽管其整体架构一直没怎么变，但其底层的存储引擎却演进了几个版本，感兴趣的读者可参考">
-<meta itemprop="datePublished" content="2021-04-11T22:42:54+08:00" />
-<meta itemprop="dateModified" content="2021-04-11T23:04:44+08:00" />
-<meta itemprop="wordCount" content="4403">
-
-
-
-<meta itemprop="keywords" content="tsdb,,prometheus," />
-<meta name="twitter:card" content="summary"/>
+<meta itemprop="description" content="Prometheus 作为云原生时代的时序数据库， 是当下最流行的监控平台之一，尽管其整体架构一直没怎么变，但其底层的存储引擎却演进了几个版本，感兴趣的读者可参考"><meta itemprop="datePublished" content="2021-04-11T22:42:54&#43;08:00" />
+<meta itemprop="dateModified" content="2021-04-12T20:17:39&#43;08:00" />
+<meta itemprop="wordCount" content="4836">
+<meta itemprop="keywords" content="tsdb,,prometheus," /><meta name="twitter:card" content="summary"/>
 <meta name="twitter:title" content="Prometheus 存储引擎分析"/>
 <meta name="twitter:description" content="Prometheus 作为云原生时代的时序数据库， 是当下最流行的监控平台之一，尽管其整体架构一直没怎么变，但其底层的存储引擎却演进了几个版本，感兴趣的读者可参考"/>
 
@@ -137,8 +133,8 @@
       <div class="post-meta">
         <span class="post-time"> 2021-04-11 </span>
         
-          <span class="more-meta"> 约 4403 字 </span>
-          <span class="more-meta"> 预计阅读 9 分钟 </span>
+          <span class="more-meta"> 约 4836 字 </span>
+          <span class="more-meta"> 预计阅读 10 分钟 </span>
         
       </div>
     </header>
@@ -158,7 +154,7 @@
 </li>
 </ul>
 </li>
-<li><a href="#headline-5">V2 磁盘存储格式</a>
+<li><a href="#headline-5">磁盘存储格式</a>
 <ul>
 <li><a href="#headline-6">数据格式</a>
 </li>
@@ -186,9 +182,9 @@
 </div>
     <div class="post-content">
       
-<p>Prometheus 作为云原生时代的时序数据库， 是当下最流行的监控平台之一，尽管其整体架构一直没怎么变，但其底层的存储引擎却演进了几个版本，感兴趣的读者可参考 <a href="https://tech.ipalfish.com/blog/2020/03/31/the-evolution-of-prometheus-storage-layer/">Prometheus 存储层的演进</a>。本文主要介绍 Prometheus V2 版本的存储格式细节，以及查询是如何定位到符合条件的数据，旨在通过本文的分析，对 Prometheus 的存储引擎有更深入了解。</p>
+<p>Prometheus 作为云原生时代的时序数据库， 是当下最流行的监控平台之一，尽管其整体架构一直没怎么变，但其底层的存储引擎却演进了几个版本，感兴趣的读者可参考 <a href="https://tech.ipalfish.com/blog/2020/03/31/the-evolution-of-prometheus-storage-layer/">Prometheus 存储层的演进</a>。本文主要介绍 Prometheus V2 版本（现在主要使用）的存储格式细节，以及查询如何定位到符合条件的数据，旨在通过本文的分析，对 Prometheus 的存储引擎有更深入了解。</p>
 <p>
-注意：本文并不会涉及到查询的解析与函数求值过程。</p>
+说明：本文并不会涉及到查询的解析与函数求值过程。代码分析基于 <a href="https://github.com/prometheus/prometheus/tree/v2.25.2">v2.25.2</a> 版本。</p>
 <div id="outline-container-headline-1" class="outline-2">
 <h2 id="headline-1">
 背景知识
@@ -312,14 +308,14 @@ metric     labels                        value timesample</code></pre></td></tr>
 </figcaption>
 </figure>
 <p>
-在一次查询中，会对涉及到的 label 分别求对应的 postings lists（即时间线集合），然后根据 filter 类型进行集合运算即可。</p>
+在一次查询中，会对涉及到的 label 分别求对应的 postings lists（即时间线集合），然后根据 filter 类型进行集合运算，最后根据运算结果得出的时间线，去查相应数据即可。</p>
 </div>
 </div>
 </div>
 </div>
 <div id="outline-container-headline-5" class="outline-2">
 <h2 id="headline-5">
-V2 磁盘存储格式
+磁盘存储格式
 </h2>
 <div id="outline-text-headline-5" class="outline-text-2">
 <div id="outline-container-headline-6" class="outline-3">
@@ -568,7 +564,10 @@ series 到 chunks 数据文件的映射过程
 </div>
 </li>
 <li>
-<p>block 对应的索引信息，主要是倒排索引。由于单个 label 对应的 Postings 可能会非常大，Prometheus 不是全量加载，而是每隔 32 个加载，来减轻内存压力。并且保证第一个与最后一个一定被加载，查询时采用类似跳表的方式。</p>
+<p>block 对应的索引信息，主要是倒排索引。由于单个 label 对应的 Postings 可能会非常大，Prometheus 不是全量加载，而是每隔 32 个加载，来减轻内存压力。并且保证第一个与最后一个一定被加载，查询时采用类似跳表的方式进行 posting 定位。</p>
+<ul>
+<li>
+<p>下面代码为 DB 启动时，读入 postings 的逻辑：</p>
 <div class="src src-go">
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
@@ -630,6 +629,130 @@ series 到 chunks 数据文件的映射过程
 </div>
 </div>
 </div>
+</li>
+<li>
+<p>下面代码为根据 label 查询 postings 的逻辑，完整可见 index 的 <a href="https://github.com/prometheus/prometheus/blob/bda05a23ada314a0b9806a362da39b7a1a4e04c3/tsdb/index/index.go#L1555">Postings 方法</a>：</p>
+<div class="src src-go">
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-go" data-lang="go"><span class="nx">e</span><span class="p">,</span> <span class="nx">ok</span> <span class="o">:=</span> <span class="nx">r</span><span class="p">.</span><span class="nx">postings</span><span class="p">[</span><span class="nx">name</span><span class="p">]</span> <span class="c1">// name 为 label key
+</span><span class="c1"></span><span class="k">if</span> <span class="p">!</span><span class="nx">ok</span> <span class="o">||</span> <span class="nb">len</span><span class="p">(</span><span class="nx">values</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span> <span class="p">{</span> <span class="c1">// values 为当前需要查询的 label values
+</span><span class="c1"></span> <span class="k">return</span> <span class="nf">EmptyPostings</span><span class="p">(),</span> <span class="kc">nil</span>
+<span class="p">}</span>
+
+<span class="nx">res</span> <span class="o">:=</span> <span class="nb">make</span><span class="p">([]</span><span class="nx">Postings</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="nx">values</span><span class="p">))</span>
+<span class="nx">skip</span> <span class="o">:=</span> <span class="mi">0</span>
+<span class="nx">valueIndex</span> <span class="o">:=</span> <span class="mi">0</span>
+<span class="k">for</span> <span class="nx">valueIndex</span> <span class="p">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="nx">values</span><span class="p">)</span> <span class="o">&amp;&amp;</span> <span class="nx">values</span><span class="p">[</span><span class="nx">valueIndex</span><span class="p">]</span> <span class="p">&lt;</span> <span class="nx">e</span><span class="p">[</span><span class="mi">0</span><span class="p">].</span><span class="nx">value</span> <span class="p">{</span>
+ <span class="c1">// Discard values before the start.
+</span><span class="c1"></span> <span class="nx">valueIndex</span><span class="o">++</span>
+<span class="p">}</span>
+<span class="k">for</span> <span class="nx">valueIndex</span> <span class="p">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="nx">values</span><span class="p">)</span> <span class="p">{</span>
+ <span class="nx">value</span> <span class="o">:=</span> <span class="nx">values</span><span class="p">[</span><span class="nx">valueIndex</span><span class="p">]</span>
+
+ <span class="c1">// 用二分查找，找到当前 value 在 postings 中的位置
+</span><span class="c1"></span> <span class="nx">i</span> <span class="o">:=</span> <span class="nx">sort</span><span class="p">.</span><span class="nf">Search</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="nx">e</span><span class="p">),</span> <span class="kd">func</span><span class="p">(</span><span class="nx">i</span> <span class="kt">int</span><span class="p">)</span> <span class="kt">bool</span> <span class="p">{</span> <span class="k">return</span> <span class="nx">e</span><span class="p">[</span><span class="nx">i</span><span class="p">].</span><span class="nx">value</span> <span class="o">&gt;=</span> <span class="nx">value</span> <span class="p">})</span>
+ <span class="k">if</span> <span class="nx">i</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="nx">e</span><span class="p">)</span> <span class="p">{</span>
+     <span class="c1">// We&#39;re past the end.
+</span><span class="c1"></span>     <span class="k">break</span>
+ <span class="p">}</span>
+ <span class="k">if</span> <span class="nx">i</span> <span class="p">&gt;</span> <span class="mi">0</span> <span class="o">&amp;&amp;</span> <span class="nx">e</span><span class="p">[</span><span class="nx">i</span><span class="p">].</span><span class="nx">value</span> <span class="o">!=</span> <span class="nx">value</span> <span class="p">{</span>  <span class="c1">// postings 中没有该 value，需要用前面一个来在文件中搜索
+</span><span class="c1"></span>     <span class="c1">// Need to look from previous entry.
+</span><span class="c1"></span>     <span class="nx">i</span><span class="o">--</span>
+ <span class="p">}</span>
+ <span class="c1">// Don&#39;t Crc32 the entire postings offset table, this is very slow
+</span><span class="c1"></span> <span class="c1">// so hope any issues were caught at startup.
+</span><span class="c1"></span> <span class="nx">d</span> <span class="o">:=</span> <span class="nx">encoding</span><span class="p">.</span><span class="nf">NewDecbufAt</span><span class="p">(</span><span class="nx">r</span><span class="p">.</span><span class="nx">b</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="nx">r</span><span class="p">.</span><span class="nx">toc</span><span class="p">.</span><span class="nx">PostingsTable</span><span class="p">),</span> <span class="kc">nil</span><span class="p">)</span>
+ <span class="nx">d</span><span class="p">.</span><span class="nf">Skip</span><span class="p">(</span><span class="nx">e</span><span class="p">[</span><span class="nx">i</span><span class="p">].</span><span class="nx">off</span><span class="p">)</span>
+
+ <span class="c1">// Iterate on the offset table.
+</span><span class="c1"></span> <span class="kd">var</span> <span class="nx">postingsOff</span> <span class="kt">uint64</span> <span class="c1">// The offset into the postings table.
+</span><span class="c1"></span> <span class="k">for</span> <span class="nx">d</span><span class="p">.</span><span class="nf">Err</span><span class="p">()</span> <span class="o">==</span> <span class="kc">nil</span> <span class="p">{</span>
+     <span class="c1">// ... skip 逻辑省略
+</span><span class="c1"></span>     <span class="nx">v</span> <span class="o">:=</span> <span class="nx">d</span><span class="p">.</span><span class="nf">UvarintBytes</span><span class="p">()</span>       <span class="c1">// Label value.
+</span><span class="c1"></span>     <span class="nx">postingsOff</span> <span class="p">=</span> <span class="nx">d</span><span class="p">.</span><span class="nf">Uvarint64</span><span class="p">()</span> <span class="c1">// Offset.
+</span><span class="c1"></span>     <span class="k">for</span> <span class="nb">string</span><span class="p">(</span><span class="nx">v</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="nx">value</span> <span class="p">{</span>
+         <span class="k">if</span> <span class="nb">string</span><span class="p">(</span><span class="nx">v</span><span class="p">)</span> <span class="o">==</span> <span class="nx">value</span> <span class="p">{</span>
+             <span class="c1">// Read from the postings table.
+</span><span class="c1"></span>             <span class="nx">d2</span> <span class="o">:=</span> <span class="nx">encoding</span><span class="p">.</span><span class="nf">NewDecbufAt</span><span class="p">(</span><span class="nx">r</span><span class="p">.</span><span class="nx">b</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="nx">postingsOff</span><span class="p">),</span> <span class="nx">castagnoliTable</span><span class="p">)</span>
+             <span class="nx">_</span><span class="p">,</span> <span class="nx">p</span><span class="p">,</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nx">r</span><span class="p">.</span><span class="nx">dec</span><span class="p">.</span><span class="nf">Postings</span><span class="p">(</span><span class="nx">d2</span><span class="p">.</span><span class="nf">Get</span><span class="p">())</span>
+             <span class="nx">res</span> <span class="p">=</span> <span class="nb">append</span><span class="p">(</span><span class="nx">res</span><span class="p">,</span> <span class="nx">p</span><span class="p">)</span>
+         <span class="p">}</span>
+         <span class="nx">valueIndex</span><span class="o">++</span>
+         <span class="k">if</span> <span class="nx">valueIndex</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="nx">values</span><span class="p">)</span> <span class="p">{</span>
+             <span class="k">break</span>
+         <span class="p">}</span>
+         <span class="nx">value</span> <span class="p">=</span> <span class="nx">values</span><span class="p">[</span><span class="nx">valueIndex</span><span class="p">]</span>
+     <span class="p">}</span>
+     <span class="k">if</span> <span class="nx">i</span><span class="o">+</span><span class="mi">1</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="nx">e</span><span class="p">)</span> <span class="o">||</span> <span class="nx">value</span> <span class="o">&gt;=</span> <span class="nx">e</span><span class="p">[</span><span class="nx">i</span><span class="o">+</span><span class="mi">1</span><span class="p">].</span><span class="nx">value</span> <span class="o">||</span> <span class="nx">valueIndex</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="nx">values</span><span class="p">)</span> <span class="p">{</span>
+         <span class="c1">// Need to go to a later postings offset entry, if there is one.
+</span><span class="c1"></span>         <span class="k">break</span>
+     <span class="p">}</span>
+ <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></td></tr></table>
+</div>
+</div>
+</div>
+</li>
+</ul>
 </li>
 </ul>
 </div>
@@ -897,7 +1020,7 @@ Head
 <div id="outline-text-headline-12" class="outline-text-2">
 <p>通过上文的分析，大体上把 Prometheus 的存储结构以及查询流程分析了一遍，还有些细节没再展开去介绍，比如为了节约内存使用，label 使用了字典压缩，但这并不妨碍读者理解其原理。</p>
 <p>
-此外，Prometheus 默认 2 小时一个 Block 对大时间范围查询不友好，因此其后台会对定期 chunk 文件进行 compaction，合并后的文件大小为 <code class="verbatim">min(31d, retention_time * 0.1)</code> ，相关细节后面有机会再单独介绍吧。</p>
+此外，Prometheus 默认 2 小时一个 Block 对大时间范围查询不友好，因此后台会对定期 chunk 文件进行 compaction，合并后的文件大小为 <code class="verbatim">min(31d, retention_time * 0.1)</code> ，相关细节后面有机会再单独介绍吧。</p>
 </div>
 </div>
 <div id="outline-container-headline-13" class="outline-2">
@@ -944,8 +1067,8 @@ Head
   <p class="copyright-item">
     <span class="item-title">上次更新</span>
     <span class="item-content">
-        2021-04-11
-        <a href="https://github.com/jiacai2050/jiacai2050.github.io/commit/0a6e281c3ee560491402a9ff6e9fa90384fdaf7a" title="add prom storage engine">(0a6e281)</a>
+        2021-04-12
+        <a href="https://github.com/jiacai2050/jiacai2050.github.io/commit/5ba1146688977b13dd87ad4e9571a4220e0da210" title="format">(5ba1146)</a>
     </span>
   </p>
   
@@ -1038,7 +1161,7 @@ Head
 
 
 
-<script type="text/javascript" src="/js/main.min.c12618f9a600c40bd024996677e951e64d3487006775aeb22e200c990006c5c7.js"></script>
+<script type="text/javascript" src="/js/main.min.c99b103c33d1539acf3025e1913697534542c4a5aa5af0ccc20475ed2863603b.js"></script>
 
 
 <script type="application/javascript">

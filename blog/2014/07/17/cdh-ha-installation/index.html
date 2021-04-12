@@ -25,7 +25,7 @@
 
 
 
-<meta name="generator" content="Hugo 0.79.0 with theme even" />
+<meta name="generator" content="Hugo 0.81.0 with theme even" />
 
 
 <link rel="canonical" href="https://liujiacai.net/blog/2014/07/17/cdh-ha-installation/" />
@@ -37,7 +37,7 @@
 
 
 
-<link href="/sass/main.min.c7bc1becf36bcf6a9ebd25d2947e43a2eb745ddb0c9a32b43126fd7fa460c351.css" rel="stylesheet">
+<link href="/sass/main.min.24f64ae1eb89951aa146cbb31238f141b5994462fa2362bbd7bae8c71e0359cc.css" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
 <link rel="stylesheet" href="/css/jiacai.css">
 
@@ -46,20 +46,16 @@
 <meta property="og:description" content="继上次安装完Kerberos安全认证后，现在我在这基础上，又给CDH加上了HA（high availability），也就是高可靠性，具体来讲就是双NameNode，双Jobtracker（我还是在MRv1模式下），有了HA后，这下集群的健壮性就能够得到很好的保证了。
 我还是按照官方文档来操作的，有了上次的经验，建议大家在具体操作实施前，先快速阅读一遍，做到心中有数，我还阅读了Apache官方的说明，也不用怎么详细，大概知道怎么回事就行了。" />
 <meta property="og:type" content="article" />
-<meta property="og:url" content="https://liujiacai.net/blog/2014/07/17/cdh-ha-installation/" />
-<meta property="article:published_time" content="2014-07-17T23:07:34+08:00" />
-<meta property="article:modified_time" content="2020-12-04T22:35:59+08:00" />
+<meta property="og:url" content="https://liujiacai.net/blog/2014/07/17/cdh-ha-installation/" /><meta property="article:section" content="post" />
+<meta property="article:published_time" content="2014-07-17T23:07:34&#43;08:00" />
+<meta property="article:modified_time" content="2020-12-04T22:35:59&#43;08:00" />
+
 <meta itemprop="name" content="hadoop1.0 高可靠性(HA)安装与总结">
 <meta itemprop="description" content="继上次安装完Kerberos安全认证后，现在我在这基础上，又给CDH加上了HA（high availability），也就是高可靠性，具体来讲就是双NameNode，双Jobtracker（我还是在MRv1模式下），有了HA后，这下集群的健壮性就能够得到很好的保证了。
-我还是按照官方文档来操作的，有了上次的经验，建议大家在具体操作实施前，先快速阅读一遍，做到心中有数，我还阅读了Apache官方的说明，也不用怎么详细，大概知道怎么回事就行了。">
-<meta itemprop="datePublished" content="2014-07-17T23:07:34+08:00" />
-<meta itemprop="dateModified" content="2020-12-04T22:35:59+08:00" />
+我还是按照官方文档来操作的，有了上次的经验，建议大家在具体操作实施前，先快速阅读一遍，做到心中有数，我还阅读了Apache官方的说明，也不用怎么详细，大概知道怎么回事就行了。"><meta itemprop="datePublished" content="2014-07-17T23:07:34&#43;08:00" />
+<meta itemprop="dateModified" content="2020-12-04T22:35:59&#43;08:00" />
 <meta itemprop="wordCount" content="2401">
-
-
-
-<meta itemprop="keywords" content="hadoop," />
-<meta name="twitter:card" content="summary"/>
+<meta itemprop="keywords" content="hadoop," /><meta name="twitter:card" content="summary"/>
 <meta name="twitter:title" content="hadoop1.0 高可靠性(HA)安装与总结"/>
 <meta name="twitter:description" content="继上次安装完Kerberos安全认证后，现在我在这基础上，又给CDH加上了HA（high availability），也就是高可靠性，具体来讲就是双NameNode，双Jobtracker（我还是在MRv1模式下），有了HA后，这下集群的健壮性就能够得到很好的保证了。
 我还是按照官方文档来操作的，有了上次的经验，建议大家在具体操作实施前，先快速阅读一遍，做到心中有数，我还阅读了Apache官方的说明，也不用怎么详细，大概知道怎么回事就行了。"/>
@@ -458,7 +454,7 @@ sudo -u hdfs bin/hdfs dfs -chown mapred /tmp/hadoop-mapred/mapred/system
 
 
 
-<script type="text/javascript" src="/js/main.min.c12618f9a600c40bd024996677e951e64d3487006775aeb22e200c990006c5c7.js"></script>
+<script type="text/javascript" src="/js/main.min.c99b103c33d1539acf3025e1913697534542c4a5aa5af0ccc20475ed2863603b.js"></script>
 
 
 <script type="application/javascript">
