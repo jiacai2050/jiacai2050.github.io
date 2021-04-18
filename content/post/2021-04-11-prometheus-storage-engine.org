@@ -129,7 +129,7 @@ chunk 为数据在磁盘中的最小组织单元，需要明确以下两点：
 - 然后再根据 Postings 中的 series 信息，找到对应的 chunk 位置，即上文中的 series ref。
 #+attr_org: :width 600px
 #+CAPTION: series 到 chunks 数据文件的映射过程
-[[https://img.alicdn.com/imgextra/i2/581166664/O1CN01ncQkYZ1z6A3SfXvO3_!!581166664.jpg]]
+[[https://img.alicdn.com/imgextra/i4/581166664/O1CN01HsQNy31z6A3HT9l5B_!!581166664.jpg]]
 
 ** 使用方式
 Prometheus 在启动时，会去加载数据元信息到内存中。主要有下面两部分：
