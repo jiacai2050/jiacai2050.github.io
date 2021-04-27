@@ -142,7 +142,7 @@ Hugo 则不同，它默认会用文件中 frontmatter 的 date，而非文件名
 &lt;/div&gt;
 &lt;div id=&#34;outline-container-headline-5&#34; class=&#34;outline-3&#34;&gt;
 &lt;h3 id=&#34;headline-5&#34;&gt;
-RSS 链接
+RSS
 &lt;/h3&gt;
 &lt;div id=&#34;outline-text-headline-5&#34; class=&#34;outline-text-3&#34;&gt;
 &lt;p&gt;默认 Hugo 生成的 RSS 链接为 &lt;code class=&#34;verbatim&#34;&gt;/index.xml&lt;/code&gt; ，而我之前用的是 &lt;a href=&#34;https://liujiacai.net/atom.xml&#34;&gt;/atom.xml&lt;/a&gt;，可以通过如下配置修改：&lt;/p&gt;
@@ -162,6 +162,8 @@ RSS 链接
 &lt;/div&gt;
 &lt;/div&gt;
 &lt;/div&gt;
+&lt;p&gt;
+另外一点，默认 Hugo 只会把文章的摘要输出到 RSS，如果想输出全文，可以修改 RSS &lt;a href=&#34;https://gohugo.io/templates/rss/#the-embedded-rss-xml&#34;&gt;模板&lt;/a&gt;，&lt;a href=&#34;https://github.com/jiacai2050/jiacai2050.github.io/blob/hugo/layouts/_default/rss.xml&#34;&gt;rss.xml&lt;/a&gt; 是我目前使用的。&lt;/p&gt;
 &lt;/div&gt;
 &lt;/div&gt;
 &lt;div id=&#34;outline-container-headline-6&#34; class=&#34;outline-3&#34;&gt;

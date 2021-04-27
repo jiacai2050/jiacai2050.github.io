@@ -23,7 +23,7 @@
 
 
 
-<meta name="generator" content="Hugo 0.81.0 with theme even" />
+<meta name="generator" content="Hugo 0.79.0 with theme even" />
 
 
 <link rel="canonical" href="https://liujiacai.net/blog/2020/08/08/go-meet-java/" />
@@ -35,7 +35,7 @@
 
 
 
-<link href="/sass/main.min.24f64ae1eb89951aa146cbb31238f141b5994462fa2362bbd7bae8c71e0359cc.css" rel="stylesheet">
+<link href="/sass/main.min.c7bc1becf36bcf6a9ebd25d2947e43a2eb745ddb0c9a32b43126fd7fa460c351.css" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
 <link rel="stylesheet" href="/css/jiacai.css">
 
@@ -43,15 +43,19 @@
 <meta property="og:title" content="实践总结：在 Java 中调用 Go 代码" />
 <meta property="og:description" content="在 Java 中调用 Go 的大致过程如下 1 go --&gt; cgo --&gt; jna --&gt; java 整个过程要解决的问题主要两个： 数据类型在两种语言中如何转化 何时清理无用的数据 下面就围绕上述调用过程" />
 <meta property="og:type" content="article" />
-<meta property="og:url" content="https://liujiacai.net/blog/2020/08/08/go-meet-java/" /><meta property="article:section" content="post" />
-<meta property="article:published_time" content="2020-08-08T09:30:53&#43;00:00" />
-<meta property="article:modified_time" content="2020-12-04T22:35:59&#43;08:00" />
-
+<meta property="og:url" content="https://liujiacai.net/blog/2020/08/08/go-meet-java/" />
+<meta property="article:published_time" content="2020-08-08T09:30:53+00:00" />
+<meta property="article:modified_time" content="2020-12-04T22:35:59+08:00" />
 <meta itemprop="name" content="实践总结：在 Java 中调用 Go 代码">
-<meta itemprop="description" content="在 Java 中调用 Go 的大致过程如下 1 go --&gt; cgo --&gt; jna --&gt; java 整个过程要解决的问题主要两个： 数据类型在两种语言中如何转化 何时清理无用的数据 下面就围绕上述调用过程"><meta itemprop="datePublished" content="2020-08-08T09:30:53&#43;00:00" />
-<meta itemprop="dateModified" content="2020-12-04T22:35:59&#43;08:00" />
+<meta itemprop="description" content="在 Java 中调用 Go 的大致过程如下 1 go --&gt; cgo --&gt; jna --&gt; java 整个过程要解决的问题主要两个： 数据类型在两种语言中如何转化 何时清理无用的数据 下面就围绕上述调用过程">
+<meta itemprop="datePublished" content="2020-08-08T09:30:53+00:00" />
+<meta itemprop="dateModified" content="2020-12-04T22:35:59+08:00" />
 <meta itemprop="wordCount" content="1746">
-<meta itemprop="keywords" content="Go,Java," /><meta name="twitter:card" content="summary"/>
+
+
+
+<meta itemprop="keywords" content="Go,Java," />
+<meta name="twitter:card" content="summary"/>
 <meta name="twitter:title" content="实践总结：在 Java 中调用 Go 代码"/>
 <meta name="twitter:description" content="在 Java 中调用 Go 的大致过程如下 1 go --&gt; cgo --&gt; jna --&gt; java 整个过程要解决的问题主要两个： 数据类型在两种语言中如何转化 何时清理无用的数据 下面就围绕上述调用过程"/>
 
@@ -599,7 +603,7 @@ JNA 将 Java 基本类型直接映射为 C 中同等大小的类型，这里<a h
 
 
 
-<script type="text/javascript" src="/js/main.min.c99b103c33d1539acf3025e1913697534542c4a5aa5af0ccc20475ed2863603b.js"></script>
+<script type="text/javascript" src="/js/main.min.c12618f9a600c40bd024996677e951e64d3487006775aeb22e200c990006c5c7.js"></script>
 
 
 <script type="application/javascript">

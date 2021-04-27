@@ -1,0 +1,863 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <title>Trait 使用及原理分析 - Keep Coding</title>
+  <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author" content="刘家财" /><meta name="description" content="在 Rust 设计目标中，零成本抽象是非常重要的一条，它让 Rust 具备高级语言表达能力的同时，又不会带来性能损耗。零成本的基石是范型与 trait，它们可以在" /><meta name="keywords" content="lisp, clojure, emacs, database, life" />
+
+
+
+
+
+
+<meta name="generator" content="Hugo 0.79.0 with theme even" />
+
+
+<link rel="canonical" href="https://liujiacai.net/blog/2021/04/27/trait-usage/" />
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+
+
+
+<link href="/sass/main.min.c7bc1becf36bcf6a9ebd25d2947e43a2eb745ddb0c9a32b43126fd7fa460c351.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+<link rel="stylesheet" href="/css/jiacai.css">
+
+
+<meta property="og:title" content="Trait 使用及原理分析" />
+<meta property="og:description" content="在 Rust 设计目标中，零成本抽象是非常重要的一条，它让 Rust 具备高级语言表达能力的同时，又不会带来性能损耗。零成本的基石是范型与 trait，它们可以在" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://liujiacai.net/blog/2021/04/27/trait-usage/" />
+<meta property="article:published_time" content="2021-04-27T21:48:47+08:00" />
+<meta property="article:modified_time" content="2021-04-27T22:19:40+08:00" />
+<meta itemprop="name" content="Trait 使用及原理分析">
+<meta itemprop="description" content="在 Rust 设计目标中，零成本抽象是非常重要的一条，它让 Rust 具备高级语言表达能力的同时，又不会带来性能损耗。零成本的基石是范型与 trait，它们可以在">
+<meta itemprop="datePublished" content="2021-04-27T21:48:47+08:00" />
+<meta itemprop="dateModified" content="2021-04-27T22:19:40+08:00" />
+<meta itemprop="wordCount" content="2050">
+
+
+
+<meta itemprop="keywords" content="rust," />
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Trait 使用及原理分析"/>
+<meta name="twitter:description" content="在 Rust 设计目标中，零成本抽象是非常重要的一条，它让 Rust 具备高级语言表达能力的同时，又不会带来性能损耗。零成本的基石是范型与 trait，它们可以在"/>
+
+<!--[if lte IE 9]>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/classlist/1.1.20170427/classList.min.js"></script>
+<![endif]-->
+
+<!--[if lt IE 9]>
+  <script src="https://cdn.jsdelivr.net/npm/html5shiv@3.7.3/dist/html5shiv.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/respond.js@1.4.2/dest/respond.min.js"></script>
+<![endif]-->
+
+</head>
+<body>
+  <div id="mobile-navbar" class="mobile-navbar">
+  <div class="mobile-header-logo">
+    <a href="/" class="logo">Keep Coding</a>
+  </div>
+  <div class="mobile-navbar-icon">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+  <ul class="mobile-menu-list">
+    <a href="/">
+        <li class="mobile-menu-item">主页</li>
+      </a><a href="/post/">
+        <li class="mobile-menu-item">归档</li>
+      </a><a href="/tags/">
+        <li class="mobile-menu-item">标签</li>
+      </a><a href="/categories/">
+        <li class="mobile-menu-item">分类</li>
+      </a><a href="/podcast/">
+        <li class="mobile-menu-item">Podcast</li>
+      </a><a href="/blogrolls/">
+        <li class="mobile-menu-item">友链</li>
+      </a><a href="/about/">
+        <li class="mobile-menu-item">关于</li>
+      </a>
+  </ul>
+</nav>
+  <div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+  <a href="/" class="logo">Keep Coding</a>
+</div>
+
+<nav class="site-navbar">
+  <ul id="menu" class="menu">
+    <li class="menu-item">
+        <a class="menu-item-link" href="/">主页</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/post/">归档</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/tags/">标签</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/categories/">分类</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/podcast/">Podcast</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/blogrolls/">友链</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/about/">关于</a>
+      </li>
+  </ul>
+</nav>
+    </header>
+
+    <main id="main" class="main">
+      <div class="content-wrapper">
+        <div id="content" class="content">
+          <article class="post">
+    
+    <header class="post-header">
+      <h1 class="post-title">Trait 使用及原理分析</h1>
+
+      <div class="post-meta">
+        <span class="post-time"> 2021-04-27 </span>
+        <div class="post-category">
+            <a href="/categories/%E7%BC%96%E7%A8%8B%E8%AF%AD%E8%A8%80/"> 编程语言 </a>
+            </div>
+          <span class="more-meta"> 约 2050 字 </span>
+          <span class="more-meta"> 预计阅读 5 分钟 </span>
+        
+      </div>
+    </header>
+
+    <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content always-active">
+    <nav id="TableOfContents">
+<ul>
+<li><a href="#headline-1">使用方式</a>
+<ul>
+<li><a href="#headline-2">静态派发</a>
+</li>
+<li><a href="#headline-3">动态派发</a>
+</li>
+<li><a href="#headline-4">impl trait</a>
+</li>
+</ul>
+</li>
+<li><a href="#headline-5">常见问题</a>
+<ul>
+<li><a href="#headline-6">向上转型（upcast）</a>
+</li>
+<li><a href="#headline-7">Object safety</a>
+</li>
+</ul>
+</li>
+<li><a href="#headline-8">总结</a>
+</li>
+<li><a href="#headline-9">参考</a>
+</li>
+</ul>
+</nav>
+  </div>
+</div>
+    <div class="post-content">
+      
+<p>
+在 Rust 设计目标中，零成本抽象是非常重要的一条，它让 Rust 具备高级语言表达能力的同时，又不会带来性能损耗。零成本的基石是范型与 trait，它们可以在编译期把高级语法编译成与高效的底层代码，从而实现运行时的高效。这篇文章就来介绍 trait，包括使用方式与两个常见问题的分析，在问题探究的过程中来阐述其实现原理。</p>
+<div id="outline-container-headline-1" class="outline-2">
+<h2 id="headline-1">
+使用方式
+</h2>
+<div id="outline-text-headline-1" class="outline-text-2">
+<p>Trait 的主要作用是用来抽象行为，类似于其他编程语言中的「接口」，这里举一示例阐述 trait 的主要使用方式：</p>
+<div class="src src-rust">
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-rust" data-lang="rust"><span class="k">trait</span><span class="w"> </span><span class="n">Greeting</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span><span class="w">    </span><span class="k">fn</span> <span class="nf">greeting</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">)</span><span class="w"> </span>-&gt; <span class="nb">String</span><span class="p">;</span><span class="w">
+</span><span class="w"></span><span class="p">}</span><span class="w">
+</span><span class="w">
+</span><span class="w"></span><span class="k">struct</span> <span class="nc">Cat</span><span class="p">;</span><span class="w">
+</span><span class="w"></span><span class="k">impl</span><span class="w"> </span><span class="n">Greeting</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">Cat</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span><span class="w">    </span><span class="k">fn</span> <span class="nf">greeting</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">)</span><span class="w"> </span>-&gt;<span class="nb">String</span> <span class="p">{</span><span class="w">
+</span><span class="w">        </span><span class="s">&#34;Meow...&#34;</span><span class="p">.</span><span class="n">to_string</span><span class="p">()</span><span class="w">
+</span><span class="w">    </span><span class="p">}</span><span class="w">
+</span><span class="w"></span><span class="p">}</span><span class="w">
+</span><span class="w">
+</span><span class="w"></span><span class="k">struct</span> <span class="nc">Dog</span><span class="p">;</span><span class="w">
+</span><span class="w"></span><span class="k">impl</span><span class="w"> </span><span class="n">Greeting</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">Dog</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span><span class="w">    </span><span class="k">fn</span> <span class="nf">greeting</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">)</span><span class="w"> </span>-&gt;<span class="nb">String</span> <span class="p">{</span><span class="w">
+</span><span class="w">        </span><span class="s">&#34;Bark...&#34;</span><span class="p">.</span><span class="n">to_string</span><span class="p">()</span><span class="w">
+</span><span class="w">    </span><span class="p">}</span><span class="w">
+</span><span class="w"></span><span class="p">}</span><span class="w">
+</span></code></pre></td></tr></table>
+</div>
+</div>
+</div>
+<p>在上述代码中，定义了一个 trait Greeting，两个 struct 实现了它，根据函数调用方式，主要两种使用方式：</p>
+<ul>
+<li>
+<p>基于范型的静态派发</p>
+</li>
+<li>
+<p>基于 trait object 的动态派发</p>
+</li>
+</ul>
+<p>范型的概念比较常见，这里着重介绍下 trait object 的<a href="https://doc.rust-lang.org/1.51.0/reference/types/trait-object.html">定义</a>：</p>
+<blockquote>
+<p>A trait object is an opaque value of another type that implements a set of traits. The set of traits is made up of an object safe base trait plus any number of auto traits.</p>
+</blockquote>
+<p>比较重要的一点是 trait object 属于 <a href="https://doc.rust-lang.org/1.51.0/reference/dynamically-sized-types.html">Dynamically Sized Types</a>（DST），在编译期无法确定大小，只能通过指针来间接访问，常见的形式有 <code class="verbatim">Box&lt;dyn trait&gt;</code>  <code class="verbatim">&amp;dyn trait</code> 等。</p>
+<div class="src src-rust">
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-rust" data-lang="rust"><span class="k">fn</span> <span class="nf">print_greeting_static</span><span class="o">&lt;</span><span class="n">G</span>: <span class="nc">Greeting</span><span class="o">&gt;</span><span class="p">(</span><span class="n">g</span>: <span class="nc">G</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span><span class="w">    </span><span class="n">println</span><span class="o">!</span><span class="p">(</span><span class="s">&#34;{}&#34;</span><span class="p">,</span><span class="w"> </span><span class="n">g</span><span class="p">.</span><span class="n">greeting</span><span class="p">());</span><span class="w">
+</span><span class="w"></span><span class="p">}</span><span class="w">
+</span><span class="w"></span><span class="k">fn</span> <span class="nf">print_greeting_dynamic</span><span class="p">(</span><span class="n">g</span>: <span class="nb">Box</span><span class="o">&lt;</span><span class="n">dyn</span><span class="w"> </span><span class="n">Greeting</span><span class="o">&gt;</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span><span class="w">    </span><span class="n">println</span><span class="o">!</span><span class="p">(</span><span class="s">&#34;{}&#34;</span><span class="p">,</span><span class="w"> </span><span class="n">g</span><span class="p">.</span><span class="n">greeting</span><span class="p">());</span><span class="w">
+</span><span class="w"></span><span class="p">}</span><span class="w">
+</span><span class="w">
+</span><span class="w"></span><span class="n">print_greeting_static</span><span class="p">(</span><span class="n">Cat</span><span class="p">);</span><span class="w">
+</span><span class="w"></span><span class="n">print_greeting_static</span><span class="p">(</span><span class="n">Dog</span><span class="p">);</span><span class="w">
+</span><span class="w">
+</span><span class="w"></span><span class="n">print_greeting_dynamic</span><span class="p">(</span><span class="nb">Box</span>::<span class="n">new</span><span class="p">(</span><span class="n">Cat</span><span class="p">));</span><span class="w">
+</span><span class="w"></span><span class="n">print_greeting_dynamic</span><span class="p">(</span><span class="nb">Box</span>::<span class="n">new</span><span class="p">(</span><span class="n">Dog</span><span class="p">));</span><span class="w">
+</span></code></pre></td></tr></table>
+</div>
+</div>
+</div>
+<div id="outline-container-headline-2" class="outline-3">
+<h3 id="headline-2">
+静态派发
+</h3>
+<div id="outline-text-headline-2" class="outline-text-3">
+<p>在 Rust 中，范型的实现采用的是单态化（monomorphization），会针对不同类型的调用者，在编译时生成不同版本的函数，所以范型也被称为<a href="https://bluejekyll.github.io/blog/posts/type-parameters/">类型参数</a>。好处是没有虚函数调用的开销，缺点是最终的二进制文件膨胀。在上面的例子中， <code class="verbatim">print_greeting_static</code> 会编译成下面这两个版本：</p>
+<div class="src src-rust">
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-rust" data-lang="rust"><span class="n">print_greeting_static_cat</span><span class="p">(</span><span class="n">Cat</span><span class="p">);</span><span class="w">
+</span><span class="w"></span><span class="n">print_greeting_static_dog</span><span class="p">(</span><span class="n">Dog</span><span class="p">);</span><span class="w">
+</span></code></pre></td></tr></table>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div id="outline-container-headline-3" class="outline-3">
+<h3 id="headline-3">
+动态派发
+</h3>
+<div id="outline-text-headline-3" class="outline-text-3">
+<p>不是所有函数的调用都能在编译期确定调用者类型，一个常见的场景是 GUI 编程中事件响应的 callback，一般来说一个事件可能对应多个 callback 函数，而这些 callback 函数都是在编译期不确定的，因此范型在这里就不适用了，需要采用动态派发的方式：</p>
+<div class="src src-rust">
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-rust" data-lang="rust"><span class="k">trait</span><span class="w"> </span><span class="n">ClickCallback</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span><span class="w">    </span><span class="k">fn</span> <span class="nf">on_click</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">,</span><span class="w"> </span><span class="n">x</span>: <span class="kt">i64</span><span class="p">,</span><span class="w"> </span><span class="n">y</span>: <span class="kt">i64</span><span class="p">);</span><span class="w">
+</span><span class="w"></span><span class="p">}</span><span class="w">
+</span><span class="w">
+</span><span class="w"></span><span class="k">struct</span> <span class="nc">Button</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span><span class="w">    </span><span class="n">listeners</span>: <span class="nb">Vec</span><span class="o">&lt;</span><span class="nb">Box</span><span class="o">&lt;</span><span class="n">dyn</span><span class="w"> </span><span class="n">ClickCallback</span><span class="o">&gt;&gt;</span><span class="p">,</span><span class="w">
+</span><span class="w"></span><span class="p">}</span><span class="w">
+</span></code></pre></td></tr></table>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div id="outline-container-headline-4" class="outline-3">
+<h3 id="headline-4">
+impl trait
+</h3>
+<div id="outline-text-headline-4" class="outline-text-3">
+<p>在 Rust 1.26 版本中，引入了一种新的 trait 使用方式，即：<a href="https://doc.rust-lang.org/edition-guide/rust-2018/trait-system/impl-trait-for-returning-complex-types-with-ease.html">impl trait</a>，可以用在两个地方：函数参数与返回值。 该方式主要是简化复杂 trait 的使用，算是范型的特例版，因为在使用 impl trait 的地方，也是静态派发，而且作为函数返回值时，数据类型只能有一种，这一点要尤为注意！</p>
+<div class="src src-rust">
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-rust" data-lang="rust"><span class="k">fn</span> <span class="nf">print_greeting_impl</span><span class="p">(</span><span class="n">g</span>: <span class="nc">impl</span><span class="w"> </span><span class="n">Greeting</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span><span class="w">    </span><span class="n">println</span><span class="o">!</span><span class="p">(</span><span class="s">&#34;{}&#34;</span><span class="p">,</span><span class="w"> </span><span class="n">g</span><span class="p">.</span><span class="n">greeting</span><span class="p">());</span><span class="w">
+</span><span class="w"></span><span class="p">}</span><span class="w">
+</span><span class="w"></span><span class="n">print_greeting_impl</span><span class="p">(</span><span class="n">Cat</span><span class="p">);</span><span class="w">
+</span><span class="w"></span><span class="n">print_greeting_impl</span><span class="p">(</span><span class="n">Dog</span><span class="p">);</span><span class="w">
+</span><span class="w">
+</span><span class="w"></span><span class="c1">// 下面代码会编译报错
+</span><span class="c1"></span><span class="k">fn</span> <span class="nf">return_greeting_impl</span><span class="p">(</span><span class="n">i</span>: <span class="kt">i32</span><span class="p">)</span><span class="w"> </span>-&gt; <span class="nc">impl</span><span class="w"> </span><span class="n">Greeting</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span><span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mi">10</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span><span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">Cat</span><span class="p">;</span><span class="w">
+</span><span class="w">    </span><span class="p">}</span><span class="w">
+</span><span class="w">    </span><span class="n">Dog</span><span class="w">
+</span><span class="w"></span><span class="p">}</span><span class="w">
+</span><span class="w">
+</span><span class="w"></span><span class="c1">// | fn return_greeting_impl(i: i32) -&gt; impl Greeting {
+</span><span class="c1">// |                                    ------------- expected because this return type...
+</span><span class="c1">// |     if i &gt; 10 {
+</span><span class="c1">// |         return Cat;
+</span><span class="c1">// |                --- ...is found to be `Cat` here
+</span><span class="c1">// |     }
+</span><span class="c1">// |     Dog
+</span><span class="c1">// |     ^^^ expected struct `Cat`, found struct `Dog`
+</span></code></pre></td></tr></table>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div id="outline-container-headline-5" class="outline-2">
+<h2 id="headline-5">
+常见问题
+</h2>
+<div id="outline-text-headline-5" class="outline-text-2">
+<div id="outline-container-headline-6" class="outline-3">
+<h3 id="headline-6">
+向上转型（upcast）
+</h3>
+<div id="outline-text-headline-6" class="outline-text-3">
+<p>对于 <code class="verbatim">trait SubTrait: Base</code> ，在目前的 Rust 版本中，是无法将 <code class="verbatim">&amp;dyn SubTrait</code> 转换到 <code class="verbatim">&amp;dyn Base</code> 的。这个限制与 trait object 的内存结构有关。</p>
+<p>
+在 <a href="https://iandouglasscott.com/2018/05/28/exploring-rust-fat-pointers/">Exploring Rust fat pointers</a> 一文中，该作者通过 transmute 将 trait object 的引用转为两个 usize，并且验证它们是指向数据与函数虚表的指针：</p>
+<div class="src src-rust">
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-rust" data-lang="rust"><span class="k">use</span><span class="w"> </span><span class="n">std</span>::<span class="n">mem</span>::<span class="n">transmute</span><span class="p">;</span><span class="w">
+</span><span class="w"></span><span class="k">use</span><span class="w"> </span><span class="n">std</span>::<span class="n">fmt</span>::<span class="n">Debug</span><span class="p">;</span><span class="w">
+</span><span class="w">
+</span><span class="w"></span><span class="k">fn</span> <span class="nf">main</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span><span class="w">    </span><span class="kd">let</span><span class="w"> </span><span class="n">v</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">vec</span><span class="o">!</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="mi">3</span><span class="p">,</span><span class="w"> </span><span class="mi">4</span><span class="p">];</span><span class="w">
+</span><span class="w">    </span><span class="kd">let</span><span class="w"> </span><span class="n">a</span>: <span class="kp">&amp;</span><span class="nb">Vec</span><span class="o">&lt;</span><span class="kt">u64</span><span class="o">&gt;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">&amp;</span><span class="n">v</span><span class="p">;</span><span class="w">
+</span><span class="w">    </span><span class="c1">// 转为 trait object
+</span><span class="c1"></span><span class="w">    </span><span class="kd">let</span><span class="w"> </span><span class="n">b</span>: <span class="kp">&amp;</span><span class="nc">dyn</span><span class="w"> </span><span class="n">Debug</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">&amp;</span><span class="n">v</span><span class="p">;</span><span class="w">
+</span><span class="w">    </span><span class="n">println</span><span class="o">!</span><span class="p">(</span><span class="s">&#34;a: {}&#34;</span><span class="p">,</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="o">*</span><span class="k">const</span><span class="w"> </span><span class="n">_</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="kt">usize</span><span class="p">);</span><span class="w">
+</span><span class="w">    </span><span class="n">println</span><span class="o">!</span><span class="p">(</span><span class="s">&#34;b: {:?}&#34;</span><span class="p">,</span><span class="w"> </span><span class="k">unsafe</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">transmute</span>::<span class="o">&lt;</span><span class="n">_</span><span class="p">,</span><span class="w"> </span><span class="p">(</span><span class="kt">usize</span><span class="p">,</span><span class="w"> </span><span class="kt">usize</span><span class="p">)</span><span class="o">&gt;</span><span class="p">(</span><span class="n">b</span><span class="p">)</span><span class="w"> </span><span class="p">});</span><span class="w">
+</span><span class="w"></span><span class="p">}</span><span class="w">
+</span><span class="w">
+</span><span class="w"></span><span class="c1">// a: 140735227204568
+</span><span class="c1">// b: (140735227204568, 94484672107880)
+</span></code></pre></td></tr></table>
+</div>
+</div>
+</div>
+<p>从这里可以看出：Rust 使用 fat pointer（即两个指针） 来表示 trait object 的引用，分布指向 data 与 vtable，这和 Go 中的 <a href="https://research.swtch.com/interfaces">interface</a> 十分类似。</p>
+<figure>
+<img src="https://img.alicdn.com/imgextra/i2/581166664/O1CN01esAA7q1z6A3inQpnF_!!581166664.jpg" alt="https://img.alicdn.com/imgextra/i2/581166664/O1CN01esAA7q1z6A3inQpnF_!!581166664.jpg" title="https://img.alicdn.com/imgextra/i2/581166664/O1CN01esAA7q1z6A3inQpnF_!!581166664.jpg" /><figcaption>
+trait object reference
+</figcaption>
+</figure>
+<div class="src src-rust">
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-rust" data-lang="rust"><span class="k">pub</span><span class="w"> </span><span class="k">struct</span> <span class="nc">TraitObjectReference</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span><span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">data</span>: <span class="o">*</span><span class="k">mut</span><span class="w"> </span><span class="p">(),</span><span class="w">
+</span><span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">vtable</span>: <span class="o">*</span><span class="k">mut</span><span class="w"> </span><span class="p">(),</span><span class="w">
+</span><span class="w"></span><span class="p">}</span><span class="w">
+</span><span class="w">
+</span><span class="w"></span><span class="k">struct</span> <span class="nc">Vtable</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span><span class="w">    </span><span class="n">destructor</span>: <span class="nc">fn</span><span class="p">(</span><span class="o">*</span><span class="k">mut</span><span class="w"> </span><span class="p">()),</span><span class="w">
+</span><span class="w">    </span><span class="n">size</span>: <span class="kt">usize</span><span class="p">,</span><span class="w">
+</span><span class="w">    </span><span class="n">align</span>: <span class="kt">usize</span><span class="p">,</span><span class="w">
+</span><span class="w">    </span><span class="n">method</span>: <span class="nc">fn</span><span class="p">(</span><span class="o">*</span><span class="k">const</span><span class="w"> </span><span class="p">())</span><span class="w"> </span>-&gt; <span class="nb">String</span><span class="p">,</span><span class="w">
+</span><span class="w"></span><span class="p">}</span><span class="w">
+</span></code></pre></td></tr></table>
+</div>
+</div>
+</div>
+<p>尽管 fat pointer 导致指针体积变大（无法使用 Atomic 之类指令），但是好处是更明显的：</p>
+<ol>
+<li>
+<p>可以为已有类型实现 trait（比如 <a href="https://users.rust-lang.org/t/what-are-blanket-implementations/49904">blanket implementations</a>）</p>
+</li>
+<li>
+<p>调用虚表中的函数时，只需要引用一次，而在 C++ 中，vtable 是存在对象内部的，导致每一次函数调用都需要两次引用，如下图所示：</p>
+<figure>
+<img src="https://img.alicdn.com/imgextra/i2/581166664/O1CN01u6ms841z6A3cHRdJw_!!581166664.jpg" alt="https://img.alicdn.com/imgextra/i2/581166664/O1CN01u6ms841z6A3cHRdJw_!!581166664.jpg" title="https://img.alicdn.com/imgextra/i2/581166664/O1CN01u6ms841z6A3cHRdJw_!!581166664.jpg" /><figcaption>
+cpp vtable two-level indirect
+</figcaption>
+</figure>
+</li>
+</ol>
+<p>如果 trait 有继承关系时，vtable 是怎么存储不同 trait 的方法的呢？在目前的实现中，是依次存放在一个 vtable 中的，如下图：</p>
+<figure>
+<img src="https://img.alicdn.com/imgextra/i4/581166664/O1CN01x8adaQ1z6A3bkyKqY_!!581166664.png" alt="https://img.alicdn.com/imgextra/i4/581166664/O1CN01x8adaQ1z6A3bkyKqY_!!581166664.png" title="https://img.alicdn.com/imgextra/i4/581166664/O1CN01x8adaQ1z6A3bkyKqY_!!581166664.png" /><figcaption>
+多 trait 时 vtable 示意图
+</figcaption>
+</figure>
+<p>
+可以看到，所有 trait 的方法是顺序放在一起，并没有区分方法属于哪个 trait，这样也就导致无法进行 upcast，社区内有 <a href="https://github.com/rust-lang/rfcs/issues/2765">RFC 2765</a> 在追踪这个问题，感兴趣的读者可参考，这里就不讨论解决方案了，介绍一种比较通用的<a href="http://stackoverflow.com/a/28664881/403742">解决方案</a>，通过引入一个 AsBase 的 trait 来解决：</p>
+<div class="src src-rust">
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-rust" data-lang="rust"><span class="k">trait</span><span class="w"> </span><span class="n">Base</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span><span class="w">    </span><span class="k">fn</span> <span class="nf">base</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span><span class="w">        </span><span class="n">println</span><span class="o">!</span><span class="p">(</span><span class="s">&#34;base...&#34;</span><span class="p">);</span><span class="w">
+</span><span class="w">    </span><span class="p">}</span><span class="w">
+</span><span class="w"></span><span class="p">}</span><span class="w">
+</span><span class="w">
+</span><span class="w"></span><span class="k">trait</span><span class="w"> </span><span class="n">AsBase</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span><span class="w">    </span><span class="k">fn</span> <span class="nf">as_base</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">)</span><span class="w"> </span>-&gt; <span class="kp">&amp;</span><span class="nc">dyn</span><span class="w"> </span><span class="n">Base</span><span class="p">;</span><span class="w">
+</span><span class="w"></span><span class="p">}</span><span class="w">
+</span><span class="w">
+</span><span class="w"></span><span class="c1">// blanket implementation
+</span><span class="c1"></span><span class="k">impl</span><span class="o">&lt;</span><span class="n">T</span>: <span class="nc">Base</span><span class="o">&gt;</span><span class="w"> </span><span class="n">AsBase</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">T</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span><span class="w">    </span><span class="k">fn</span> <span class="nf">as_base</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">)</span><span class="w"> </span>-&gt; <span class="kp">&amp;</span><span class="nc">dyn</span><span class="w"> </span><span class="n">Base</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span><span class="w">        </span><span class="bp">self</span><span class="w">
+</span><span class="w">    </span><span class="p">}</span><span class="w">
+</span><span class="w"></span><span class="p">}</span><span class="w">
+</span><span class="w">
+</span><span class="w"></span><span class="k">trait</span><span class="w"> </span><span class="n">Foo</span>: <span class="nc">AsBase</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span><span class="w">    </span><span class="k">fn</span> <span class="nf">foo</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span><span class="w">        </span><span class="n">println</span><span class="o">!</span><span class="p">(</span><span class="s">&#34;foo..&#34;</span><span class="p">);</span><span class="w">
+</span><span class="w">    </span><span class="p">}</span><span class="w">
+</span><span class="w"></span><span class="p">}</span><span class="w">
+</span><span class="w">
+</span><span class="w"></span><span class="cp">#[derive(Debug)]</span><span class="w">
+</span><span class="w"></span><span class="k">struct</span> <span class="nc">MyStruct</span><span class="p">;</span><span class="w">
+</span><span class="w">
+</span><span class="w"></span><span class="k">impl</span><span class="w"> </span><span class="n">Foo</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">MyStruct</span><span class="w"> </span><span class="p">{}</span><span class="w">
+</span><span class="w"></span><span class="k">impl</span><span class="w"> </span><span class="n">Base</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">MyStruct</span><span class="w"> </span><span class="p">{}</span><span class="w">
+</span><span class="w">
+</span><span class="w"></span><span class="k">fn</span> <span class="nf">main</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span><span class="w">    </span><span class="kd">let</span><span class="w"> </span><span class="n">s</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">MyStruct</span><span class="p">;</span><span class="w">
+</span><span class="w">    </span><span class="kd">let</span><span class="w"> </span><span class="n">foo</span>: <span class="kp">&amp;</span><span class="nc">dyn</span><span class="w"> </span><span class="n">Foo</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">&amp;</span><span class="n">s</span><span class="p">;</span><span class="w">
+</span><span class="w">    </span><span class="n">foo</span><span class="p">.</span><span class="n">foo</span><span class="p">();</span><span class="w">
+</span><span class="w">    </span><span class="kd">let</span><span class="w"> </span><span class="n">base</span>: <span class="kp">&amp;</span><span class="nc">dyn</span><span class="w"> </span><span class="n">Base</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">foo</span><span class="p">.</span><span class="n">as_base</span><span class="p">();</span><span class="w">
+</span><span class="w">    </span><span class="n">base</span><span class="p">.</span><span class="n">base</span><span class="p">();</span><span class="w">
+</span><span class="w"></span><span class="p">}</span><span class="w">
+</span></code></pre></td></tr></table>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div id="outline-container-headline-7" class="outline-3">
+<h3 id="headline-7">
+Object safety
+</h3>
+<div id="outline-text-headline-7" class="outline-text-3">
+<p>在 Rust 中，并不是所有的 trait 都可用作 trait object，需要满足一定的条件，称之为 <a href="https://doc.rust-lang.org/book/ch17-02-trait-objects.html#object-safety-is-required-for-trait-objects">object safety</a> 属性。主要有以下几点：</p>
+<ol>
+<li>
+<p>函数返回类型不能是 Self（即当前类型）。这主要因为把一个对象转为 trait object 后，原始类型信息就丢失了，所以这里的 Self 也就无法确定了。</p>
+</li>
+<li>
+<p>函数中不允许有范型参数。主要原因在于单态化时会生成大量的函数，很容易导致 trait 内的方法膨胀。比如</p>
+<div class="src src-rust">
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-rust" data-lang="rust"><span class="k">trait</span><span class="w"> </span><span class="n">Trait</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span><span class="w"> </span><span class="k">fn</span> <span class="nf">foo</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">,</span><span class="w"> </span><span class="n">on</span>: <span class="nc">T</span><span class="p">);</span><span class="w">
+</span><span class="w"> </span><span class="c1">// more methods
+</span><span class="c1"></span><span class="p">}</span><span class="w">
+</span><span class="w">
+</span><span class="w"></span><span class="c1">// 10 implementations
+</span><span class="c1"></span><span class="k">fn</span> <span class="nf">call_foo</span><span class="p">(</span><span class="n">thing</span>: <span class="nb">Box</span><span class="o">&lt;</span><span class="n">Trait</span><span class="o">&gt;</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span><span class="w"> </span><span class="n">thing</span><span class="p">.</span><span class="n">foo</span><span class="p">(</span><span class="kc">true</span><span class="p">);</span><span class="w"> </span><span class="c1">// this could be any one of the 10 types above
+</span><span class="c1"></span><span class="w"> </span><span class="n">thing</span><span class="p">.</span><span class="n">foo</span><span class="p">(</span><span class="mi">1</span><span class="p">);</span><span class="w">
+</span><span class="w"> </span><span class="n">thing</span><span class="p">.</span><span class="n">foo</span><span class="p">(</span><span class="s">&#34;hello&#34;</span><span class="p">);</span><span class="w">
+</span><span class="w"></span><span class="p">}</span><span class="w">
+</span><span class="w">
+</span><span class="w"></span><span class="c1">// 总共会有 10 * 3 = 30 个实现
+</span></code></pre></td></tr></table>
+</div>
+</div>
+</div>
+</li>
+<li>
+<p>Trait 不能继承 Sized。这是由于 Rust 会默认为 trait object 实现该 trait，生成类似下面的代码：</p>
+<div class="src src-rust">
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-rust" data-lang="rust"><span class="k">trait</span><span class="w"> </span><span class="n">Foo</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span><span class="w"> </span><span class="k">fn</span> <span class="nf">method1</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">);</span><span class="w">
+</span><span class="w"> </span><span class="k">fn</span> <span class="nf">method2</span><span class="p">(</span><span class="o">&amp;</span><span class="k">mut</span><span class="w"> </span><span class="bp">self</span><span class="p">,</span><span class="w"> </span><span class="n">x</span>: <span class="kt">i32</span><span class="p">,</span><span class="w"> </span><span class="n">y</span>: <span class="nb">String</span><span class="p">)</span><span class="w"> </span>-&gt; <span class="kt">usize</span><span class="p">;</span><span class="w">
+</span><span class="w"></span><span class="p">}</span><span class="w">
+</span><span class="w">
+</span><span class="w"></span><span class="c1">// autogenerated impl
+</span><span class="c1"></span><span class="k">impl</span><span class="w"> </span><span class="n">Foo</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">TraitObject</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span><span class="w"> </span><span class="k">fn</span> <span class="nf">method1</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span><span class="w">     </span><span class="c1">// `self` is an `&amp;Foo` trait object.
+</span><span class="c1"></span><span class="w">
+</span><span class="w">     </span><span class="c1">// load the right function pointer and call it with the opaque data pointer
+</span><span class="c1"></span><span class="w">     </span><span class="p">(</span><span class="bp">self</span><span class="p">.</span><span class="n">vtable</span><span class="p">.</span><span class="n">method1</span><span class="p">)(</span><span class="bp">self</span><span class="p">.</span><span class="n">data</span><span class="p">)</span><span class="w">
+</span><span class="w"> </span><span class="p">}</span><span class="w">
+</span><span class="w"> </span><span class="k">fn</span> <span class="nf">method2</span><span class="p">(</span><span class="o">&amp;</span><span class="k">mut</span><span class="w"> </span><span class="bp">self</span><span class="p">,</span><span class="w"> </span><span class="n">x</span>: <span class="kt">i32</span><span class="p">,</span><span class="w"> </span><span class="n">y</span>: <span class="nb">String</span><span class="p">)</span><span class="w"> </span>-&gt; <span class="kt">usize</span> <span class="p">{</span><span class="w">
+</span><span class="w">     </span><span class="c1">// `self` is an `&amp;mut Foo` trait object
+</span><span class="c1"></span><span class="w">
+</span><span class="w">     </span><span class="c1">// as above, passing along the other arguments
+</span><span class="c1"></span><span class="w">     </span><span class="p">(</span><span class="bp">self</span><span class="p">.</span><span class="n">vtable</span><span class="p">.</span><span class="n">method2</span><span class="p">)(</span><span class="bp">self</span><span class="p">.</span><span class="n">data</span><span class="p">,</span><span class="w"> </span><span class="n">x</span><span class="p">,</span><span class="w"> </span><span class="n">y</span><span class="p">)</span><span class="w">
+</span><span class="w"> </span><span class="p">}</span><span class="w">
+</span><span class="w"></span><span class="p">}</span><span class="w">
+</span></code></pre></td></tr></table>
+</div>
+</div>
+</div>
+<p>如果 Foo 继承了 Sized，那么就要求 trait object 也是 Sized，而 trait object 是 DST 类型，属于 <code class="verbatim">?Sized</code> ，所以 trait 不能继承 Sized。</p>
+<p>
+对于非 safe 的 trait，能修改成 safe 是最好的方案，如果不能，可以尝试范型的方式。</p>
+</li>
+</ol>
+</div>
+</div>
+</div>
+</div>
+<div id="outline-container-headline-8" class="outline-2">
+<h2 id="headline-8">
+总结
+</h2>
+<div id="outline-text-headline-8" class="outline-text-2">
+<p>本文开篇就介绍了 trait 是实现零成本抽象的基础，通过 trait 可以为已有类型增加新方法，这其实解决了<a href="https://en.wikipedia.org/wiki/Expression_problem">表达式问题</a>，可以进行运算符重载，可以进行面向接口编程等。希望通过本文的分析，可以让读者更好的驾驭 trait 的使用，在面对编译器错误时，能够做到游刃有余。</p>
+</div>
+</div>
+<div id="outline-container-headline-9" class="outline-2">
+<h2 id="headline-9">
+参考
+</h2>
+<div id="outline-text-headline-9" class="outline-text-2">
+<ul>
+<li>
+<p><a href="https://www.infoq.cn/article/Uugi_eIJusEka1aSPmQM">想要改变世界的 Rust 语言</a></p>
+</li>
+<li>
+<p><a href="https://blog.rust-lang.org/2015/05/11/traits.html">Abstraction without overhead: traits in Rust</a></p>
+</li>
+<li>
+<p><a href="http://huonw.github.io/blog/2015/01/peeking-inside-trait-objects/">Peeking inside Trait Objects</a></p>
+</li>
+<li>
+<p><a href="http://huonw.github.io/blog/2015/01/object-safety">Object Safety</a></p>
+</li>
+<li>
+<p><a href="https://lukasatkinson.de/2018/interface-dispatch/">Interface Dispatch</a></p>
+</li>
+<li>
+<p><a href="https://www.possiblerust.com/pattern/3-things-to-try-when-you-can-t-make-a-trait-object">3 Things to Try When You Can&#39;t Make a Trait Object</a></p>
+</li>
+</ul>
+</div>
+</div>
+
+    </div>
+
+    <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    <span class="item-content">刘家财</span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+        2021-04-27
+        <a href="https://github.com/jiacai2050/jiacai2050.github.io/commit/8ad34e625c16a62b90a93ec65c3579b521f5e4d5" title="add rust trait post">(8ad34e6)</a>
+    </span>
+  </p>
+  
+  <p class="copyright-item">
+    <span class="item-title">许可协议</span>
+    <span class="item-content"><a rel="license noopener" href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank">CC BY-NC-ND 4.0</a></span>
+  </p>
+</div>
+<footer class="post-footer">
+      <div class="post-tags">
+          <a href="/tags/rust/">rust</a>
+          </div>
+      <nav class="post-nav">
+        
+        <a class="next" href="/blog/2021/04/11/prometheus-storage-engine/">
+            <span class="next-text nav-default">Prometheus 存储引擎分析</span>
+            <span class="next-text nav-mobile">下一篇</span>
+            <i class="iconfont icon-right"></i>
+          </a>
+      </nav>
+    </footer>
+  </article>
+        </div>
+        <div id="disqus_thread"></div>
+    <script type="text/javascript">
+    (function() {
+      
+      
+      if (window.location.hostname === 'localhost') return;
+
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      var disqus_shortname = 'jiacai2050';
+      dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+
+  
+
+  
+
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="social-links">
+      <a href="mailto:jiacai2050&#43;blog@gmail.com" class="iconfont icon-email" title="email"></a>
+      <a href="https://stackoverflow.com/users/2163429/jiacai-liu" class="iconfont icon-stack-overflow" title="stack-overflow"></a>
+      <a href="https://www.twitter.com/liujiacai" class="iconfont icon-twitter" title="twitter"></a>
+      <a href="https://www.facebook.com/liujiacai" class="iconfont icon-facebook" title="facebook"></a>
+      <a href="https://www.linkedin.com/in/liujiacai/" class="iconfont icon-linkedin" title="linkedin"></a>
+      <a href="https://github.com/jiacai2050" class="iconfont icon-github" title="github"></a>
+      <a href="http://weibo.com/liujiacai" class="iconfont icon-weibo" title="weibo"></a>
+      <a href="https://www.zhihu.com/people/jiacai2050" class="iconfont icon-zhihu" title="zhihu"></a>
+      <a href="https://www.douban.com/people/liujiacai/" class="iconfont icon-douban" title="douban"></a>
+  <a href="https://liujiacai.net/atom.xml" type="application/rss+xml" class="iconfont icon-rss" title="rss"></a>
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://gohugo.io">Hugo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 - 
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  
+
+  <span class="copyright-year">
+    &copy; 
+    2014 - 
+    2021<span class="heart"><i class="iconfont icon-heart"></i></span><span>刘家财</span>
+  </span>
+</div>
+
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+      <i class="iconfont icon-up"></i>
+    </div>
+  </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+
+
+
+<script type="text/javascript" src="/js/main.min.c12618f9a600c40bd024996677e951e64d3487006775aeb22e200c990006c5c7.js"></script>
+
+
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'UA-50745138-1', 'auto');
+	ga('set', 'anonymizeIp', true);
+	ga('send', 'pageview');
+}
+</script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
+<script id="baidu_analytics">
+  var _hmt = _hmt || [];
+  (function() {
+    if (window.location.hostname === 'localhost') return;
+    var hm = document.createElement("script"); hm.async = true;
+    hm.src = "https://hm.baidu.com/hm.js?3ffc15f400ce3f8b1db5afc4f29b6ce9";
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(hm, s);
+  })();
+</script>
+
+
+
+
+
+
+</body>
+</html>

@@ -23,7 +23,7 @@
 
 
 
-<meta name="generator" content="Hugo 0.81.0 with theme even" />
+<meta name="generator" content="Hugo 0.79.0 with theme even" />
 
 
 <link rel="canonical" href="https://liujiacai.net/blog/2020/12/05/hexo-to-hugo/" />
@@ -35,7 +35,7 @@
 
 
 
-<link href="/sass/main.min.24f64ae1eb89951aa146cbb31238f141b5994462fa2362bbd7bae8c71e0359cc.css" rel="stylesheet">
+<link href="/sass/main.min.c7bc1becf36bcf6a9ebd25d2947e43a2eb745ddb0c9a32b43126fd7fa460c351.css" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
 <link rel="stylesheet" href="/css/jiacai.css">
 
@@ -43,15 +43,19 @@
 <meta property="og:title" content="博客系统迁移：Hexo 到 Hugo" />
 <meta property="og:description" content="上一篇文章介绍了 Emacs 的理念以及其强大的扩展功能，基本上能在 Emacs 里面做到事，我都在 Emacs 里面做。之前的博客一直都是用的 markdown 来书写，虽然 Emacs 也有 markdown 插件，但是" />
 <meta property="og:type" content="article" />
-<meta property="og:url" content="https://liujiacai.net/blog/2020/12/05/hexo-to-hugo/" /><meta property="article:section" content="post" />
-<meta property="article:published_time" content="2020-12-05T13:12:21&#43;08:00" />
-<meta property="article:modified_time" content="2020-12-09T22:41:50&#43;08:00" />
-
+<meta property="og:url" content="https://liujiacai.net/blog/2020/12/05/hexo-to-hugo/" />
+<meta property="article:published_time" content="2020-12-05T13:12:21+08:00" />
+<meta property="article:modified_time" content="2021-04-27T22:19:40+08:00" />
 <meta itemprop="name" content="博客系统迁移：Hexo 到 Hugo">
-<meta itemprop="description" content="上一篇文章介绍了 Emacs 的理念以及其强大的扩展功能，基本上能在 Emacs 里面做到事，我都在 Emacs 里面做。之前的博客一直都是用的 markdown 来书写，虽然 Emacs 也有 markdown 插件，但是"><meta itemprop="datePublished" content="2020-12-05T13:12:21&#43;08:00" />
-<meta itemprop="dateModified" content="2020-12-09T22:41:50&#43;08:00" />
-<meta itemprop="wordCount" content="2522">
-<meta itemprop="keywords" content="blog,,emacs," /><meta name="twitter:card" content="summary"/>
+<meta itemprop="description" content="上一篇文章介绍了 Emacs 的理念以及其强大的扩展功能，基本上能在 Emacs 里面做到事，我都在 Emacs 里面做。之前的博客一直都是用的 markdown 来书写，虽然 Emacs 也有 markdown 插件，但是">
+<meta itemprop="datePublished" content="2020-12-05T13:12:21+08:00" />
+<meta itemprop="dateModified" content="2021-04-27T22:19:40+08:00" />
+<meta itemprop="wordCount" content="2574">
+
+
+
+<meta itemprop="keywords" content="blog,,emacs," />
+<meta name="twitter:card" content="summary"/>
 <meta name="twitter:title" content="博客系统迁移：Hexo 到 Hugo"/>
 <meta name="twitter:description" content="上一篇文章介绍了 Emacs 的理念以及其强大的扩展功能，基本上能在 Emacs 里面做到事，我都在 Emacs 里面做。之前的博客一直都是用的 markdown 来书写，虽然 Emacs 也有 markdown 插件，但是"/>
 
@@ -135,7 +139,7 @@
         <div class="post-category">
             <a href="/categories/%E7%83%AD%E7%88%B1%E7%94%9F%E6%B4%BB/"> 热爱生活 </a>
             </div>
-          <span class="more-meta"> 约 2522 字 </span>
+          <span class="more-meta"> 约 2574 字 </span>
           <span class="more-meta"> 预计阅读 6 分钟 </span>
         
       </div>
@@ -154,7 +158,7 @@
 </li>
 <li><a href="#headline-4">文章链接</a>
 </li>
-<li><a href="#headline-5">RSS 链接</a>
+<li><a href="#headline-5">RSS</a>
 </li>
 <li><a href="#headline-6">Tags 链接</a>
 </li>
@@ -314,7 +318,7 @@ Hugo 则不同，它默认会用文件中 frontmatter 的 date，而非文件名
 </div>
 <div id="outline-container-headline-5" class="outline-3">
 <h3 id="headline-5">
-RSS 链接
+RSS
 </h3>
 <div id="outline-text-headline-5" class="outline-text-3">
 <p>默认 Hugo 生成的 RSS 链接为 <code class="verbatim">/index.xml</code> ，而我之前用的是 <a href="https://liujiacai.net/atom.xml">/atom.xml</a>，可以通过如下配置修改：</p>
@@ -334,6 +338,8 @@ RSS 链接
 </div>
 </div>
 </div>
+<p>
+另外一点，默认 Hugo 只会把文章的摘要输出到 RSS，如果想输出全文，可以修改 RSS <a href="https://gohugo.io/templates/rss/#the-embedded-rss-xml">模板</a>，<a href="https://github.com/jiacai2050/jiacai2050.github.io/blob/hugo/layouts/_default/rss.xml">rss.xml</a> 是我目前使用的。</p>
 </div>
 </div>
 <div id="outline-container-headline-6" class="outline-3">
@@ -748,8 +754,8 @@ easy-hugo 还提供了预览、发布（默认调用 deploy.sh）等命令，比
   <p class="copyright-item">
     <span class="item-title">上次更新</span>
     <span class="item-content">
-        2020-12-09
-        <a href="https://github.com/jiacai2050/jiacai2050.github.io/commit/0b18ff3d5bbc4ac1f9554cf3112b694a53e6b238" title="add fix tags link">(0b18ff3)</a>
+        2021-04-27
+        <a href="https://github.com/jiacai2050/jiacai2050.github.io/commit/8ad34e625c16a62b90a93ec65c3579b521f5e4d5" title="add rust trait post">(8ad34e6)</a>
     </span>
   </p>
   
@@ -846,7 +852,7 @@ easy-hugo 还提供了预览、发布（默认调用 deploy.sh）等命令，比
 
 
 
-<script type="text/javascript" src="/js/main.min.c99b103c33d1539acf3025e1913697534542c4a5aa5af0ccc20475ed2863603b.js"></script>
+<script type="text/javascript" src="/js/main.min.c12618f9a600c40bd024996677e951e64d3487006775aeb22e200c990006c5c7.js"></script>
 
 
 <script type="application/javascript">
