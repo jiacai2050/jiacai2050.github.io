@@ -6,7 +6,8 @@
 在 Rust 设计目标中，零成本抽象是非常重要的一条，它让 Rust 具备高级语言表达能力的同时，又不会带来性能损耗。零成本的基石是范型与 trait，它们可以在编译期把高级语法编译成与高效的底层代码，从而实现运行时的高效。这篇文章就来介绍 trait，包括使用方式与两个常见问题的分析，在问题探究的过程中来阐述其实现原理。
 
 * 使用方式
-Trait 的主要作用是用来抽象行为，类似于其他编程语言中的「接口」，这里举一示例阐述 trait 的主要使用方式：
+** 基本用法
+Trait 的主要作用是用来抽象行为，类似于其他编程语言中的「接口」，这里举一示例阐述 trait 的基本使用方式：
 #+begin_src rust
 trait Greeting {
     fn greeting(&self) -> String;
@@ -30,7 +31,7 @@ impl Greeting for Dog {
 - 基于范型的静态派发
 - 基于 trait object 的动态派发
 
-范型的概念比较常见，这里着重介绍下 trait object 的[[https://doc.rust-lang.org/1.51.0/reference/types/trait-object.html][定义]]：
+范型的概念比较常见，这里着重介绍下 [[https://doc.rust-lang.org/1.51.0/reference/types/trait-object.html][trait object]]：
 #+begin_quote
 A trait object is an opaque value of another type that implements a set of traits. The set of traits is made up of an object safe base trait plus any number of auto traits.
 #+end_quote
@@ -51,13 +52,13 @@ print_greeting_dynamic(Box::new(Dog));
 
 #+end_src
 
-** 静态派发
+*** 静态派发
 在 Rust 中，范型的实现采用的是单态化（monomorphization），会针对不同类型的调用者，在编译时生成不同版本的函数，所以范型也被称为[[https://bluejekyll.github.io/blog/posts/type-parameters/][类型参数]]。好处是没有虚函数调用的开销，缺点是最终的二进制文件膨胀。在上面的例子中， =print_greeting_static= 会编译成下面这两个版本：
 #+begin_src rust
 print_greeting_static_cat(Cat);
 print_greeting_static_dog(Dog);
 #+end_src
-** 动态派发
+*** 动态派发
 不是所有函数的调用都能在编译期确定调用者类型，一个常见的场景是 GUI 编程中事件响应的 callback，一般来说一个事件可能对应多个 callback 函数，而这些 callback 函数都是在编译期不确定的，因此范型在这里就不适用了，需要采用动态派发的方式：
 #+begin_src rust
 trait ClickCallback {
@@ -68,7 +69,7 @@ struct Button {
     listeners: Vec<Box<dyn ClickCallback>>,
 }
 #+end_src
-** impl trait
+*** impl trait
 在 Rust 1.26 版本中，引入了一种新的 trait 使用方式，即：[[https://doc.rust-lang.org/edition-guide/rust-2018/trait-system/impl-trait-for-returning-complex-types-with-ease.html][impl trait]]，可以用在两个地方：函数参数与返回值。 该方式主要是简化复杂 trait 的使用，算是范型的特例版，因为在使用 impl trait 的地方，也是静态派发，而且作为函数返回值时，数据类型只能有一种，这一点要尤为注意！
 #+begin_src rust
 fn print_greeting_impl(g: impl Greeting) {
@@ -93,6 +94,39 @@ fn return_greeting_impl(i: i32) -> impl Greeting {
 // |     }
 // |     Dog
 // |     ^^^ expected struct `Cat`, found struct `Dog`
+#+end_src
+** 高阶用法
+在上面介绍的基本用法中，trait 中方法的参数或返回值类型都是确定的，Rust 提供了类型「惰性绑定」的机制，即关联类型（associated type），这样就能在实现 trait 时再来确定类型，一个常见的例子是标准库中的 [[https://doc.rust-lang.org/1.51.0/core/iter/trait.Iterator.html][Iterator]]，next 的返回值为 =Self::Item= ：
+#+begin_src rust
+trait Iterator {
+    type Item;
+    fn next(&mut self) -> Option<Self::Item>;
+}
+
+/// 一个只输出偶数的示例
+struct EvenNumbers {
+    count: usize,
+    limit: usize,
+}
+impl Iterator for EvenNumbers {
+    type Item = usize;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.count > self.limit {
+            return None;
+        }
+        let ret = self.count * 2;
+        self.count += 1;
+        Some(ret)
+    }
+}
+fn main() {
+    let nums = EvenNumbers { count: 1, limit: 5 };
+    for n in nums {
+        println!("{}", n);
+    }
+}
+// 依次输出  2 4 6 8 10
 #+end_src
 * 常见问题
 ** 向上转型（upcast）
@@ -231,6 +265,7 @@ impl Foo for TraitObject {
 本文开篇就介绍了 trait 是实现零成本抽象的基础，通过 trait 可以为已有类型增加新方法，这其实解决了[[https://en.wikipedia.org/wiki/Expression_problem][表达式问题]]，可以进行运算符重载，可以进行面向接口编程等。希望通过本文的分析，可以让读者更好的驾驭 trait 的使用，在面对编译器错误时，能够做到游刃有余。
 * 参考
 - [[https://www.infoq.cn/article/Uugi_eIJusEka1aSPmQM][想要改变世界的 Rust 语言]]
+- [[https://doc.rust-lang.org/book/ch19-03-advanced-traits.html][Advanced Traits]]
 - [[https://blog.rust-lang.org/2015/05/11/traits.html][Abstraction without overhead: traits in Rust]]
 - [[http://huonw.github.io/blog/2015/01/peeking-inside-trait-objects/][Peeking inside Trait Objects]]
 - [[http://huonw.github.io/blog/2015/01/object-safety][Object Safety]]
