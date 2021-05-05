@@ -16,7 +16,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
 
 
-<meta name="author" content="刘家财" /><meta name="description" content="在 Rust 设计目标中，零成本抽象是非常重要的一条，它让 Rust 具备高级语言表达能力的同时，又不会带来性能损耗。零成本的基石是范型与 trait，它们可以在" /><meta name="keywords" content="lisp, clojure, emacs, database, life" />
+<meta name="author" content="刘家财" /><meta name="description" content="在 Rust 设计目标中，零成本抽象是非常重要的一条，它让 Rust 具备高级语言表达能力的同时，又不会带来性能损耗。零成本的基石是泛型与 trait，它们可以在" /><meta name="keywords" content="lisp, clojure, emacs, database, life" />
 
 
 
@@ -41,23 +41,23 @@
 
 
 <meta property="og:title" content="Trait 使用及原理分析" />
-<meta property="og:description" content="在 Rust 设计目标中，零成本抽象是非常重要的一条，它让 Rust 具备高级语言表达能力的同时，又不会带来性能损耗。零成本的基石是范型与 trait，它们可以在" />
+<meta property="og:description" content="在 Rust 设计目标中，零成本抽象是非常重要的一条，它让 Rust 具备高级语言表达能力的同时，又不会带来性能损耗。零成本的基石是泛型与 trait，它们可以在" />
 <meta property="og:type" content="article" />
 <meta property="og:url" content="https://liujiacai.net/blog/2021/04/27/trait-usage/" />
 <meta property="article:published_time" content="2021-04-27T21:48:47+08:00" />
-<meta property="article:modified_time" content="2021-04-27T22:19:40+08:00" />
+<meta property="article:modified_time" content="2021-05-05T13:29:23+08:00" />
 <meta itemprop="name" content="Trait 使用及原理分析">
-<meta itemprop="description" content="在 Rust 设计目标中，零成本抽象是非常重要的一条，它让 Rust 具备高级语言表达能力的同时，又不会带来性能损耗。零成本的基石是范型与 trait，它们可以在">
+<meta itemprop="description" content="在 Rust 设计目标中，零成本抽象是非常重要的一条，它让 Rust 具备高级语言表达能力的同时，又不会带来性能损耗。零成本的基石是泛型与 trait，它们可以在">
 <meta itemprop="datePublished" content="2021-04-27T21:48:47+08:00" />
-<meta itemprop="dateModified" content="2021-04-27T22:19:40+08:00" />
-<meta itemprop="wordCount" content="2050">
+<meta itemprop="dateModified" content="2021-05-05T13:29:23+08:00" />
+<meta itemprop="wordCount" content="2701">
 
 
 
 <meta itemprop="keywords" content="rust," />
 <meta name="twitter:card" content="summary"/>
 <meta name="twitter:title" content="Trait 使用及原理分析"/>
-<meta name="twitter:description" content="在 Rust 设计目标中，零成本抽象是非常重要的一条，它让 Rust 具备高级语言表达能力的同时，又不会带来性能损耗。零成本的基石是范型与 trait，它们可以在"/>
+<meta name="twitter:description" content="在 Rust 设计目标中，零成本抽象是非常重要的一条，它让 Rust 具备高级语言表达能力的同时，又不会带来性能损耗。零成本的基石是泛型与 trait，它们可以在"/>
 
 <!--[if lte IE 9]>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/classlist/1.1.20170427/classList.min.js"></script>
@@ -139,8 +139,8 @@
         <div class="post-category">
             <a href="/categories/%E7%BC%96%E7%A8%8B%E8%AF%AD%E8%A8%80/"> 编程语言 </a>
             </div>
-          <span class="more-meta"> 约 2050 字 </span>
-          <span class="more-meta"> 预计阅读 5 分钟 </span>
+          <span class="more-meta"> 约 2701 字 </span>
+          <span class="more-meta"> 预计阅读 6 分钟 </span>
         
       </div>
     </header>
@@ -152,25 +152,39 @@
 <ul>
 <li><a href="#headline-1">使用方式</a>
 <ul>
-<li><a href="#headline-2">静态派发</a>
-</li>
-<li><a href="#headline-3">动态派发</a>
-</li>
-<li><a href="#headline-4">impl trait</a>
-</li>
-</ul>
-</li>
-<li><a href="#headline-5">常见问题</a>
+<li><a href="#headline-2">基本用法</a>
 <ul>
-<li><a href="#headline-6">向上转型（upcast）</a>
+<li><a href="#headline-3">静态派发</a>
 </li>
-<li><a href="#headline-7">Object safety</a>
+<li><a href="#headline-4">动态派发</a>
+</li>
+<li><a href="#headline-5">impl trait</a>
 </li>
 </ul>
 </li>
-<li><a href="#headline-8">总结</a>
+<li><a href="#headline-6">高阶用法</a>
+<ul>
+<li><a href="#headline-7">关联类型</a>
 </li>
-<li><a href="#headline-9">参考</a>
+<li><a href="#headline-8">Derive</a>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href="#headline-9">常见问题</a>
+<ul>
+<li><a href="#headline-10">向上转型（upcast）</a>
+</li>
+<li><a href="#headline-11">向下转型（downcast）</a>
+</li>
+<li><a href="#headline-12">Object safety</a>
+</li>
+</ul>
+</li>
+<li><a href="#headline-13">总结</a>
+</li>
+<li><a href="#headline-14">参考</a>
 </li>
 </ul>
 </nav>
@@ -179,13 +193,21 @@
     <div class="post-content">
       
 <p>
-在 Rust 设计目标中，零成本抽象是非常重要的一条，它让 Rust 具备高级语言表达能力的同时，又不会带来性能损耗。零成本的基石是范型与 trait，它们可以在编译期把高级语法编译成与高效的底层代码，从而实现运行时的高效。这篇文章就来介绍 trait，包括使用方式与两个常见问题的分析，在问题探究的过程中来阐述其实现原理。</p>
+在 Rust 设计目标中，零成本抽象是非常重要的一条，它让 Rust 具备高级语言表达能力的同时，又不会带来性能损耗。零成本的基石是泛型与 trait，它们可以在编译期把高级语法编译成与高效的底层代码，从而实现运行时的高效。这篇文章就来介绍 trait，包括使用方式与两个常见问题的分析，在问题探究的过程中来阐述其实现原理。</p>
+<blockquote>
+<p>本文投稿于 <a href="https://rustmagazine.github.io/rust_magazine_2021/chapter_4/ant_trait.html">RustMagazine 中文月刊</a></p>
+</blockquote>
 <div id="outline-container-headline-1" class="outline-2">
 <h2 id="headline-1">
 使用方式
 </h2>
 <div id="outline-text-headline-1" class="outline-text-2">
-<p>Trait 的主要作用是用来抽象行为，类似于其他编程语言中的「接口」，这里举一示例阐述 trait 的主要使用方式：</p>
+<div id="outline-container-headline-2" class="outline-3">
+<h3 id="headline-2">
+基本用法
+</h3>
+<div id="outline-text-headline-2" class="outline-text-3">
+<p>Trait 的主要作用是用来抽象行为，类似于其他编程语言中的「接口」，这里举一示例阐述 trait 的基本使用方式：</p>
 <div class="src src-rust">
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
@@ -209,20 +231,20 @@
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-rust" data-lang="rust"><span class="k">trait</span><span class="w"> </span><span class="n">Greeting</span><span class="w"> </span><span class="p">{</span><span class="w">
-</span><span class="w">    </span><span class="k">fn</span> <span class="nf">greeting</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">)</span><span class="w"> </span>-&gt; <span class="nb">String</span><span class="p">;</span><span class="w">
+</span><span class="w">    </span><span class="k">fn</span> <span class="nf">greeting</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">)</span><span class="w"> </span>-&gt; <span class="kp">&amp;</span><span class="kt">str</span><span class="p">;</span><span class="w">
 </span><span class="w"></span><span class="p">}</span><span class="w">
 </span><span class="w">
 </span><span class="w"></span><span class="k">struct</span> <span class="nc">Cat</span><span class="p">;</span><span class="w">
 </span><span class="w"></span><span class="k">impl</span><span class="w"> </span><span class="n">Greeting</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">Cat</span><span class="w"> </span><span class="p">{</span><span class="w">
-</span><span class="w">    </span><span class="k">fn</span> <span class="nf">greeting</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">)</span><span class="w"> </span>-&gt;<span class="nb">String</span> <span class="p">{</span><span class="w">
-</span><span class="w">        </span><span class="s">&#34;Meow...&#34;</span><span class="p">.</span><span class="n">to_string</span><span class="p">()</span><span class="w">
+</span><span class="w">    </span><span class="k">fn</span> <span class="nf">greeting</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">)</span><span class="w"> </span>-&gt; <span class="kp">&amp;</span><span class="kt">str</span> <span class="p">{</span><span class="w">
+</span><span class="w">        </span><span class="s">&#34;Meow!&#34;</span><span class="w">
 </span><span class="w">    </span><span class="p">}</span><span class="w">
 </span><span class="w"></span><span class="p">}</span><span class="w">
 </span><span class="w">
 </span><span class="w"></span><span class="k">struct</span> <span class="nc">Dog</span><span class="p">;</span><span class="w">
 </span><span class="w"></span><span class="k">impl</span><span class="w"> </span><span class="n">Greeting</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">Dog</span><span class="w"> </span><span class="p">{</span><span class="w">
-</span><span class="w">    </span><span class="k">fn</span> <span class="nf">greeting</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">)</span><span class="w"> </span>-&gt;<span class="nb">String</span> <span class="p">{</span><span class="w">
-</span><span class="w">        </span><span class="s">&#34;Bark...&#34;</span><span class="p">.</span><span class="n">to_string</span><span class="p">()</span><span class="w">
+</span><span class="w">    </span><span class="k">fn</span> <span class="nf">greeting</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">)</span><span class="w"> </span>-&gt; <span class="kp">&amp;</span><span class="kt">str</span> <span class="p">{</span><span class="w">
+</span><span class="w">        </span><span class="s">&#34;Woof!&#34;</span><span class="w">
 </span><span class="w">    </span><span class="p">}</span><span class="w">
 </span><span class="w"></span><span class="p">}</span><span class="w">
 </span></code></pre></td></tr></table>
@@ -232,13 +254,13 @@
 <p>在上述代码中，定义了一个 trait Greeting，两个 struct 实现了它，根据函数调用方式，主要两种使用方式：</p>
 <ul>
 <li>
-<p>基于范型的静态派发</p>
+<p>基于泛型的静态派发</p>
 </li>
 <li>
 <p>基于 trait object 的动态派发</p>
 </li>
 </ul>
-<p>范型的概念比较常见，这里着重介绍下 trait object 的<a href="https://doc.rust-lang.org/1.51.0/reference/types/trait-object.html">定义</a>：</p>
+<p>泛型的概念比较常见，这里着重介绍下 <a href="https://doc.rust-lang.org/1.51.0/reference/types/trait-object.html">trait object</a>：</p>
 <blockquote>
 <p>A trait object is an opaque value of another type that implements a set of traits. The set of traits is made up of an object safe base trait plus any number of auto traits.</p>
 </blockquote>
@@ -276,12 +298,12 @@
 </div>
 </div>
 </div>
-<div id="outline-container-headline-2" class="outline-3">
-<h3 id="headline-2">
+<div id="outline-container-headline-3" class="outline-4">
+<h4 id="headline-3">
 静态派发
-</h3>
-<div id="outline-text-headline-2" class="outline-text-3">
-<p>在 Rust 中，范型的实现采用的是单态化（monomorphization），会针对不同类型的调用者，在编译时生成不同版本的函数，所以范型也被称为<a href="https://bluejekyll.github.io/blog/posts/type-parameters/">类型参数</a>。好处是没有虚函数调用的开销，缺点是最终的二进制文件膨胀。在上面的例子中， <code class="verbatim">print_greeting_static</code> 会编译成下面这两个版本：</p>
+</h4>
+<div id="outline-text-headline-3" class="outline-text-4">
+<p>在 Rust 中，泛型的实现采用的是单态化（monomorphization），会针对不同类型的调用者，在编译时生成不同版本的函数，所以泛型也被称为<a href="https://bluejekyll.github.io/blog/posts/type-parameters/">类型参数</a>。好处是没有虚函数调用的开销，缺点是最终的二进制文件膨胀。在上面的例子中， <code class="verbatim">print_greeting_static</code> 会编译成下面这两个版本：</p>
 <div class="src src-rust">
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
@@ -297,12 +319,12 @@
 </div>
 </div>
 </div>
-<div id="outline-container-headline-3" class="outline-3">
-<h3 id="headline-3">
+<div id="outline-container-headline-4" class="outline-4">
+<h4 id="headline-4">
 动态派发
-</h3>
-<div id="outline-text-headline-3" class="outline-text-3">
-<p>不是所有函数的调用都能在编译期确定调用者类型，一个常见的场景是 GUI 编程中事件响应的 callback，一般来说一个事件可能对应多个 callback 函数，而这些 callback 函数都是在编译期不确定的，因此范型在这里就不适用了，需要采用动态派发的方式：</p>
+</h4>
+<div id="outline-text-headline-4" class="outline-text-4">
+<p>不是所有函数的调用都能在编译期确定调用者类型，一个常见的场景是 GUI 编程中事件响应的 callback，一般来说一个事件可能对应多个 callback 函数，而这些 callback 函数都是在编译期不确定的，因此泛型在这里就不适用了，需要采用动态派发的方式：</p>
 <div class="src src-rust">
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
@@ -328,12 +350,12 @@
 </div>
 </div>
 </div>
-<div id="outline-container-headline-4" class="outline-3">
-<h3 id="headline-4">
+<div id="outline-container-headline-5" class="outline-4">
+<h4 id="headline-5">
 impl trait
-</h3>
-<div id="outline-text-headline-4" class="outline-text-3">
-<p>在 Rust 1.26 版本中，引入了一种新的 trait 使用方式，即：<a href="https://doc.rust-lang.org/edition-guide/rust-2018/trait-system/impl-trait-for-returning-complex-types-with-ease.html">impl trait</a>，可以用在两个地方：函数参数与返回值。 该方式主要是简化复杂 trait 的使用，算是范型的特例版，因为在使用 impl trait 的地方，也是静态派发，而且作为函数返回值时，数据类型只能有一种，这一点要尤为注意！</p>
+</h4>
+<div id="outline-text-headline-5" class="outline-text-4">
+<p>在 Rust 1.26 版本中，引入了一种新的 trait 使用方式，即：<a href="https://doc.rust-lang.org/edition-guide/rust-2018/trait-system/impl-trait-for-returning-complex-types-with-ease.html">impl trait</a>，可以用在两个地方：函数参数与返回值。 该方式主要是简化复杂 trait 的使用，算是泛型的特例版，因为在使用 impl trait 的地方，也是静态派发，而且作为函数返回值时，数据类型只能有一种，这一点要尤为注意！</p>
 <div class="src src-rust">
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
@@ -391,16 +413,126 @@ impl trait
 </div>
 </div>
 </div>
-<div id="outline-container-headline-5" class="outline-2">
-<h2 id="headline-5">
-常见问题
-</h2>
-<div id="outline-text-headline-5" class="outline-text-2">
 <div id="outline-container-headline-6" class="outline-3">
 <h3 id="headline-6">
-向上转型（upcast）
+高阶用法
 </h3>
 <div id="outline-text-headline-6" class="outline-text-3">
+<div id="outline-container-headline-7" class="outline-4">
+<h4 id="headline-7">
+关联类型
+</h4>
+<div id="outline-text-headline-7" class="outline-text-4">
+<p>在上面介绍的基本用法中，trait 中方法的参数或返回值类型都是确定的，Rust 提供了类型「惰性绑定」的机制，即关联类型（associated type），这样就能在实现 trait 时再来确定类型，一个常见的例子是标准库中的 <a href="https://doc.rust-lang.org/1.51.0/core/iter/trait.Iterator.html">Iterator</a>，next 的返回值为 <code class="verbatim">Self::Item</code> ：</p>
+<div class="src src-rust">
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-rust" data-lang="rust"><span class="k">trait</span><span class="w"> </span><span class="nb">Iterator</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span><span class="w">    </span><span class="k">type</span> <span class="nc">Item</span><span class="p">;</span><span class="w">
+</span><span class="w">    </span><span class="k">fn</span> <span class="nf">next</span><span class="p">(</span><span class="o">&amp;</span><span class="k">mut</span><span class="w"> </span><span class="bp">self</span><span class="p">)</span><span class="w"> </span>-&gt; <span class="nb">Option</span><span class="o">&lt;</span><span class="n">Self</span>::<span class="n">Item</span><span class="o">&gt;</span><span class="p">;</span><span class="w">
+</span><span class="w"></span><span class="p">}</span><span class="w">
+</span><span class="w">
+</span><span class="w"></span><span class="sd">/// 一个只输出偶数的示例
+</span><span class="sd"></span><span class="k">struct</span> <span class="nc">EvenNumbers</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span><span class="w">    </span><span class="n">count</span>: <span class="kt">usize</span><span class="p">,</span><span class="w">
+</span><span class="w">    </span><span class="n">limit</span>: <span class="kt">usize</span><span class="p">,</span><span class="w">
+</span><span class="w"></span><span class="p">}</span><span class="w">
+</span><span class="w"></span><span class="k">impl</span><span class="w"> </span><span class="nb">Iterator</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">EvenNumbers</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span><span class="w">    </span><span class="k">type</span> <span class="nc">Item</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kt">usize</span><span class="p">;</span><span class="w">
+</span><span class="w">
+</span><span class="w">    </span><span class="k">fn</span> <span class="nf">next</span><span class="p">(</span><span class="o">&amp;</span><span class="k">mut</span><span class="w"> </span><span class="bp">self</span><span class="p">)</span><span class="w"> </span>-&gt; <span class="nb">Option</span><span class="o">&lt;</span><span class="n">Self</span>::<span class="n">Item</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span><span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="bp">self</span><span class="p">.</span><span class="n">count</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="bp">self</span><span class="p">.</span><span class="n">limit</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span><span class="w">            </span><span class="k">return</span><span class="w"> </span><span class="nb">None</span><span class="p">;</span><span class="w">
+</span><span class="w">        </span><span class="p">}</span><span class="w">
+</span><span class="w">        </span><span class="kd">let</span><span class="w"> </span><span class="n">ret</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="bp">self</span><span class="p">.</span><span class="n">count</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mi">2</span><span class="p">;</span><span class="w">
+</span><span class="w">        </span><span class="bp">self</span><span class="p">.</span><span class="n">count</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span><span class="w">
+</span><span class="w">        </span><span class="nb">Some</span><span class="p">(</span><span class="n">ret</span><span class="p">)</span><span class="w">
+</span><span class="w">    </span><span class="p">}</span><span class="w">
+</span><span class="w"></span><span class="p">}</span><span class="w">
+</span><span class="w"></span><span class="k">fn</span> <span class="nf">main</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span><span class="w">    </span><span class="kd">let</span><span class="w"> </span><span class="n">nums</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">EvenNumbers</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">count</span>: <span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="n">limit</span>: <span class="mi">5</span><span class="w"> </span><span class="p">};</span><span class="w">
+</span><span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="n">n</span><span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="n">nums</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span><span class="w">        </span><span class="n">println</span><span class="o">!</span><span class="p">(</span><span class="s">&#34;{}&#34;</span><span class="p">,</span><span class="w"> </span><span class="n">n</span><span class="p">);</span><span class="w">
+</span><span class="w">    </span><span class="p">}</span><span class="w">
+</span><span class="w"></span><span class="p">}</span><span class="w">
+</span><span class="w"></span><span class="c1">// 依次输出  2 4 6 8 10
+</span></code></pre></td></tr></table>
+</div>
+</div>
+</div>
+<p>关联类型的使用和泛型相似，Iterator 也可使用泛型来定义：</p>
+<div class="src src-rust">
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-rust" data-lang="rust"><span class="k">pub</span><span class="w"> </span><span class="k">trait</span><span class="w"> </span><span class="nb">Iterator</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span><span class="w">    </span><span class="k">fn</span> <span class="nf">next</span><span class="p">(</span><span class="o">&amp;</span><span class="k">mut</span><span class="w"> </span><span class="bp">self</span><span class="p">)</span><span class="w"> </span>-&gt; <span class="nb">Option</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span><span class="p">;</span><span class="w">
+</span><span class="w"></span><span class="p">}</span><span class="w">
+</span></code></pre></td></tr></table>
+</div>
+</div>
+</div>
+<p>它们的区别主要在于：
+一个特定类型可以多次实现泛型 trait，比如： <code>From&lt;T&gt;</code> ，但是只能实现一次关联类型的 trait，比如： <code class="verbatim">Iterator</code> <code class="verbatim">Deref</code> 。</p>
+</div>
+</div>
+<div id="outline-container-headline-8" class="outline-4">
+<h4 id="headline-8">
+Derive
+</h4>
+<div id="outline-text-headline-8" class="outline-text-4">
+<p>在 Rust 中，可以使用 derive 属性来实现一些<a href="https://doc.rust-lang.org/book/appendix-03-derivable-traits.html">常用的 trait</a>，比如：Debug/Clone 等，对于用户自定义的 trait，也可以实现<a href="https://doc.rust-lang.org/book/ch19-06-macros.html?highlight=derive#how-to-write-a-custom-derive-macro">过程宏</a>支持 derive，具体可参考：<a href="https://stackoverflow.com/a/53136446/2163429">How to write a custom derive macro?</a> ，这里不再赘述。</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div id="outline-container-headline-9" class="outline-2">
+<h2 id="headline-9">
+常见问题
+</h2>
+<div id="outline-text-headline-9" class="outline-text-2">
+<div id="outline-container-headline-10" class="outline-3">
+<h3 id="headline-10">
+向上转型（upcast）
+</h3>
+<div id="outline-text-headline-10" class="outline-text-3">
 <p>对于 <code class="verbatim">trait SubTrait: Base</code> ，在目前的 Rust 版本中，是无法将 <code class="verbatim">&amp;dyn SubTrait</code> 转换到 <code class="verbatim">&amp;dyn Base</code> 的。这个限制与 trait object 的内存结构有关。</p>
 <p>
 在 <a href="https://iandouglasscott.com/2018/05/28/exploring-rust-fat-pointers/">Exploring Rust fat pointers</a> 一文中，该作者通过 transmute 将 trait object 的引用转为两个 usize，并且验证它们是指向数据与函数虚表的指针：</p>
@@ -583,18 +715,126 @@ cpp vtable two-level indirect
 </div>
 </div>
 </div>
-<div id="outline-container-headline-7" class="outline-3">
-<h3 id="headline-7">
+<div id="outline-container-headline-11" class="outline-3">
+<h3 id="headline-11">
+向下转型（downcast）
+</h3>
+<div id="outline-text-headline-11" class="outline-text-3">
+<p>向下转型是指把一个 trait object 再转为之前的具体类型，Rust 提供了 <a href="https://doc.rust-lang.org/1.51.0/core/any/trait.Any.html">Any</a> 这个 trait 来实现这个功能。</p>
+<div class="src src-rust">
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-rust" data-lang="rust"><span class="k">pub</span><span class="w"> </span><span class="k">trait</span><span class="w"> </span><span class="n">Any</span>: <span class="nb">&#39;static</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span><span class="w">    </span><span class="k">fn</span> <span class="nf">type_id</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">)</span><span class="w"> </span>-&gt; <span class="nc">TypeId</span><span class="p">;</span><span class="w">
+</span><span class="w"></span><span class="p">}</span><span class="w">
+</span></code></pre></td></tr></table>
+</div>
+</div>
+</div>
+<p>大多数类型都实现了 Any，只有那些包含非 <code class="verbatim">&#39;static</code> 引用的类型没有实现。通过 type_id 就能够在运行时判断类型，下面看一示例：</p>
+<div class="src src-rust">
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-rust" data-lang="rust"><span class="k">use</span><span class="w"> </span><span class="n">std</span>::<span class="n">any</span>::<span class="n">Any</span><span class="p">;</span><span class="w">
+</span><span class="w"></span><span class="k">trait</span><span class="w"> </span><span class="n">Greeting</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span><span class="w">    </span><span class="k">fn</span> <span class="nf">greeting</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">)</span><span class="w"> </span>-&gt; <span class="kp">&amp;</span><span class="kt">str</span><span class="p">;</span><span class="w">
+</span><span class="w">    </span><span class="k">fn</span> <span class="nf">as_any</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">)</span><span class="w"> </span>-&gt; <span class="kp">&amp;</span><span class="nc">dyn</span><span class="w"> </span><span class="n">Any</span><span class="p">;</span><span class="w">
+</span><span class="w"></span><span class="p">}</span><span class="w">
+</span><span class="w">
+</span><span class="w"></span><span class="k">struct</span> <span class="nc">Cat</span><span class="p">;</span><span class="w">
+</span><span class="w"></span><span class="k">impl</span><span class="w"> </span><span class="n">Greeting</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">Cat</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span><span class="w">    </span><span class="k">fn</span> <span class="nf">greeting</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">)</span><span class="w"> </span>-&gt; <span class="kp">&amp;</span><span class="kt">str</span> <span class="p">{</span><span class="w">
+</span><span class="w">        </span><span class="s">&#34;Meow!&#34;</span><span class="w">
+</span><span class="w">    </span><span class="p">}</span><span class="w">
+</span><span class="w">    </span><span class="k">fn</span> <span class="nf">as_any</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">)</span><span class="w"> </span>-&gt; <span class="kp">&amp;</span><span class="nc">dyn</span><span class="w"> </span><span class="n">Any</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span><span class="w">        </span><span class="bp">self</span><span class="w">
+</span><span class="w">    </span><span class="p">}</span><span class="w">
+</span><span class="w"></span><span class="p">}</span><span class="w">
+</span><span class="w">
+</span><span class="w"></span><span class="k">fn</span> <span class="nf">main</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span><span class="w">    </span><span class="kd">let</span><span class="w"> </span><span class="n">cat</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Cat</span><span class="p">;</span><span class="w">
+</span><span class="w">    </span><span class="kd">let</span><span class="w"> </span><span class="n">g</span>: <span class="kp">&amp;</span><span class="nc">dyn</span><span class="w"> </span><span class="n">Greeting</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">&amp;</span><span class="n">cat</span><span class="p">;</span><span class="w">
+</span><span class="w">    </span><span class="n">println</span><span class="o">!</span><span class="p">(</span><span class="s">&#34;greeting {}&#34;</span><span class="p">,</span><span class="w"> </span><span class="n">g</span><span class="p">.</span><span class="n">greeting</span><span class="p">());</span><span class="w">
+</span><span class="w">
+</span><span class="w">    </span><span class="c1">// &amp;Cat 类型
+</span><span class="c1"></span><span class="w">    </span><span class="kd">let</span><span class="w"> </span><span class="n">downcast_cat</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">g</span><span class="p">.</span><span class="n">as_any</span><span class="p">().</span><span class="n">downcast_ref</span>::<span class="o">&lt;</span><span class="n">Cat</span><span class="o">&gt;</span><span class="p">().</span><span class="n">unwrap</span><span class="p">();</span><span class="w">
+</span><span class="w">    </span><span class="n">println</span><span class="o">!</span><span class="p">(</span><span class="s">&#34;greeting {}&#34;</span><span class="p">,</span><span class="w"> </span><span class="n">downcast_cat</span><span class="p">.</span><span class="n">greeting</span><span class="p">());</span><span class="w">
+</span><span class="w"></span><span class="p">}</span><span class="w">
+</span></code></pre></td></tr></table>
+</div>
+</div>
+</div>
+<p>上面的代码重点在 <a href="https://doc.rust-lang.org/1.51.0/core/any/trait.Any.html#method.downcast_ref">downcast_ref</a>，其实现为：</p>
+<div class="src src-rust">
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-rust" data-lang="rust"><span class="k">pub</span><span class="w"> </span><span class="k">fn</span> <span class="nf">downcast_ref</span><span class="o">&lt;</span><span class="n">T</span>: <span class="nc">Any</span><span class="o">&gt;</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">)</span><span class="w"> </span>-&gt; <span class="nb">Option</span><span class="o">&lt;&amp;</span><span class="n">T</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span><span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="bp">self</span><span class="p">.</span><span class="n">is</span>::<span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span><span class="w">        </span><span class="k">unsafe</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nb">Some</span><span class="p">(</span><span class="o">&amp;*</span><span class="p">(</span><span class="bp">self</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="o">*</span><span class="k">const</span><span class="w"> </span><span class="n">dyn</span><span class="w"> </span><span class="n">Any</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="o">*</span><span class="k">const</span><span class="w"> </span><span class="n">T</span><span class="p">))</span><span class="w"> </span><span class="p">}</span><span class="w">
+</span><span class="w">    </span><span class="p">}</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span><span class="w">        </span><span class="nb">None</span><span class="w">
+</span><span class="w">    </span><span class="p">}</span><span class="w">
+</span><span class="w"></span><span class="p">}</span><span class="w">
+</span></code></pre></td></tr></table>
+</div>
+</div>
+</div>
+<p>可以看到，在类型一致时，通过 unsafe 代码把 trait object 引用的第一个指针（即 data 指针）转为了指向具体类型的引用。</p>
+</div>
+</div>
+<div id="outline-container-headline-12" class="outline-3">
+<h3 id="headline-12">
 Object safety
 </h3>
-<div id="outline-text-headline-7" class="outline-text-3">
+<div id="outline-text-headline-12" class="outline-text-3">
 <p>在 Rust 中，并不是所有的 trait 都可用作 trait object，需要满足一定的条件，称之为 <a href="https://doc.rust-lang.org/book/ch17-02-trait-objects.html#object-safety-is-required-for-trait-objects">object safety</a> 属性。主要有以下几点：</p>
 <ol>
 <li>
 <p>函数返回类型不能是 Self（即当前类型）。这主要因为把一个对象转为 trait object 后，原始类型信息就丢失了，所以这里的 Self 也就无法确定了。</p>
 </li>
 <li>
-<p>函数中不允许有范型参数。主要原因在于单态化时会生成大量的函数，很容易导致 trait 内的方法膨胀。比如</p>
+<p>函数中不允许有泛型参数。主要原因在于单态化时会生成大量的函数，很容易导致 trait 内的方法膨胀。比如</p>
 <div class="src src-rust">
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
@@ -684,32 +924,35 @@ Object safety
 </div>
 <p>如果 Foo 继承了 Sized，那么就要求 trait object 也是 Sized，而 trait object 是 DST 类型，属于 <code class="verbatim">?Sized</code> ，所以 trait 不能继承 Sized。</p>
 <p>
-对于非 safe 的 trait，能修改成 safe 是最好的方案，如果不能，可以尝试范型的方式。</p>
+对于非 safe 的 trait，能修改成 safe 是最好的方案，如果不能，可以尝试泛型的方式。</p>
 </li>
 </ol>
 </div>
 </div>
 </div>
 </div>
-<div id="outline-container-headline-8" class="outline-2">
-<h2 id="headline-8">
+<div id="outline-container-headline-13" class="outline-2">
+<h2 id="headline-13">
 总结
 </h2>
-<div id="outline-text-headline-8" class="outline-text-2">
+<div id="outline-text-headline-13" class="outline-text-2">
 <p>本文开篇就介绍了 trait 是实现零成本抽象的基础，通过 trait 可以为已有类型增加新方法，这其实解决了<a href="https://en.wikipedia.org/wiki/Expression_problem">表达式问题</a>，可以进行运算符重载，可以进行面向接口编程等。希望通过本文的分析，可以让读者更好的驾驭 trait 的使用，在面对编译器错误时，能够做到游刃有余。</p>
 </div>
 </div>
-<div id="outline-container-headline-9" class="outline-2">
-<h2 id="headline-9">
+<div id="outline-container-headline-14" class="outline-2">
+<h2 id="headline-14">
 参考
 </h2>
-<div id="outline-text-headline-9" class="outline-text-2">
+<div id="outline-text-headline-14" class="outline-text-2">
 <ul>
 <li>
 <p><a href="https://www.infoq.cn/article/Uugi_eIJusEka1aSPmQM">想要改变世界的 Rust 语言</a></p>
 </li>
 <li>
 <p><a href="https://blog.rust-lang.org/2015/05/11/traits.html">Abstraction without overhead: traits in Rust</a></p>
+</li>
+<li>
+<p><a href="https://doc.rust-lang.org/book/ch19-03-advanced-traits.html">Advanced Traits</a></p>
 </li>
 <li>
 <p><a href="http://huonw.github.io/blog/2015/01/peeking-inside-trait-objects/">Peeking inside Trait Objects</a></p>
@@ -737,8 +980,8 @@ Object safety
   <p class="copyright-item">
     <span class="item-title">上次更新</span>
     <span class="item-content">
-        2021-04-27
-        <a href="https://github.com/jiacai2050/jiacai2050.github.io/commit/8ad34e625c16a62b90a93ec65c3579b521f5e4d5" title="add rust trait post">(8ad34e6)</a>
+        2021-05-05
+        <a href="https://github.com/jiacai2050/jiacai2050.github.io/commit/fc8af4bbfe98bb877a183f3d526832d6e0b25f2a" title="add downcast demo">(fc8af4b)</a>
     </span>
   </p>
   
