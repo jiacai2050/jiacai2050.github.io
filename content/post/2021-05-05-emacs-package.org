@@ -1,0 +1,160 @@
+#+TITLE: Emacs 包管理
+#+DATE: 2021-05-05T20:29:08+08:00
+#+TAGS[]: emacs
+#+DRAFT: false
+#+CATEGORIES[]:
+
+对于 Emacs 用户来说，优化自己的配置是件乐趣无穷的事情，而且也是成为 Emacs 高手的必经之路。一般来说，新手的配置都是东拼西凑出来的，这是最快最有效的学习途径。随着对 Emacs 使用的加深，配置逐渐复杂，如果不对之前杂乱无章的配置进行重构，很难想象可以继续愉快地使用 Emacs。
+
+这篇文章就来介绍一下我个人优化[[https://github.com/jiacai2050/dotfiles/tree/master/.emacs.d][配置]]的心得，主要内容：包的加载原理与管理实践，希望对读者优化自己的配置有些帮助。
+
+* Package.el 问题
+毫不夸张地说，高度的扩展性是 Emacs 延续几十年生生不息的主要原因， =(length package-alist)= 可以统计通过 [[https://wikemacs.org/wiki/Package.el][package.el]] 安装的包数量，我是 137 个。
+
+尽管 package.el 提供了一种便捷的方式来安装包，但它并不提供版本管理的功能，这是任何一个包管理器最基础的功能，我曾经多次因为包升级导致功能失效，这是十分让人沮丧的事情，参考[[https://emacs-china.org/t/package-el-autoloads/8049/12?u=jiacai2050][这里]]。
+
+社区有一些解决方案，比如 [[https://github.com/raxod502/straight.el][straight]]、[[https://github.com/emacscollective/borg][borg]] ，但为了避免引入新问题，减轻学习负担，我目前没有采用这些方案，而是用 git 自带的 submodule 来管理一些[[https://github.com/jiacai2050/dotfiles/tree/master/.emacs.d/vendor][重度使用的包]]（比如 lsp-mode/magit），闲暇时再专门去做升级工作，升级出问题直接回退到之前的 commit 即可，再也不用担心被工具打断的烦恼。
+
+* 包加载原理
+对于 package.el 管理的包，用户是无须了解 Emacs 加载包的方式就可以使用，但是如何要自己完全管理，就需要了解这些细节了。首先明确下包的定义：
+#+begin_quote
+包是[[https://www.gnu.org/software/emacs/manual/html_node/elisp/Simple-Packages.html][一个]]或[[https://www.gnu.org/software/emacs/manual/html_node/elisp/Multi_002dfile-Packages.html][多个]] ELisp 文件的集合，Emacs 在 =load-path= 指定的文件夹中进行搜索。
+#+end_quote
+Emacs 提供了两类高阶接口来进行包的自动加载：Autoload 与 Feature。
+** [[Https://www.gnu.org/software/emacs/manual/html_node/elisp/Autoload.html][Autoload]]
+Autoload 函数可以声明函数或宏，在真正时使用再去加载其对应的文件。
+   #+begin_src lisp
+(autoload filename docstring interactive type)
+   #+end_src
+   一般不直接使用 autoload 函数，而是 autoload 魔法注释，然后用一些函数来解析魔法注释自动生成 autoload 函数，比如在 my-mode 文件夹内有一文件 =hello-world.el= ，内容为：
+   #+begin_src lisp
+;;;###autoload
+(defun my-hello ()
+  (interactive)
+  (message "hello world"))
+   #+end_src
+使用下面的命令生成 autoloads 文件
+   #+begin_src lisp
+(package-generate-autoloads "hello-world" "~/my-mode")
+   #+end_src
+   在同一目录生成 =hello-world-autoloads.el= 文件，内容为：
+   #+begin_src lisp
+;;; hello-world-autoloads.el --- automatically extracted autoloads
+;;
+;;; Code:
+
+(add-to-list 'load-path (directory-file-name
+                         (or (file-name-directory #$) (car load-path))))
+
+
+;;;### (autoloads nil "hello-world" "hello-world.el" (0 0 0 0))
+;;; Generated autoloads from hello-world.el
+
+(autoload 'my-hello "hello-world" nil t nil)
+
+;;;***
+
+;; Local Variables:
+;; version-control: never
+;; no-byte-compile: t
+;; no-update-autoloads: t
+;; coding: utf-8
+;; End:
+;;; hello-world-autoloads.el ends here
+   #+end_src
+这意味着只在第一次 =M-x my-hello= 时，才回去加载 =hello-world.el= 文件。
+
+这里需要注意，为了让 Emacs 识别到 my-hello 函数，需要去加载 hello-world-autoloads.el 文件，对于通过 package.el 管理的包，package.el 在下载该包时，会进行下面的操作：
+1. 解析依赖，递归下载
+2. 把包目录追加到 load-path 中
+3. 自动生成 autoloads 文件，并且加载它
+
+这样用户就能够直接使用该包提供的函数了。如果使用 submodule 管理，上述操作则需要自己实现，后文会介绍。
+** [[https://www.gnu.org/software/emacs/manual/html_node/elisp/Named-Features.html][feature]]
+feature 是 Emacs 提供的另一种自动加载 ELisp 文件的机制，使用示例：
+#+begin_src lisp
+(defun my-hello ()
+  (interactive)
+  (message "hello world"))
+
+;; feature 名与文件名相同
+(provide 'hello-world)
+#+end_src
+上述代码即生成了一个 feature，名为 hello-world，由于与文件同名，可以在使用 my-hello 前 =(require 'hello-world)= ，这样也会去加载 hello-world.el 文件。
+** [[https://www.gnu.org/software/emacs/manual/html_node/elisp/How-Programs-Do-Loading.html][Load]]
+#+begin_src lisp
+(load filename &optional missing-ok nomessage nosuffix must-suffix)
+#+end_src
+上面的 autoload 与 feature 都会调用 load 函数去加载文件，load 为相对低级的 API，不推荐上层直接调用。
+
+* Submodule 管理包
+在上面介绍 autoload 时，介绍了 package.el 下载一个包时的大致步骤，这里重新温故下：
+1. 解析依赖，递归下载
+2. 把包目录追加到 load-path 中
+3. 自动生成 autoloads 文件，并且加载它
+
+使用 submodule 的话，只能下载包本身，上述三步都需要自己做，我目前使用 [[https://github.com/jwiegley/use-package][use-package]] 来配置包，下面通过一个示例来介绍其用法：
+#+begin_src lisp
+(use-package lsp-mode
+  ;; 配置 load-path，lsp-mode 通过 submodule 下载到 ~/.emacs.d/vendor/lsp-mode 目录内
+  :load-path ("~/.emacs.d/vendor/lsp-mode" "~/.emacs.d/vendor/lsp-mode/clients")
+  :init (setq lsp-keymap-prefix "C-c l")
+  ;; 配置 mode 的 hook
+  :hook ((go-mode . lsp-deferred))
+  ;; 生成 autoloads
+  :commands (lsp lsp-deferred)
+  ;; 配置 custom 变量
+  :custom ((lsp-log-io nil))
+  :config
+  (require 'lsp-modeline)
+  (push "[/\\\\]vendor$" lsp-file-watch-ignored-directories)
+  ;; 配置 mode-map 快捷键
+  :bind (:map lsp-mode-map
+              ("M-." . lsp-find-definition)
+              ("M-n" . lsp-find-references)))
+
+#+end_src
+可以看到，use-package 宏的使用非常简明扼要，而且把包的各种配置都统一起来了。use-package 解决了配置的问题，但对于包的依赖，只能一个个下载（具体见包的 =Package-Requires= 声明）：
+#+begin_src lisp
+;; lsp-mode deps
+(use-package spinner
+  :defer t)
+(use-package lv
+  :defer t)
+#+end_src
+use-package 会自动利用 package.el 去下载这些依赖。我这里的做法是折中的，对于一些轻量的包，没必要用 submodule 管理。读者可能会觉得这种手动管理依赖的方式会比较繁琐，但是实际上不同包的依赖很有可能是相同的，比如：[[https://github.com/magnars/dash.el][dash.el]]、[[https://github.com/magnars/s.el][s.el]]、[[https://github.com/rejeep/f.el][f.el]] 等比较基础的包，所以实际需要手动管理的依赖不是很多。
+** use-package bootstrap
+#+begin_src lisp
+(package-initialize)
+(when (not package-archive-contents)
+  (package-refresh-contents))
+
+(dolist (p '(use-package))
+  (when (not (package-installed-p p))
+    (package-install p)))
+
+(setq use-package-always-ensure t
+      use-package-verbose t)
+
+;; 后面就可以直接使用 use-package 来安装、配置包了
+#+end_src
+** 常用 Git 命令
+#+begin_src bash
+# 修改 .gitmodules 后
+git submodule sync
+
+# 更新到最新 commit
+git submodule update --init --recursive --remote
+
+# https://stackoverflow.com/a/18854453/2163429
+# 更新到 .gitmodules 中指定的 commit
+git submodule update --init
+#+end_src
+对于 submodule 的增加与删除，直接在 magit 中操作就好了， =magit-status-mode= 下按 =o= 即可。
+
+* 参考
+- [[https://www.gnu.org/software/emacs/manual/html_node/emacs/Lisp-Libraries.html][27.8 Libraries of Lisp Code for Emacs]]
+- [[https://www.gnu.org/software/emacs/manual/html_node/elisp/Startup-Summary.html][40.1.1 Summary: Sequence of Actions at Startup]]
+- [[https://www.gnu.org/software/emacs/manual/html_node/elisp/Packaging-Basics.html][41.1 Packaging Basics]]
+- [[https://www.gnu.org/software/emacs/manual/html_node/emacs/Package-Installation.html][48.3 Package Installation]]
+- [[https://emacs.stackexchange.com/questions/33783/file-name-directory-how-does-emacs-know-what-is][(file-name-directory #$): How does Emacs know what #$ is?]]
