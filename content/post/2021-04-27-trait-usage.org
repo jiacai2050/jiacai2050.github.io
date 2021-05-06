@@ -140,7 +140,8 @@ pub trait Iterator<T> {
 }
 #+end_src
 它们的区别主要在于：
-一个特定类型可以多次实现泛型 trait，比如： ~From<T>~ ，但是只能实现一次关联类型的 trait，比如： =Iterator= =Deref= 。
+- 一个特定类型（比如上文中的 Cat）可以多次实现泛型 trait。比如对于 [[https://doc.rust-lang.org/1.51.0/std/convert/trait.From.html][From<T>]]，可以有 =impl From<&str> for Cat= 也可以有 =impl From<String> for Cat=
+- 但是对于关联类型的 trait，只能实现一次。比如对于 [[https://doc.rust-lang.org/1.51.0/alloc/str/trait.FromStr.html][FromStr]]，只能有 =impl FromStr for Cat= ，类似的 trait 还有 =Iterator= =Deref=
 *** Derive
 在 Rust 中，可以使用 derive 属性来实现一些[[https://doc.rust-lang.org/book/appendix-03-derivable-traits.html][常用的 trait]]，比如：Debug/Clone 等，对于用户自定义的 trait，也可以实现[[https://doc.rust-lang.org/book/ch19-06-macros.html?highlight=derive#how-to-write-a-custom-derive-macro][过程宏]]支持 derive，具体可参考：[[https://stackoverflow.com/a/53136446/2163429][How to write a custom derive macro?]] ，这里不再赘述。
 * 常见问题
