@@ -329,8 +329,15 @@ impl trait
 &lt;/div&gt;
 &lt;/div&gt;
 &lt;/div&gt;
-&lt;p&gt;它们的区别主要在于：
-一个特定类型可以多次实现泛型 trait，比如： &lt;code&gt;From&amp;lt;T&amp;gt;&lt;/code&gt; ，但是只能实现一次关联类型的 trait，比如： &lt;code class=&#34;verbatim&#34;&gt;Iterator&lt;/code&gt; &lt;code class=&#34;verbatim&#34;&gt;Deref&lt;/code&gt; 。&lt;/p&gt;
+&lt;p&gt;它们的区别主要在于：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;一个特定类型（比如上文中的 Cat）可以多次实现泛型 trait。比如对于 &lt;a href=&#34;https://doc.rust-lang.org/1.51.0/std/convert/trait.From.html&#34;&gt;From&amp;lt;T&amp;gt;&lt;/a&gt;，可以有 &lt;code class=&#34;verbatim&#34;&gt;impl From&amp;lt;&amp;amp;str&amp;gt; for Cat&lt;/code&gt; 也可以有 &lt;code class=&#34;verbatim&#34;&gt;impl From&amp;lt;String&amp;gt; for Cat&lt;/code&gt;&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;但是对于关联类型的 trait，只能实现一次。比如对于 &lt;a href=&#34;https://doc.rust-lang.org/1.51.0/alloc/str/trait.FromStr.html&#34;&gt;FromStr&lt;/a&gt;，只能有 &lt;code class=&#34;verbatim&#34;&gt;impl FromStr for Cat&lt;/code&gt; ，类似的 trait 还有 &lt;code class=&#34;verbatim&#34;&gt;Iterator&lt;/code&gt; &lt;code class=&#34;verbatim&#34;&gt;Deref&lt;/code&gt;&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
 &lt;/div&gt;
 &lt;/div&gt;
 &lt;div id=&#34;outline-container-headline-8&#34; class=&#34;outline-4&#34;&gt;

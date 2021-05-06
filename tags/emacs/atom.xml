@@ -8,7 +8,7 @@
     <language>zh-cn</language>
     <lastBuildDate>Wed, 05 May 2021 00:00:00 +0000</lastBuildDate><atom:link href="https://liujiacai.net/tags/emacs/atom.xml" rel="self" type="application/rss+xml" />
     <item>
-      <title>Emacs 包管理</title>
+      <title>Emacs 包管理指南</title>
       <link>https://liujiacai.net/blog/2021/05/05/emacs-package/</link>
       <pubDate>Wed, 05 May 2021 00:00:00 +0000</pubDate>
       
@@ -37,7 +37,7 @@ Package.el 问题
 &lt;div id=&#34;outline-text-headline-2&#34; class=&#34;outline-text-2&#34;&gt;
 &lt;p&gt;对于 package.el 管理的包，用户是无须了解 Emacs 加载包的方式就可以使用，但是如何要自己完全管理，就需要了解这些细节了。首先明确下包的定义：&lt;/p&gt;
 &lt;blockquote&gt;
-&lt;p&gt;包是&lt;a href=&#34;https://www.gnu.org/software/emacs/manual/html_node/elisp/Simple-Packages.html&#34;&gt;一个&lt;/a&gt;或&lt;a href=&#34;https://www.gnu.org/software/emacs/manual/html_node/elisp/Multi_002dfile-Packages.html&#34;&gt;多个&lt;/a&gt; ELisp 文件的集合，Emacs 在 &lt;code class=&#34;verbatim&#34;&gt;load-path&lt;/code&gt; 指定的文件夹中进行搜索。&lt;/p&gt;
+&lt;p&gt;包是&lt;a href=&#34;https://www.gnu.org/software/emacs/manual/html_node/elisp/Simple-Packages.html&#34;&gt;一个&lt;/a&gt;或&lt;a href=&#34;https://www.gnu.org/software/emacs/manual/html_node/elisp/Multi_002dfile-Packages.html&#34;&gt;多个&lt;/a&gt; ELisp 文件的集合，Emacs 在 &lt;a href=&#34;https://www.gnu.org/software/emacs/manual/html_node/elisp/Library-Search.html&#34;&gt;load-path&lt;/a&gt; 指定的文件夹中进行搜索。&lt;/p&gt;
 &lt;/blockquote&gt;
 &lt;p&gt;Emacs 提供了两类高阶接口来进行包的自动加载：Autoload 与 Feature。&lt;/p&gt;
 &lt;div id=&#34;outline-container-headline-3&#34; class=&#34;outline-3&#34;&gt;
@@ -45,7 +45,7 @@ Package.el 问题
 &lt;a href=&#34;Https://www.gnu.org/software/emacs/manual/html_node/elisp/Autoload.html&#34;&gt;Autoload&lt;/a&gt;
 &lt;/h3&gt;
 &lt;div id=&#34;outline-text-headline-3&#34; class=&#34;outline-text-3&#34;&gt;
-&lt;p&gt;Autoload 函数可以声明函数或宏，在真正时使用再去加载其对应的文件。&lt;/p&gt;
+&lt;p&gt;Autoload 函数可以声明函数或宏，在真正使用时再去加载其对应的文件。&lt;/p&gt;
 &lt;div class=&#34;src src-lisp&#34;&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
 &lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
@@ -139,7 +139,7 @@ Package.el 问题
 &lt;/div&gt;
 &lt;p&gt;这意味着只在第一次 &lt;code class=&#34;verbatim&#34;&gt;M-x my-hello&lt;/code&gt; 时，才回去加载 &lt;code class=&#34;verbatim&#34;&gt;hello-world.el&lt;/code&gt; 文件。&lt;/p&gt;
 &lt;p&gt;
-这里需要注意，为了让 Emacs 识别到 my-hello 函数，需要去加载 hello-world-autoloads.el 文件，对于通过 package.el 管理的包，package.el 在下载该包时，会进行下面的操作：&lt;/p&gt;
+这里需要注意，为了让 Emacs 识别到 my-hello 函数的声明，需要去加载 hello-world-autoloads.el 文件，对于通过 package.el 管理的包，package.el 在下载该包时，会进行下面的操作：&lt;/p&gt;
 &lt;ol&gt;
 &lt;li&gt;
 &lt;p&gt;解析依赖，递归下载&lt;/p&gt;
@@ -156,10 +156,10 @@ Package.el 问题
 &lt;/div&gt;
 &lt;div id=&#34;outline-container-headline-4&#34; class=&#34;outline-3&#34;&gt;
 &lt;h3 id=&#34;headline-4&#34;&gt;
-&lt;a href=&#34;https://www.gnu.org/software/emacs/manual/html_node/elisp/Named-Features.html&#34;&gt;feature&lt;/a&gt;
+&lt;a href=&#34;Https://www.gnu.org/software/emacs/manual/html_node/elisp/Named-Features.html&#34;&gt;Feature&lt;/a&gt;
 &lt;/h3&gt;
 &lt;div id=&#34;outline-text-headline-4&#34; class=&#34;outline-text-3&#34;&gt;
-&lt;p&gt;feature 是 Emacs 提供的另一种自动加载 ELisp 文件的机制，使用示例：&lt;/p&gt;
+&lt;p&gt;Feature 是 Emacs 提供的另一种自动加载 ELisp 文件的机制，使用示例：&lt;/p&gt;
 &lt;div class=&#34;src src-lisp&#34;&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
 &lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
@@ -180,7 +180,7 @@ Package.el 问题
 &lt;/div&gt;
 &lt;/div&gt;
 &lt;/div&gt;
-&lt;p&gt;上述代码即生成了一个 feature，名为 hello-world，由于与文件同名，可以在使用 my-hello 前 &lt;code class=&#34;verbatim&#34;&gt;(require &amp;#39;hello-world)&lt;/code&gt; ，这样也会去加载 hello-world.el 文件。&lt;/p&gt;
+&lt;p&gt;上述代码即生成了一个 feature，名为 hello-world，由于与文件同名，只需在使用 my-hello 前 &lt;code class=&#34;verbatim&#34;&gt;(require &amp;#39;hello-world)&lt;/code&gt; 即可，这样就会去自动加载 hello-world.el。&lt;/p&gt;
 &lt;/div&gt;
 &lt;/div&gt;
 &lt;div id=&#34;outline-container-headline-5&#34; class=&#34;outline-3&#34;&gt;
@@ -220,7 +220,7 @@ Submodule 管理包
 &lt;p&gt;自动生成 autoloads 文件，并且加载它&lt;/p&gt;
 &lt;/li&gt;
 &lt;/ol&gt;
-&lt;p&gt;使用 submodule 的话，只能下载包本身，上述三步都需要自己做，我目前使用 &lt;a href=&#34;https://github.com/jwiegley/use-package&#34;&gt;use-package&lt;/a&gt; 来配置包，下面通过一个示例来介绍其用法：&lt;/p&gt;
+&lt;p&gt;使用 submodule 的话，只能下载包本身，上述三步都需要自己做，我目前使用 &lt;a href=&#34;https://github.com/jwiegley/use-package&#34;&gt;use-package&lt;/a&gt; 来下载、配置包，下面通过一个示例来介绍其用法：&lt;/p&gt;
 &lt;div class=&#34;src src-lisp&#34;&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
 &lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
@@ -263,7 +263,100 @@ Submodule 管理包
 &lt;/div&gt;
 &lt;/div&gt;
 &lt;/div&gt;
-&lt;p&gt;可以看到，use-package 宏的使用非常简明扼要，而且把包的各种配置都统一起来了。use-package 解决了配置的问题，但对于包的依赖，只能一个个下载（具体见包的 &lt;code class=&#34;verbatim&#34;&gt;Package-Requires&lt;/code&gt; 声明）：&lt;/p&gt;
+&lt;p&gt;可以看到，use-package 宏的使用非常简明扼要，而且把包的各种配置都统一起来了，强烈推荐。使用 &lt;a href=&#34;https://www.gnu.org/software/emacs/manual/html_node/elisp/Expansion.html&#34;&gt;macroexpand-1&lt;/a&gt; 展开 use-package，会发现和我们手动配置的代码相差无几：&lt;/p&gt;
+&lt;div class=&#34;src src-lisp&#34;&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt; 1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 4
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 5
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 6
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 7
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 8
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 9
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;10
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;11
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;12
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;13
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;14
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;15
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;16
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;17
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;18
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;19
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;20
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;21
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;22
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;23
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;24
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;25
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;26
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;27
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;28
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;29
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;30
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;31
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;32
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;33
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;34
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;35
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;36
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;37
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;38
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;39
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;40
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;41
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;42
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-lisp&#34; data-lang=&#34;lisp&#34;&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;k&#34;&gt;progn&lt;/span&gt;
+  &lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nv&#34;&gt;eval-and-compile&lt;/span&gt;
+    &lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nv&#34;&gt;add-to-list&lt;/span&gt; &lt;span class=&#34;ss&#34;&gt;&amp;#39;load-path&lt;/span&gt; &lt;span class=&#34;s&#34;&gt;&amp;#34;~/.emacs.d/vendor/lsp-mode&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;))&lt;/span&gt;
+  &lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nv&#34;&gt;eval-and-compile&lt;/span&gt;
+    &lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nv&#34;&gt;add-to-list&lt;/span&gt; &lt;span class=&#34;ss&#34;&gt;&amp;#39;load-path&lt;/span&gt; &lt;span class=&#34;s&#34;&gt;&amp;#34;~/.emacs.d/vendor/lsp-mode/clients&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;))&lt;/span&gt;
+
+  &lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;k&#34;&gt;let&lt;/span&gt;
+      &lt;span class=&#34;p&#34;&gt;((&lt;/span&gt;&lt;span class=&#34;nv&#34;&gt;custom--inhibit-theme-enable&lt;/span&gt; &lt;span class=&#34;no&#34;&gt;nil&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;))&lt;/span&gt;
+    &lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nb&#34;&gt;unless&lt;/span&gt;
+        &lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nv&#34;&gt;memq&lt;/span&gt; &lt;span class=&#34;ss&#34;&gt;&amp;#39;use-package&lt;/span&gt; &lt;span class=&#34;nv&#34;&gt;custom-known-themes&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+      &lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nv&#34;&gt;deftheme&lt;/span&gt; &lt;span class=&#34;nf&#34;&gt;use-package&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+      &lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nv&#34;&gt;enable-theme&lt;/span&gt; &lt;span class=&#34;ss&#34;&gt;&amp;#39;use-package&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+      &lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;k&#34;&gt;setq&lt;/span&gt; &lt;span class=&#34;nv&#34;&gt;custom-enabled-themes&lt;/span&gt;
+            &lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nv&#34;&gt;remq&lt;/span&gt; &lt;span class=&#34;ss&#34;&gt;&amp;#39;use-package&lt;/span&gt; &lt;span class=&#34;nv&#34;&gt;custom-enabled-themes&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)))&lt;/span&gt;
+    &lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nv&#34;&gt;custom-theme-set-variables&lt;/span&gt; &lt;span class=&#34;ss&#34;&gt;&amp;#39;use-package&lt;/span&gt;
+                                &lt;span class=&#34;o&#34;&gt;&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nv&#34;&gt;lsp-log-io&lt;/span&gt; &lt;span class=&#34;no&#34;&gt;nil&lt;/span&gt; &lt;span class=&#34;no&#34;&gt;nil&lt;/span&gt; &lt;span class=&#34;no&#34;&gt;nil&lt;/span&gt; &lt;span class=&#34;s&#34;&gt;&amp;#34;Customized with use-package lsp-mode&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)))&lt;/span&gt;
+  &lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nb&#34;&gt;unless&lt;/span&gt;
+      &lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nf&#34;&gt;fboundp&lt;/span&gt; &lt;span class=&#34;ss&#34;&gt;&amp;#39;lsp-deferred&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+    &lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nv&#34;&gt;autoload&lt;/span&gt; &lt;span class=&#34;nf&#34;&gt;#&amp;#39;&lt;/span&gt;&lt;span class=&#34;nv&#34;&gt;lsp-deferred&lt;/span&gt; &lt;span class=&#34;s&#34;&gt;&amp;#34;lsp-mode&amp;#34;&lt;/span&gt; &lt;span class=&#34;no&#34;&gt;nil&lt;/span&gt; &lt;span class=&#34;no&#34;&gt;t&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;))&lt;/span&gt;
+  &lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nb&#34;&gt;unless&lt;/span&gt;
+      &lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nf&#34;&gt;fboundp&lt;/span&gt; &lt;span class=&#34;ss&#34;&gt;&amp;#39;lsp-find-definition&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+    &lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nv&#34;&gt;autoload&lt;/span&gt; &lt;span class=&#34;nf&#34;&gt;#&amp;#39;&lt;/span&gt;&lt;span class=&#34;nv&#34;&gt;lsp-find-definition&lt;/span&gt; &lt;span class=&#34;s&#34;&gt;&amp;#34;lsp-mode&amp;#34;&lt;/span&gt; &lt;span class=&#34;no&#34;&gt;nil&lt;/span&gt; &lt;span class=&#34;no&#34;&gt;t&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;))&lt;/span&gt;
+  &lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nb&#34;&gt;unless&lt;/span&gt;
+      &lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nf&#34;&gt;fboundp&lt;/span&gt; &lt;span class=&#34;ss&#34;&gt;&amp;#39;lsp-find-references&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+    &lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nv&#34;&gt;autoload&lt;/span&gt; &lt;span class=&#34;nf&#34;&gt;#&amp;#39;&lt;/span&gt;&lt;span class=&#34;nv&#34;&gt;lsp-find-references&lt;/span&gt; &lt;span class=&#34;s&#34;&gt;&amp;#34;lsp-mode&amp;#34;&lt;/span&gt; &lt;span class=&#34;no&#34;&gt;nil&lt;/span&gt; &lt;span class=&#34;no&#34;&gt;t&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;))&lt;/span&gt;
+  &lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nb&#34;&gt;unless&lt;/span&gt;
+      &lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nf&#34;&gt;fboundp&lt;/span&gt; &lt;span class=&#34;ss&#34;&gt;&amp;#39;lsp&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+    &lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nv&#34;&gt;autoload&lt;/span&gt; &lt;span class=&#34;nf&#34;&gt;#&amp;#39;&lt;/span&gt;&lt;span class=&#34;nv&#34;&gt;lsp&lt;/span&gt; &lt;span class=&#34;s&#34;&gt;&amp;#34;lsp-mode&amp;#34;&lt;/span&gt; &lt;span class=&#34;no&#34;&gt;nil&lt;/span&gt; &lt;span class=&#34;no&#34;&gt;t&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;))&lt;/span&gt;
+  &lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nv&#34;&gt;condition-case-unless-debug&lt;/span&gt; &lt;span class=&#34;nv&#34;&gt;err&lt;/span&gt;
+      &lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;k&#34;&gt;setq&lt;/span&gt; &lt;span class=&#34;nv&#34;&gt;lsp-keymap-prefix&lt;/span&gt; &lt;span class=&#34;s&#34;&gt;&amp;#34;C-c l&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+    &lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;kt&#34;&gt;error&lt;/span&gt;
+     &lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nf&#34;&gt;funcall&lt;/span&gt; &lt;span class=&#34;nv&#34;&gt;use-package--warning139&lt;/span&gt; &lt;span class=&#34;ss&#34;&gt;:init&lt;/span&gt; &lt;span class=&#34;nv&#34;&gt;err&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)))&lt;/span&gt;
+  &lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nv&#34;&gt;eval-after-load&lt;/span&gt; &lt;span class=&#34;ss&#34;&gt;&amp;#39;lsp-mode&lt;/span&gt;
+    &lt;span class=&#34;o&#34;&gt;&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;k&#34;&gt;progn&lt;/span&gt;
+       &lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nf&#34;&gt;require&lt;/span&gt; &lt;span class=&#34;ss&#34;&gt;&amp;#39;lsp-modeline&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+       &lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nb&#34;&gt;push&lt;/span&gt; &lt;span class=&#34;s&#34;&gt;&amp;#34;[/\\\\]vendor$&amp;#34;&lt;/span&gt; &lt;span class=&#34;nv&#34;&gt;lsp-file-watch-ignored-directories&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+       &lt;span class=&#34;no&#34;&gt;t&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+    &lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nv&#34;&gt;add-hook&lt;/span&gt; &lt;span class=&#34;ss&#34;&gt;&amp;#39;go-mode-hook&lt;/span&gt; &lt;span class=&#34;nf&#34;&gt;#&amp;#39;&lt;/span&gt;&lt;span class=&#34;nv&#34;&gt;lsp-deferred&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+    &lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nv&#34;&gt;bind-keys&lt;/span&gt; &lt;span class=&#34;ss&#34;&gt;:package&lt;/span&gt; &lt;span class=&#34;nv&#34;&gt;lsp-mode&lt;/span&gt; &lt;span class=&#34;ss&#34;&gt;:map&lt;/span&gt; &lt;span class=&#34;nv&#34;&gt;lsp-mode-map&lt;/span&gt;
+      &lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s&#34;&gt;&amp;#34;M-.&amp;#34;&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;.&lt;/span&gt; &lt;span class=&#34;nv&#34;&gt;lsp-find-definition&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+      &lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s&#34;&gt;&amp;#34;M-n&amp;#34;&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;.&lt;/span&gt; &lt;span class=&#34;nv&#34;&gt;lsp-find-references&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;))&lt;/span&gt;
+    &lt;span class=&#34;p&#34;&gt;))&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;p&gt;use-package 解决了繁琐的配置问题，但并不能解决包依赖的问题，只能一个个下载（具体依赖见包的 &lt;code class=&#34;verbatim&#34;&gt;Package-Requires&lt;/code&gt; 声明）：&lt;/p&gt;
 &lt;div class=&#34;src src-lisp&#34;&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
 &lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
@@ -272,17 +365,19 @@ Submodule 管理包
 &lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
 &lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;4
 &lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;5
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;6
 &lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
 &lt;td class=&#34;lntd&#34;&gt;
 &lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-lisp&#34; data-lang=&#34;lisp&#34;&gt;&lt;span class=&#34;c1&#34;&gt;;; lsp-mode deps&lt;/span&gt;
 &lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nf&#34;&gt;use-package&lt;/span&gt; &lt;span class=&#34;nv&#34;&gt;spinner&lt;/span&gt;
   &lt;span class=&#34;ss&#34;&gt;:defer&lt;/span&gt; &lt;span class=&#34;no&#34;&gt;t&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
 &lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nf&#34;&gt;use-package&lt;/span&gt; &lt;span class=&#34;nv&#34;&gt;lv&lt;/span&gt;
-  &lt;span class=&#34;ss&#34;&gt;:defer&lt;/span&gt; &lt;span class=&#34;no&#34;&gt;t&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+  &lt;span class=&#34;ss&#34;&gt;:defer&lt;/span&gt; &lt;span class=&#34;no&#34;&gt;t&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
+&lt;span class=&#34;c1&#34;&gt;;; ...&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
 &lt;/div&gt;
 &lt;/div&gt;
 &lt;/div&gt;
-&lt;p&gt;use-package 会自动利用 package.el 去下载这些依赖。我这里的做法是折中的，对于一些轻量的包，没必要用 submodule 管理。读者可能会觉得这种手动管理依赖的方式会比较繁琐，但是实际上不同包的依赖很有可能是相同的，比如：&lt;a href=&#34;https://github.com/magnars/dash.el&#34;&gt;dash.el&lt;/a&gt;、&lt;a href=&#34;https://github.com/magnars/s.el&#34;&gt;s.el&lt;/a&gt;、&lt;a href=&#34;https://github.com/rejeep/f.el&#34;&gt;f.el&lt;/a&gt; 等比较基础的包，所以实际需要手动管理的依赖不是很多。&lt;/p&gt;
+&lt;p&gt;use-package 在 load-path 中找不到这些依赖时，会自动利用 package.el 去下载。我这里的做法是折中的，对于一些轻量的包，没必要用 submodule 管理。读者可能会觉得这种手动管理依赖的方式会比较繁琐，但是实际上不同包的依赖很有可能是相同的，比如：&lt;a href=&#34;https://github.com/magnars/dash.el&#34;&gt;dash.el&lt;/a&gt;、&lt;a href=&#34;https://github.com/magnars/s.el&#34;&gt;s.el&lt;/a&gt;、&lt;a href=&#34;https://github.com/rejeep/f.el&#34;&gt;f.el&lt;/a&gt; 等这些基础包，所以实际需要手动管理的依赖不是很多。&lt;/p&gt;
 &lt;div id=&#34;outline-container-headline-7&#34; class=&#34;outline-3&#34;&gt;
 &lt;h3 id=&#34;headline-7&#34;&gt;
 use-package bootstrap
@@ -364,6 +459,9 @@ git submodule update --init&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/t
 &lt;/h2&gt;
 &lt;div id=&#34;outline-text-headline-9&#34; class=&#34;outline-text-2&#34;&gt;
 &lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;a href=&#34;https://www.gnu.org/software/emacs/manual/html_node/elisp/How-Programs-Do-Loading.html&#34;&gt;16.1 How Programs Do Loading&lt;/a&gt;&lt;/p&gt;
+&lt;/li&gt;
 &lt;li&gt;
 &lt;p&gt;&lt;a href=&#34;https://www.gnu.org/software/emacs/manual/html_node/emacs/Lisp-Libraries.html&#34;&gt;27.8 Libraries of Lisp Code for Emacs&lt;/a&gt;&lt;/p&gt;
 &lt;/li&gt;

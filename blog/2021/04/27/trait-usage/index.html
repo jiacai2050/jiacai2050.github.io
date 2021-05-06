@@ -45,12 +45,12 @@
 <meta property="og:type" content="article" />
 <meta property="og:url" content="https://liujiacai.net/blog/2021/04/27/trait-usage/" />
 <meta property="article:published_time" content="2021-04-27T21:48:47+08:00" />
-<meta property="article:modified_time" content="2021-05-05T13:49:08+08:00" />
+<meta property="article:modified_time" content="2021-05-06T16:09:25+08:00" />
 <meta itemprop="name" content="Trait 使用及原理分析">
 <meta itemprop="description" content="在 Rust 设计目标中，零成本抽象是非常重要的一条，它让 Rust 具备高级语言表达能力的同时，又不会带来性能损耗。零成本的基石是泛型与 trait，它们可以在">
 <meta itemprop="datePublished" content="2021-04-27T21:48:47+08:00" />
-<meta itemprop="dateModified" content="2021-05-05T13:49:08+08:00" />
-<meta itemprop="wordCount" content="2701">
+<meta itemprop="dateModified" content="2021-05-06T16:09:25+08:00" />
+<meta itemprop="wordCount" content="2765">
 
 
 
@@ -139,7 +139,7 @@
         <div class="post-category">
             <a href="/categories/%E7%BC%96%E7%A8%8B%E8%AF%AD%E8%A8%80/"> 编程语言 </a>
             </div>
-          <span class="more-meta"> 约 2701 字 </span>
+          <span class="more-meta"> 约 2765 字 </span>
           <span class="more-meta"> 预计阅读 6 分钟 </span>
         
       </div>
@@ -507,8 +507,15 @@ impl trait
 </div>
 </div>
 </div>
-<p>它们的区别主要在于：
-一个特定类型可以多次实现泛型 trait，比如： <code>From&lt;T&gt;</code> ，但是只能实现一次关联类型的 trait，比如： <code class="verbatim">Iterator</code> <code class="verbatim">Deref</code> 。</p>
+<p>它们的区别主要在于：</p>
+<ul>
+<li>
+<p>一个特定类型（比如上文中的 Cat）可以多次实现泛型 trait。比如对于 <a href="https://doc.rust-lang.org/1.51.0/std/convert/trait.From.html">From&lt;T&gt;</a>，可以有 <code class="verbatim">impl From&lt;&amp;str&gt; for Cat</code> 也可以有 <code class="verbatim">impl From&lt;String&gt; for Cat</code></p>
+</li>
+<li>
+<p>但是对于关联类型的 trait，只能实现一次。比如对于 <a href="https://doc.rust-lang.org/1.51.0/alloc/str/trait.FromStr.html">FromStr</a>，只能有 <code class="verbatim">impl FromStr for Cat</code> ，类似的 trait 还有 <code class="verbatim">Iterator</code> <code class="verbatim">Deref</code></p>
+</li>
+</ul>
 </div>
 </div>
 <div id="outline-container-headline-8" class="outline-4">
@@ -980,8 +987,8 @@ Object safety
   <p class="copyright-item">
     <span class="item-title">上次更新</span>
     <span class="item-content">
-        2021-05-05
-        <a href="https://github.com/jiacai2050/jiacai2050.github.io/commit/2b964267c4b11ae6eb4de5c118b2bd225dbd6a2b" title="typo">(2b96426)</a>
+        2021-05-06
+        <a href="https://github.com/jiacai2050/jiacai2050.github.io/commit/bea8890583f12060c60f25dd79d28c16d3f8786f" title="update associated types demo">(bea8890)</a>
     </span>
   </p>
   
@@ -997,7 +1004,7 @@ Object safety
       <nav class="post-nav">
         <a class="prev" href="/blog/2021/05/05/emacs-package/">
             <i class="iconfont icon-left"></i>
-            <span class="prev-text nav-default">Emacs 包管理</span>
+            <span class="prev-text nav-default">Emacs 包管理指南</span>
             <span class="prev-text nav-mobile">上一篇</span>
           </a>
         <a class="next" href="/blog/2021/04/11/prometheus-storage-engine/">
