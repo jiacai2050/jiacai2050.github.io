@@ -1,328 +1,303 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?>
-<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
-  <channel>
-    <title>hadoop on Keep Coding</title>
-    <link>https://liujiacai.net/tags/hadoop/</link>
-    <description>Recent content in hadoop on Keep Coding</description>
-    <generator>Hugo -- gohugo.io</generator>
-    <language>zh-cn</language>
-    <lastBuildDate>Sun, 07 Sep 2014 00:00:00 +0000</lastBuildDate><atom:link href="https://liujiacai.net/tags/hadoop/atom.xml" rel="self" type="application/rss+xml" />
-    <item>
-      <title>Yarn概述</title>
-      <link>https://liujiacai.net/blog/2014/09/07/yarn-intro/</link>
-      <pubDate>Sun, 07 Sep 2014 00:00:00 +0000</pubDate>
-      
-      <guid>https://liujiacai.net/blog/2014/09/07/yarn-intro/</guid>
-      <description>&lt;p&gt;Yarn是随着hadoop发展而催生的新框架，全称是Yet Another Resource Negotiator，可以翻译为“另一个资源管理器”。yarn取代了以前hadoop中jobtracker（后面简写JT）的角色，因为以前JT的任务过重，负责任务的调度、跟踪、失败重启等过程，而且只能运行mapreduce作业，不支持其他编程模式，这也限制了JT使用范围，而yarn应运而生，解决了这两个问题。&lt;/p&gt;
-&lt;p&gt;为了表述清楚，大家可以先看&lt;a href=&#34;http://blog.csdn.net/jiacai2050/article/details/8656279&#34;&gt;hadoop版本说明&lt;/a&gt;这篇文章，我这里要说的是hadoop2.0,也就是新增了yarn之后的版本。&lt;/p&gt;
-&lt;h2 id=&#34;1-yarn或称mrv2&#34;&gt;1. Yarn(或称MRv2)&lt;/h2&gt;
-&lt;p&gt;Yarn把jobtracker的任务分解开来，分为：&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;ResourceManager（简写RM）负责管理分配全局资源&lt;/li&gt;
-&lt;li&gt;ApplicationMaster（简写AM），AM与每个具体任务对应，负责管理任务的整个生命周期内的所有事宜&lt;/li&gt;
-&lt;/ul&gt;
-&lt;p&gt;除了上面两个以外，tasktracker被NodeManager（简写NM）替代，RM与NM构成了集群的计算平台。这种设计允许NM上长期运行一些辅助服务，这些辅助服务一般都是应用相关的，通过配置项指定，在NM启动时加载。例如在yarn上运行mapreduce程序时，shuffle就是一个由NM加载起来的辅助服务。需要注意的是，在hadoop 0.23之前的版本，shuffle是tasktracker的一部分。&lt;/p&gt;
-&lt;p&gt;与每个应用相关的AM是一个框架类库，它与RM沟通协商如何分配资源，与NM协同执行并且监测应用的执行情况。在yarn的设计中，mapreduce只是一种编程模式，yarn还允许像MPI(message passing interface)，Spark等应用构架部署在yarn上运行。&lt;/p&gt;
-&lt;h2 id=&#34;2-yarn设计&#34;&gt;2. Yarn设计&lt;/h2&gt;
-&lt;img src=&#34;http://img.blog.csdn.net/20140818230608465&#34; width=&#34;550&#34; height=&#34;500&#34;/&gt;
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>hadoop on Keep Coding</title><link>https://liujiacai.net/tags/hadoop/</link><description>Recent content in hadoop on Keep Coding</description><generator>Hugo -- gohugo.io</generator><language>zh-cn</language><lastBuildDate>Sun, 07 Sep 2014 00:00:00 +0000</lastBuildDate><atom:link href="https://liujiacai.net/tags/hadoop/atom.xml" rel="self" type="application/rss+xml"/><item><title>Yarn概述</title><link>https://liujiacai.net/blog/2014/09/07/yarn-intro/</link><pubDate>Sun, 07 Sep 2014 00:00:00 +0000</pubDate><guid>https://liujiacai.net/blog/2014/09/07/yarn-intro/</guid><description>&lt;p>Yarn是随着hadoop发展而催生的新框架，全称是Yet Another Resource Negotiator，可以翻译为“另一个资源管理器”。yarn取代了以前hadoop中jobtracker（后面简写JT）的角色，因为以前JT的任务过重，负责任务的调度、跟踪、失败重启等过程，而且只能运行mapreduce作业，不支持其他编程模式，这也限制了JT使用范围，而yarn应运而生，解决了这两个问题。&lt;/p>
+&lt;p>为了表述清楚，大家可以先看&lt;a href="http://blog.csdn.net/jiacai2050/article/details/8656279">hadoop版本说明&lt;/a>这篇文章，我这里要说的是hadoop2.0,也就是新增了yarn之后的版本。&lt;/p>
+&lt;h2 id="1-yarn或称mrv2">1. Yarn(或称MRv2)&lt;/h2>
+&lt;p>Yarn把jobtracker的任务分解开来，分为：&lt;/p>
+&lt;ul>
+&lt;li>ResourceManager（简写RM）负责管理分配全局资源&lt;/li>
+&lt;li>ApplicationMaster（简写AM），AM与每个具体任务对应，负责管理任务的整个生命周期内的所有事宜&lt;/li>
+&lt;/ul>
+&lt;p>除了上面两个以外，tasktracker被NodeManager（简写NM）替代，RM与NM构成了集群的计算平台。这种设计允许NM上长期运行一些辅助服务，这些辅助服务一般都是应用相关的，通过配置项指定，在NM启动时加载。例如在yarn上运行mapreduce程序时，shuffle就是一个由NM加载起来的辅助服务。需要注意的是，在hadoop 0.23之前的版本，shuffle是tasktracker的一部分。&lt;/p>
+&lt;p>与每个应用相关的AM是一个框架类库，它与RM沟通协商如何分配资源，与NM协同执行并且监测应用的执行情况。在yarn的设计中，mapreduce只是一种编程模式，yarn还允许像MPI(message passing interface)，Spark等应用构架部署在yarn上运行。&lt;/p>
+&lt;h2 id="2-yarn设计">2. Yarn设计&lt;/h2>
+&lt;img src="http://img.blog.csdn.net/20140818230608465" width="550" height="500"/>
 上图是一个典型的YARN集群。可以看到RM有两个主要服务：
 - 可插拔的Scheduler，只负责用户提交任务的调度
 - ApplicationsMaster的（简写AsM）负责管理集群中每个任务的ApplicationMaster（简写AM），负责任务的监控、失败重起等
-&lt;p&gt;在hadoop1.0时，资源分配的单位是slot，再具体分为map的slot与reduce的slot，而且这些slot的个数是在任务运行前事先定义的，在任务运行过程中不能改变，很明显，这会造成资源的分配不均问题。在haodop2.0中，yarn采用了container的概念来分配资源。每个container由一些可以动态改变的属性组成，到现在为止，仅支持内存、cpu两种。但是yarn的这种资源管理方式是通用的，社区以后会加入更多的属性，比如网络带宽，本地硬盘大小等等。&lt;/p&gt;
-&lt;h2 id=&#34;3-yarn主要组件&#34;&gt;3. Yarn主要组件&lt;/h2&gt;
-&lt;p&gt;在这小节里，主要介绍yarn各个组件，以及他们之间是如何通信的。&lt;/p&gt;
-&lt;h3 id=&#34;31-client--rm&#34;&gt;3.1 Client&amp;lt;&amp;ndash;&amp;gt;RM&lt;/h3&gt;
-&lt;img src=&#34;http://img02.taobaocdn.com/imgextra/i2/581166664/TB2LOpuapXXXXXXXpXXXXXXXXXX_!!581166664.png_620x10000.jpg&#34; width=&#34;450&#34; height=&#34;400&#34;/&gt;
-&lt;p&gt;上面这个图是Client向RM提交任务时的流程。
+&lt;p>在hadoop1.0时，资源分配的单位是slot，再具体分为map的slot与reduce的slot，而且这些slot的个数是在任务运行前事先定义的，在任务运行过程中不能改变，很明显，这会造成资源的分配不均问题。在haodop2.0中，yarn采用了container的概念来分配资源。每个container由一些可以动态改变的属性组成，到现在为止，仅支持内存、cpu两种。但是yarn的这种资源管理方式是通用的，社区以后会加入更多的属性，比如网络带宽，本地硬盘大小等等。&lt;/p>
+&lt;h2 id="3-yarn主要组件">3. Yarn主要组件&lt;/h2>
+&lt;p>在这小节里，主要介绍yarn各个组件，以及他们之间是如何通信的。&lt;/p>
+&lt;h3 id="31-client--rm">3.1 Client&amp;lt;&amp;ndash;&amp;gt;RM&lt;/h3>
+&lt;img src="http://img02.taobaocdn.com/imgextra/i2/581166664/TB2LOpuapXXXXXXXpXXXXXXXXXX_!!581166664.png_620x10000.jpg" width="450" height="400"/>
+&lt;p>上面这个图是Client向RM提交任务时的流程。
 (1) Client通过New Application Request来通知RM中的AsM组建
 (2) AsM一般会返回一个新生成的全局ID，除此之外，传递的信息还有集群的资源状况，这样Client就可以在需要时请求资源来运行任务的第一个container即AM。
-(3) 之后，Client就可以构造并发送ASC了。ASC中包括了调度队列，优先级，用户认证信息，除了这些基本的信息之外，还包括用来启动AM的CLC信息，一个CLC中包括jar包、依赖文件、安全token，以及运行任务过程中需要的其他文件。&lt;/p&gt;
-&lt;p&gt;经过上面这三步，一个Client就完成了一次任务的提交。之后，Client可以直接通过RM查询任务的状态，在必要时，可以要求RM杀死这个应用。如下图：
-&lt;img src=&#34;http://img02.taobaocdn.com/imgextra/i2/581166664/TB2WzhzapXXXXbcXXXXXXXXXXXX_!!581166664.png_620x10000.jpg&#34; width=&#34;450&#34; height=&#34;400&#34;/&gt;&lt;/p&gt;
-&lt;h3 id=&#34;32-rm--am&#34;&gt;3.2 RM&amp;lt;&amp;ndash;&amp;gt;AM&lt;/h3&gt;
-&lt;p&gt;RM在收到Client端发送的ASC后，它会查询是否有满足其资源要求的container来运行AM，找到后，RM会与那个container所在机器上的NM通信，来启动AM。下面这个图描述了这其中的细节。
-&lt;img src=&#34;http://img04.taobaocdn.com/imgextra/i4/581166664/TB21l0xapXXXXcUXXXXXXXXXXXX_!!581166664.png&#34; /&gt;&lt;/p&gt;
-&lt;p&gt;(1) AM向RM注册，这个过程包括handshaking过程，并且传递一些信息，包括AM监听的RPC端口、用于监测任务运行状态的URL等。
+(3) 之后，Client就可以构造并发送ASC了。ASC中包括了调度队列，优先级，用户认证信息，除了这些基本的信息之外，还包括用来启动AM的CLC信息，一个CLC中包括jar包、依赖文件、安全token，以及运行任务过程中需要的其他文件。&lt;/p>
+&lt;p>经过上面这三步，一个Client就完成了一次任务的提交。之后，Client可以直接通过RM查询任务的状态，在必要时，可以要求RM杀死这个应用。如下图：
+&lt;img src="http://img02.taobaocdn.com/imgextra/i2/581166664/TB2WzhzapXXXXbcXXXXXXXXXXXX_!!581166664.png_620x10000.jpg" width="450" height="400"/>&lt;/p>
+&lt;h3 id="32-rm--am">3.2 RM&amp;lt;&amp;ndash;&amp;gt;AM&lt;/h3>
+&lt;p>RM在收到Client端发送的ASC后，它会查询是否有满足其资源要求的container来运行AM，找到后，RM会与那个container所在机器上的NM通信，来启动AM。下面这个图描述了这其中的细节。
+&lt;img src="http://img04.taobaocdn.com/imgextra/i4/581166664/TB21l0xapXXXXcUXXXXXXXXXXXX_!!581166664.png" />&lt;/p>
+&lt;p>(1) AM向RM注册，这个过程包括handshaking过程，并且传递一些信息，包括AM监听的RPC端口、用于监测任务运行状态的URL等。
 (2) RM中的Scheduler部件做回应。这个过程会传递AM所需的信息，比如这个集群的最大与最小资源使用情况等。AM利用这些信息来计算并请求任务所需的资源。
 (3) 这个过程是AM向RM请求资源。传递的信息主要包含请求container的列表，还有可能包含这个AM已经释放的container的列表。
 (4) 在AM经过(3)请求资源之后，在稍微晚些时候，会把心跳包与任务进度信息发送给RM
 (5) Scheduler在收到AM的资源请求后，会根据调度策略，来分配container以满足AM的请求。
-(6) 在任务完成后，AM会给RM发送一个结束消息，然后退出。&lt;/p&gt;
-&lt;p&gt;在上面(5)与(6)之间，AM在收到RM返回的container列表后，会与每个container所在机器的NM通信，来启动这个container，下面就说说这个过程。&lt;/p&gt;
-&lt;h3 id=&#34;32-am--nm&#34;&gt;3.2 AM&amp;lt;&amp;ndash;&amp;gt;NM&lt;/h3&gt;
-&lt;img src=&#34;http://img01.taobaocdn.com/imgextra/i1/581166664/TB2FQ4AapXXXXaDXXXXXXXXXXXX_!!581166664.png&#34;/&gt;
+(6) 在任务完成后，AM会给RM发送一个结束消息，然后退出。&lt;/p>
+&lt;p>在上面(5)与(6)之间，AM在收到RM返回的container列表后，会与每个container所在机器的NM通信，来启动这个container，下面就说说这个过程。&lt;/p>
+&lt;h3 id="32-am--nm">3.2 AM&amp;lt;&amp;ndash;&amp;gt;NM&lt;/h3>
+&lt;img src="http://img01.taobaocdn.com/imgextra/i1/581166664/TB2FQ4AapXXXXaDXXXXXXXXXXXX_!!581166664.png"/>
 (1) AM向container所在机器的NM发送CLC来启动container
 (2)(3) 在container运行过程中，AM可以查询它的运行状态
-&lt;h2 id=&#34;4-api&#34;&gt;4. API&lt;/h2&gt;
-&lt;p&gt;通过上面的描述，开发者在开发YARN上的应用时主要需要关注以下接口：&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;&lt;a href=&#34;http://hadoop.apache.org/docs/stable/api/org/apache/hadoop/yarn/api/ApplicationClientProtocol.html&#34;&gt;ApplicationClientProtocol&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
-&lt;blockquote&gt;
-&lt;p&gt;Client使用这个协议来与RM通信，来启动一个新应用，检查任务的运行状态或杀死任务&lt;/p&gt;
-&lt;/blockquote&gt;
-&lt;ul&gt;
-&lt;li&gt;&lt;a href=&#34;http://hadoop.apache.org/docs/stable/api/org/apache/hadoop/yarn/api/ApplicationMasterProtocol.html&#34;&gt;ApplicationMasterProtocol&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
-&lt;blockquote&gt;
-&lt;p&gt;AM使用这个协议来向RM注册/撤销，请求资源来运行任务。&lt;/p&gt;
-&lt;/blockquote&gt;
-&lt;ul&gt;
-&lt;li&gt;&lt;a href=&#34;http://hadoop.apache.org/docs/stable/api/org/apache/hadoop/yarn/api/ContainerManagementProtocol.html&#34;&gt;ContainerManagementProtocol&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
-&lt;blockquote&gt;
-&lt;p&gt;AM使用这个协议来与NM通信，来启动/停止container，查询container的状态。&lt;/p&gt;
-&lt;/blockquote&gt;
-&lt;h2 id=&#34;5-总结&#34;&gt;5. 总结&lt;/h2&gt;
-&lt;p&gt;用户在使用hadoop1.0 API编写的MapReduce可以不用修改直接运行在yarn上，不过随着yarn的发展，向后兼容性还不知道怎么样。不管怎样，新的yarn平台绝对值得我们使用。&lt;/p&gt;
-</description>
-    </item>
-    
-    <item>
-      <title>Yarn的安全模式与高可靠性安装总结</title>
-      <link>https://liujiacai.net/blog/2014/08/06/cdh-yarn-ha-kerberos/</link>
-      <pubDate>Wed, 06 Aug 2014 00:00:00 +0000</pubDate>
-      
-      <guid>https://liujiacai.net/blog/2014/08/06/cdh-yarn-ha-kerberos/</guid>
-      <description>&lt;p&gt;最近几天又重新把cdh的安全模块与高可靠性模块重新搭建了一遍，这次用是的目前最新的5.1.0的tar包安装，以前把MRv1搭建了好，这次主要是熟悉安装过程，并且把YARN的安全模块与HA模块成功搭建起来。遇到的错误还是不少，安装过程也是废了我好几天，现在想想很多错误都比较典型，现在此记录下我搭建过程中遇到的错误与心得，一方面为自己以后查阅，另一方面希望也能对遇到同样问题的人有所启发。&lt;/p&gt;
-&lt;p&gt;先说下我的环境，centos6.5, cdh用的目前最新的5.1.0的tar包。&lt;/p&gt;
-&lt;p&gt;下面在先说说YARN的安全模块与HA安装时的遇到的错误，之后在说说我在安装整个CDH的HDFS、MRv1、YARN时一些不容易注意但很难地位的错误。&lt;/p&gt;
-&lt;h3 id=&#34;一-yarn的安全模块与ha安装时遇到的错误&#34;&gt;（一） YARN的安全模块与HA安装时遇到的错误&lt;/h3&gt;
-&lt;h4 id=&#34;安全模块&#34;&gt;安全模块&lt;/h4&gt;
-&lt;ol&gt;
-&lt;li&gt;对于container-executor文件，tar包中没有，需要自己编译&lt;/li&gt;
-&lt;li&gt;按照&lt;a href=&#34;http://www.cloudera.com/content/cloudera-content/cloudera-docs/CDH5/latest/CDH5-Security-Guide/cdh5sg_yarn_security.html&#34;&gt;官方教程&lt;/a&gt;做配置后，执行 mapreduce 任务时，在 shuffle 阶段，会报下面的错误：&lt;/li&gt;
-&lt;/ol&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
-&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt; 1
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 2
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 3
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 4
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 5
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 6
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 7
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 8
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 9
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;10
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;11
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;12
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;13
-&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
-&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;2014-08-03 00:34:19,619 WARN [main] org.apache.hadoop.mapred.YarnChild: Exception running child : org.apache.hadoop.mapreduce.task.reduce.Shuffle$ShuffleError: error in shuffle in fetcher#4
-        at org.apache.hadoop.mapreduce.task.reduce.Shuffle.run(Shuffle.java:134)
-        at org.apache.hadoop.mapred.ReduceTask.run(ReduceTask.java:376)
-        at org.apache.hadoop.mapred.YarnChild$2.run(YarnChild.java:167)
-        at java.security.AccessController.doPrivileged(Native Method)
-        at javax.security.auth.Subject.doAs(Subject.java:415)
-        at org.apache.hadoop.security.UserGroupInformation.doAs(UserGroupInformation.java:1554)
-        at org.apache.hadoop.mapred.YarnChild.main(YarnChild.java:162)
+&lt;h2 id="4-api">4. API&lt;/h2>
+&lt;p>通过上面的描述，开发者在开发YARN上的应用时主要需要关注以下接口：&lt;/p>
+&lt;ul>
+&lt;li>&lt;a href="http://hadoop.apache.org/docs/stable/api/org/apache/hadoop/yarn/api/ApplicationClientProtocol.html">ApplicationClientProtocol&lt;/a>&lt;/li>
+&lt;/ul>
+&lt;blockquote>
+&lt;p>Client使用这个协议来与RM通信，来启动一个新应用，检查任务的运行状态或杀死任务&lt;/p>
+&lt;/blockquote>
+&lt;ul>
+&lt;li>&lt;a href="http://hadoop.apache.org/docs/stable/api/org/apache/hadoop/yarn/api/ApplicationMasterProtocol.html">ApplicationMasterProtocol&lt;/a>&lt;/li>
+&lt;/ul>
+&lt;blockquote>
+&lt;p>AM使用这个协议来向RM注册/撤销，请求资源来运行任务。&lt;/p>
+&lt;/blockquote>
+&lt;ul>
+&lt;li>&lt;a href="http://hadoop.apache.org/docs/stable/api/org/apache/hadoop/yarn/api/ContainerManagementProtocol.html">ContainerManagementProtocol&lt;/a>&lt;/li>
+&lt;/ul>
+&lt;blockquote>
+&lt;p>AM使用这个协议来与NM通信，来启动/停止container，查询container的状态。&lt;/p>
+&lt;/blockquote>
+&lt;h2 id="5-总结">5. 总结&lt;/h2>
+&lt;p>用户在使用hadoop1.0 API编写的MapReduce可以不用修改直接运行在yarn上，不过随着yarn的发展，向后兼容性还不知道怎么样。不管怎样，新的yarn平台绝对值得我们使用。&lt;/p></description></item><item><title>Yarn的安全模式与高可靠性安装总结</title><link>https://liujiacai.net/blog/2014/08/06/cdh-yarn-ha-kerberos/</link><pubDate>Wed, 06 Aug 2014 00:00:00 +0000</pubDate><guid>https://liujiacai.net/blog/2014/08/06/cdh-yarn-ha-kerberos/</guid><description>&lt;p>最近几天又重新把cdh的安全模块与高可靠性模块重新搭建了一遍，这次用是的目前最新的5.1.0的tar包安装，以前把MRv1搭建了好，这次主要是熟悉安装过程，并且把YARN的安全模块与HA模块成功搭建起来。遇到的错误还是不少，安装过程也是废了我好几天，现在想想很多错误都比较典型，现在此记录下我搭建过程中遇到的错误与心得，一方面为自己以后查阅，另一方面希望也能对遇到同样问题的人有所启发。&lt;/p>
+&lt;p>先说下我的环境，centos6.5, cdh用的目前最新的5.1.0的tar包。&lt;/p>
+&lt;p>下面在先说说YARN的安全模块与HA安装时的遇到的错误，之后在说说我在安装整个CDH的HDFS、MRv1、YARN时一些不容易注意但很难地位的错误。&lt;/p>
+&lt;h3 id="一-yarn的安全模块与ha安装时遇到的错误">（一） YARN的安全模块与HA安装时遇到的错误&lt;/h3>
+&lt;h4 id="安全模块">安全模块&lt;/h4>
+&lt;ol>
+&lt;li>对于container-executor文件，tar包中没有，需要自己编译&lt;/li>
+&lt;li>按照&lt;a href="http://www.cloudera.com/content/cloudera-content/cloudera-docs/CDH5/latest/CDH5-Security-Guide/cdh5sg_yarn_security.html">官方教程&lt;/a>做配置后，执行 mapreduce 任务时，在 shuffle 阶段，会报下面的错误：&lt;/li>
+&lt;/ol>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code class="language-fallback" data-lang="fallback">2014-08-03 00:34:19,619 WARN [main] org.apache.hadoop.mapred.YarnChild: Exception running child : org.apache.hadoop.mapreduce.task.reduce.Shuffle$ShuffleError: error in shuffle in fetcher#4
+at org.apache.hadoop.mapreduce.task.reduce.Shuffle.run(Shuffle.java:134)
+at org.apache.hadoop.mapred.ReduceTask.run(ReduceTask.java:376)
+at org.apache.hadoop.mapred.YarnChild$2.run(YarnChild.java:167)
+at java.security.AccessController.doPrivileged(Native Method)
+at javax.security.auth.Subject.doAs(Subject.java:415)
+at org.apache.hadoop.security.UserGroupInformation.doAs(UserGroupInformation.java:1554)
+at org.apache.hadoop.mapred.YarnChild.main(YarnChild.java:162)
 Caused by: java.io.IOException: Exceeded MAX_FAILED_UNIQUE_FETCHES; bailing-out.
-        at org.apache.hadoop.mapreduce.task.reduce.ShuffleSchedulerImpl.checkReducerHealth(ShuffleSchedulerImpl.java:323)
-        at org.apache.hadoop.mapreduce.task.reduce.ShuffleSchedulerImpl.copyFailed(ShuffleSchedulerImpl.java:245)
-        at org.apache.hadoop.mapreduce.task.reduce.Fetcher.copyFromHost(Fetcher.java:347)
-        at org.apache.hadoop.mapreduce.task.reduce.Fetcher.run(Fetcher.java:165)        
-&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
-&lt;/div&gt;
-&lt;/div&gt;&lt;p&gt;在nodemanger服务器上，在执行该job的container的syslog日志中还可以找到下面的错误&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
-&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;4
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;5
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;6
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;7
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;8
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;9
-&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
-&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;2014-08-03 00:34:19,614 WARN [fetcher#3] org.apache.hadoop.mapreduce.task.reduce.Fetcher: Invalid map id
+at org.apache.hadoop.mapreduce.task.reduce.ShuffleSchedulerImpl.checkReducerHealth(ShuffleSchedulerImpl.java:323)
+at org.apache.hadoop.mapreduce.task.reduce.ShuffleSchedulerImpl.copyFailed(ShuffleSchedulerImpl.java:245)
+at org.apache.hadoop.mapreduce.task.reduce.Fetcher.copyFromHost(Fetcher.java:347)
+at org.apache.hadoop.mapreduce.task.reduce.Fetcher.run(Fetcher.java:165)
+&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>在nodemanger服务器上，在执行该job的container的syslog日志中还可以找到下面的错误&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;span class="lnt">6
+&lt;/span>&lt;span class="lnt">7
+&lt;/span>&lt;span class="lnt">8
+&lt;/span>&lt;span class="lnt">9
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code class="language-fallback" data-lang="fallback">2014-08-03 00:34:19,614 WARN [fetcher#3] org.apache.hadoop.mapreduce.task.reduce.Fetcher: Invalid map id
 java.lang.IllegalArgumentException: TaskAttemptId string : TTP/1.1 500 Internal Server Error
 Content-Type: text/plain; charset=UTF is not properly formed
-        at org.apache.hadoop.mapreduce.TaskAttemptID.forName(TaskAttemptID.java:201)
-        at org.apache.hadoop.mapreduce.task.reduce.Fetcher.copyMapOutput(Fetcher.java:386)
-        at org.apache.hadoop.mapreduce.task.reduce.Fetcher.copyFromHost(Fetcher.java:341)
-        at org.apache.hadoop.mapreduce.task.reduce.Fetcher.run(Fetcher.java:165)
+at org.apache.hadoop.mapreduce.TaskAttemptID.forName(TaskAttemptID.java:201)
+at org.apache.hadoop.mapreduce.task.reduce.Fetcher.copyMapOutput(Fetcher.java:386)
+at org.apache.hadoop.mapreduce.task.reduce.Fetcher.copyFromHost(Fetcher.java:341)
+at org.apache.hadoop.mapreduce.task.reduce.Fetcher.run(Fetcher.java:165)
 2014-08-03 00:34:19,614 WARN [fetcher#4] org.apache.hadoop.mapreduce.task.reduce.Fetcher: Invalid map id
 java.lang.IllegalArgumentException: TaskAttemptId string : TTP/1.1 500 Internal Server Error
-&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
-&lt;/div&gt;
-&lt;/div&gt;&lt;p&gt;&lt;a href=&#34;http://mail-archives.apache.org/mod_mbox/hadoop-hdfs-user/201211.mbox/%3CBD42F346AE90F544A731516A805D1B8AD8548A@SMAIL1.prd.mpac.ca%3E&#34;&gt;网上很多说&lt;/a&gt;&lt;strong&gt;Shuffle$ShuffleError: error in shuffle in fetcher#4&lt;/strong&gt;这个错误与内存，很明显，我这里不是这种情况，因为从** TTP/1.1 500 Internal Server Error**就应该知道是resourcemanager内部的错误。&lt;/p&gt;
-&lt;p&gt;经过我验证，这时由于tar包默认并不包含native的lib，位置在&lt;code&gt;&amp;lt;hadoop&amp;gt;/lib/native&lt;/code&gt;文件夹，需要我们自己编译，把编译好的native文件拷贝到这里即可。&lt;/p&gt;
-&lt;h4 id=&#34;ha&#34;&gt;HA&lt;/h4&gt;
-&lt;p&gt;按照&lt;a href=&#34;http://www.cloudera.com/content/cloudera-content/cloudera-docs/CDH5/latest/CDH5-Installation-Guide/cdh5ig_yarn_cluster_deploy.html?scroll=topic_11_4_10_unique_1&#34;&gt;官方教程&lt;/a&gt;，先直接安装YARN时有点小错误，就是historyserver进程开启（由maprd用户开启）后无法aggregate log，我发现是有两个问题导致：&lt;/p&gt;
-&lt;ol&gt;
-&lt;li&gt;我服务器上的mapred用户只属于mapred用户组（useradd mapred这条命令执行后，就会创建mapred用户，并且属于mapred组），而由mapred启动的historyserver需要访问${yarn.app.mapreduce.am.staging-dir}/history/done_intermediate/${username}文件夹下不同用户的文件，而这个文件夹的权限是770,own为${username}:hadoop，所以historyserver没有权限读取，我这里把mapred添加到hadoop用户组去即可：s
-这里mapred用户也需要属于mapred组，是因为也需要向${yarn.nodemanager.remote-app-log-dir}/${username}目录下写一些日志（因为开启了log-aggregation），而这个目录权限也是770,own为${username}:mapred。&lt;/li&gt;
-&lt;/ol&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
-&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
-&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
-&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;usermod -a G hadoop mapred #这里需要-a选项，这样mapred用户即属于mapred组又属于hadoop组
-&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
-&lt;/div&gt;
-&lt;/div&gt;&lt;ol start=&#34;2&#34;&gt;
-&lt;li&gt;教程上说的开启log-aggregation的配置不对，教程上写的是&lt;/li&gt;
-&lt;/ol&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
-&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;4
-&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
-&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;&amp;lt;property&amp;gt;
-    &amp;lt;name&amp;gt;yarn.log.aggregation.enable&amp;lt;/name&amp;gt;
-    &amp;lt;value&amp;gt;true&amp;lt;/value&amp;gt; 
+&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>&lt;a href="http://mail-archives.apache.org/mod_mbox/hadoop-hdfs-user/201211.mbox/%3CBD42F346AE90F544A731516A805D1B8AD8548A@SMAIL1.prd.mpac.ca%3E">网上很多说&lt;/a>&lt;strong>Shuffle$ShuffleError: error in shuffle in fetcher#4&lt;/strong>这个错误与内存，很明显，我这里不是这种情况，因为从** TTP/1.1 500 Internal Server Error**就应该知道是resourcemanager内部的错误。&lt;/p>
+&lt;p>经过我验证，这时由于tar包默认并不包含native的lib，位置在&lt;code>&amp;lt;hadoop&amp;gt;/lib/native&lt;/code>文件夹，需要我们自己编译，把编译好的native文件拷贝到这里即可。&lt;/p>
+&lt;h4 id="ha">HA&lt;/h4>
+&lt;p>按照&lt;a href="http://www.cloudera.com/content/cloudera-content/cloudera-docs/CDH5/latest/CDH5-Installation-Guide/cdh5ig_yarn_cluster_deploy.html?scroll=topic_11_4_10_unique_1">官方教程&lt;/a>，先直接安装YARN时有点小错误，就是historyserver进程开启（由maprd用户开启）后无法aggregate log，我发现是有两个问题导致：&lt;/p>
+&lt;ol>
+&lt;li>我服务器上的mapred用户只属于mapred用户组（useradd mapred这条命令执行后，就会创建mapred用户，并且属于mapred组），而由mapred启动的historyserver需要访问${yarn.app.mapreduce.am.staging-dir}/history/done_intermediate/${username}文件夹下不同用户的文件，而这个文件夹的权限是770,own为${username}:hadoop，所以historyserver没有权限读取，我这里把mapred添加到hadoop用户组去即可：s
+这里mapred用户也需要属于mapred组，是因为也需要向${yarn.nodemanager.remote-app-log-dir}/${username}目录下写一些日志（因为开启了log-aggregation），而这个目录权限也是770,own为${username}:mapred。&lt;/li>
+&lt;/ol>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code class="language-fallback" data-lang="fallback">usermod -a G hadoop mapred #这里需要-a选项，这样mapred用户即属于mapred组又属于hadoop组
+&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;ol start="2">
+&lt;li>教程上说的开启log-aggregation的配置不对，教程上写的是&lt;/li>
+&lt;/ol>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code class="language-fallback" data-lang="fallback">&amp;lt;property&amp;gt;
+&amp;lt;name&amp;gt;yarn.log.aggregation.enable&amp;lt;/name&amp;gt;
+&amp;lt;value&amp;gt;true&amp;lt;/value&amp;gt;
 &amp;lt;/property&amp;gt;
-&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
-&lt;/div&gt;
-&lt;/div&gt;&lt;p&gt;应改为&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
-&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;4
-&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
-&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;&amp;lt;property&amp;gt;
-    &amp;lt;name&amp;gt;yarn.log-aggregation-enable&amp;lt;/name&amp;gt;
-    &amp;lt;value&amp;gt;true&amp;lt;/value&amp;gt; 
+&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>应改为&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code class="language-fallback" data-lang="fallback">&amp;lt;property&amp;gt;
+&amp;lt;name&amp;gt;yarn.log-aggregation-enable&amp;lt;/name&amp;gt;
+&amp;lt;value&amp;gt;true&amp;lt;/value&amp;gt;
 &amp;lt;/property&amp;gt;
-&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
-&lt;/div&gt;
-&lt;/div&gt;&lt;p&gt;&amp;mdash;&amp;mdash;&amp;mdash;&amp;mdash;&amp;mdash;下面正式说HA&amp;mdash;&amp;mdash;&amp;mdash;&amp;mdash;&amp;mdash;&amp;mdash;&lt;/p&gt;
-&lt;p&gt;YARN的HA想对于hdfs与MRv1的简单了许多，自动Failover也不需要另起个进程，ResourceManager中一个ActiveStandbyElector，它负责Automatic failover。这里只需要修改yarn-site.xml文件即可。&lt;a href=&#34;http://www.cloudera.com/content/cloudera-content/cloudera-docs/CDH5/latest/CDH5-High-Availability-Guide/cdh5hag_rm_ha_config.html&#34;&gt;官方教程&lt;/a&gt;的给出的默认配置改一项就能运行成功。&lt;/p&gt;
-&lt;p&gt;把&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
-&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;4
-&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
-&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;&amp;lt;property&amp;gt;
-    &amp;lt;name&amp;gt;yarn.resourcemanager.zk.state-store.address&amp;lt;/name&amp;gt;
-    &amp;lt;value&amp;gt;localhost:2181&amp;lt;/value&amp;gt;
+&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>&amp;mdash;&amp;mdash;&amp;mdash;&amp;mdash;&amp;mdash;下面正式说HA&amp;mdash;&amp;mdash;&amp;mdash;&amp;mdash;&amp;mdash;&amp;mdash;&lt;/p>
+&lt;p>YARN的HA想对于hdfs与MRv1的简单了许多，自动Failover也不需要另起个进程，ResourceManager中一个ActiveStandbyElector，它负责Automatic failover。这里只需要修改yarn-site.xml文件即可。&lt;a href="http://www.cloudera.com/content/cloudera-content/cloudera-docs/CDH5/latest/CDH5-High-Availability-Guide/cdh5hag_rm_ha_config.html">官方教程&lt;/a>的给出的默认配置改一项就能运行成功。&lt;/p>
+&lt;p>把&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code class="language-fallback" data-lang="fallback">&amp;lt;property&amp;gt;
+&amp;lt;name&amp;gt;yarn.resourcemanager.zk.state-store.address&amp;lt;/name&amp;gt;
+&amp;lt;value&amp;gt;localhost:2181&amp;lt;/value&amp;gt;
 &amp;lt;/property&amp;gt;
-&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
-&lt;/div&gt;
-&lt;/div&gt;&lt;p&gt;改成&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
-&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;4
-&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
-&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;&amp;lt;property&amp;gt;
-    &amp;lt;name&amp;gt;yarn.resourcemanager.zk-address&amp;lt;/name&amp;gt;
-    &amp;lt;value&amp;gt;localhost:2181&amp;lt;/value&amp;gt;
+&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>改成&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code class="language-fallback" data-lang="fallback">&amp;lt;property&amp;gt;
+&amp;lt;name&amp;gt;yarn.resourcemanager.zk-address&amp;lt;/name&amp;gt;
+&amp;lt;value&amp;gt;localhost:2181&amp;lt;/value&amp;gt;
 &amp;lt;/property&amp;gt;
-&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
-&lt;/div&gt;
-&lt;/div&gt;&lt;p&gt;其实上面的表格说的很详细了，不知道为什么给出的示例没写，不过这个错也比较好找，因为按照上面配置的开启RM时会报&lt;strong&gt;yarn.resourcemanager.zk-address&lt;/strong&gt;没定义。&lt;/p&gt;
-&lt;p&gt;其次需要注意的是&lt;strong&gt;yarn.resourcemanager.ha.id&lt;/strong&gt;在active与standby的服务器上的值是不一样的，按照官方给的配置，那就一个是rm1,一个是rm2。&lt;/p&gt;
-&lt;p&gt;如果我们在开启了安全模式还需要修改一处property即&lt;strong&gt;yarn.resourcemanager.hostname&lt;/strong&gt;，ha中的两个RM这个property值是不一样的，分别为其hostname。这是因为我们在配置yarn的principal时用了&lt;strong&gt;yarn/_HOST&lt;/strong&gt;这种方式，而_HOST对于NN与RM来说，不是按照hostname来替换的，而是分别按照&lt;strong&gt;fs.defaultFS&lt;/strong&gt;与&lt;strong&gt;yarn.resourcemanager.hostname&lt;/strong&gt;这两个property的值来替换的。DN与NM是按照每个服务器的hostname来替换的。替换规则也在&lt;a href=&#34;http://www.cloudera.com/content/cloudera-content/cloudera-docs/CDH5/latest/CDH5-Security-Guide/cdh5sg_secure_hdfs_config.html&#34;&gt;HDFS的安全模式文档&lt;/a&gt;中有说明。&lt;/p&gt;
-&lt;p&gt;下面是我rm1服务器上这两个property的配置：&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
-&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;4
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;5
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;6
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;7
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;8
-&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
-&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;&amp;lt;property&amp;gt;
-    &amp;lt;name&amp;gt;yarn.resourcemanager.ha.id&amp;lt;/name&amp;gt;
-    &amp;lt;value&amp;gt;rm1&amp;lt;/value&amp;gt;
-&amp;lt;/property&amp;gt;
-&amp;lt;property&amp;gt;
-    &amp;lt;name&amp;gt;yarn.resourcemanager.hostname&amp;lt;/name&amp;gt;
-    &amp;lt;value&amp;gt;master&amp;lt;/value&amp;gt;
-&amp;lt;/property&amp;gt; 
-&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
-&lt;/div&gt;
-&lt;/div&gt;&lt;p&gt;下面是我rm2服务器上这两个property的配置：&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
-&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;4
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;5
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;6
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;7
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;8
-&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
-&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;&amp;lt;property&amp;gt;
-    &amp;lt;name&amp;gt;yarn.resourcemanager.ha.id&amp;lt;/name&amp;gt;
-    &amp;lt;value&amp;gt;rm2&amp;lt;/value&amp;gt;
+&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>其实上面的表格说的很详细了，不知道为什么给出的示例没写，不过这个错也比较好找，因为按照上面配置的开启RM时会报&lt;strong>yarn.resourcemanager.zk-address&lt;/strong>没定义。&lt;/p>
+&lt;p>其次需要注意的是&lt;strong>yarn.resourcemanager.ha.id&lt;/strong>在active与standby的服务器上的值是不一样的，按照官方给的配置，那就一个是rm1,一个是rm2。&lt;/p>
+&lt;p>如果我们在开启了安全模式还需要修改一处property即&lt;strong>yarn.resourcemanager.hostname&lt;/strong>，ha中的两个RM这个property值是不一样的，分别为其hostname。这是因为我们在配置yarn的principal时用了&lt;strong>yarn/_HOST&lt;/strong>这种方式，而_HOST对于NN与RM来说，不是按照hostname来替换的，而是分别按照&lt;strong>fs.defaultFS&lt;/strong>与&lt;strong>yarn.resourcemanager.hostname&lt;/strong>这两个property的值来替换的。DN与NM是按照每个服务器的hostname来替换的。替换规则也在&lt;a href="http://www.cloudera.com/content/cloudera-content/cloudera-docs/CDH5/latest/CDH5-Security-Guide/cdh5sg_secure_hdfs_config.html">HDFS的安全模式文档&lt;/a>中有说明。&lt;/p>
+&lt;p>下面是我rm1服务器上这两个property的配置：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;span class="lnt">6
+&lt;/span>&lt;span class="lnt">7
+&lt;/span>&lt;span class="lnt">8
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code class="language-fallback" data-lang="fallback">&amp;lt;property&amp;gt;
+&amp;lt;name&amp;gt;yarn.resourcemanager.ha.id&amp;lt;/name&amp;gt;
+&amp;lt;value&amp;gt;rm1&amp;lt;/value&amp;gt;
 &amp;lt;/property&amp;gt;
 &amp;lt;property&amp;gt;
-    &amp;lt;name&amp;gt;yarn.resourcemanager.hostname&amp;lt;/name&amp;gt;
-    &amp;lt;value&amp;gt;master2&amp;lt;/value&amp;gt;
-&amp;lt;/property&amp;gt; 
-&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
-&lt;/div&gt;
-&lt;/div&gt;&lt;h3 id=&#34;二-cdh各个模块安装总结&#34;&gt;（二） CDH各个模块安装总结&lt;/h3&gt;
-&lt;p&gt;还是先说些我在安装过程中遇到的一些不起眼但遇到后就很难定位的错误。&lt;/p&gt;
-&lt;ol&gt;
-&lt;li&gt;如果把hadoop放到/root下，像hdfs、yarn这些用户是没法执行bin、sbin下面的脚本的，因为/root的默认权限是550，我安装时直接放到/opt下。&lt;/li&gt;
-&lt;li&gt;在安装HDFS的安全模块时，开启某个进程，比如namenode时，经常会出现某个文件找不到，这是因为我在前后开启、关闭、格式化namenode过程中，先后用了root与hdfs，用root用户开启的namenode在本地写文件hdfs用户是没法读取的。这里一定要谨记，除了开启datanode时需要用root用户，与namenode相关的都是用hdfs用户，包括namenode的format、start与stop。&lt;/li&gt;
-&lt;li&gt;还有个比较tricky的问题，本来的journalnode是开启在slaves节点上的，我现在想把它们分开，我集群内的hosts文件是这样的&lt;/li&gt;
-&lt;/ol&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
-&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;4
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;5
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;6
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;7
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;8
-&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
-&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;127.0.0.1   localhost
-10.4.13.85  master
-10.4.15.239 master2 zk1 jn1  #hostname为master2
-10.4.9.14   zk2 jn2          #hostname为zk2
-10.4.14.123 zk3 jn3          #hostname为zk3
-10.4.13.63  node1
-10.4.13.2   node2
-10.4.11.89  node3
-&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
-&lt;/div&gt;
-&lt;/div&gt;&lt;p&gt;我这里为一台服务器配置多个domain.name是方便我在后面的配置时做到见名知意，比如，我在配置journalnode时我可以这么配置&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
-&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;4
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;5
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;6
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;7
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;8
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;9
-&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
-&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;&amp;lt;property&amp;gt;
+&amp;lt;name&amp;gt;yarn.resourcemanager.hostname&amp;lt;/name&amp;gt;
+&amp;lt;value&amp;gt;master&amp;lt;/value&amp;gt;
+&amp;lt;/property&amp;gt;
+&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>下面是我rm2服务器上这两个property的配置：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;span class="lnt">6
+&lt;/span>&lt;span class="lnt">7
+&lt;/span>&lt;span class="lnt">8
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code class="language-fallback" data-lang="fallback">&amp;lt;property&amp;gt;
+&amp;lt;name&amp;gt;yarn.resourcemanager.ha.id&amp;lt;/name&amp;gt;
+&amp;lt;value&amp;gt;rm2&amp;lt;/value&amp;gt;
+&amp;lt;/property&amp;gt;
+&amp;lt;property&amp;gt;
+&amp;lt;name&amp;gt;yarn.resourcemanager.hostname&amp;lt;/name&amp;gt;
+&amp;lt;value&amp;gt;master2&amp;lt;/value&amp;gt;
+&amp;lt;/property&amp;gt;
+&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;h3 id="二-cdh各个模块安装总结">（二） CDH各个模块安装总结&lt;/h3>
+&lt;p>还是先说些我在安装过程中遇到的一些不起眼但遇到后就很难定位的错误。&lt;/p>
+&lt;ol>
+&lt;li>如果把hadoop放到/root下，像hdfs、yarn这些用户是没法执行bin、sbin下面的脚本的，因为/root的默认权限是550，我安装时直接放到/opt下。&lt;/li>
+&lt;li>在安装HDFS的安全模块时，开启某个进程，比如namenode时，经常会出现某个文件找不到，这是因为我在前后开启、关闭、格式化namenode过程中，先后用了root与hdfs，用root用户开启的namenode在本地写文件hdfs用户是没法读取的。这里一定要谨记，除了开启datanode时需要用root用户，与namenode相关的都是用hdfs用户，包括namenode的format、start与stop。&lt;/li>
+&lt;li>还有个比较tricky的问题，本来的journalnode是开启在slaves节点上的，我现在想把它们分开，我集群内的hosts文件是这样的&lt;/li>
+&lt;/ol>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;span class="lnt">6
+&lt;/span>&lt;span class="lnt">7
+&lt;/span>&lt;span class="lnt">8
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code class="language-fallback" data-lang="fallback">127.0.0.1 localhost
+10.4.13.85 master
+10.4.15.239 master2 zk1 jn1 #hostname为master2
+10.4.9.14 zk2 jn2 #hostname为zk2
+10.4.14.123 zk3 jn3 #hostname为zk3
+10.4.13.63 node1
+10.4.13.2 node2
+10.4.11.89 node3
+&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>我这里为一台服务器配置多个domain.name是方便我在后面的配置时做到见名知意，比如，我在配置journalnode时我可以这么配置&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;span class="lnt">6
+&lt;/span>&lt;span class="lnt">7
+&lt;/span>&lt;span class="lnt">8
+&lt;/span>&lt;span class="lnt">9
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code class="language-fallback" data-lang="fallback">&amp;lt;property&amp;gt;
 &amp;lt;name&amp;gt;dfs.namenode.shared.edits.dir&amp;lt;/name&amp;gt;
 &amp;lt;value&amp;gt;qjournal://jn1:8485;jn2:8485;jn3:8485/ljc&amp;lt;/value&amp;gt;
 &amp;lt;/property&amp;gt;
@@ -331,496 +306,462 @@ java.lang.IllegalArgumentException: TaskAttemptId string : TTP/1.1 500 Internal 
 &amp;lt;value&amp;gt;hdfs/_HOST@MY-REALM&amp;lt;/value&amp;gt;
 &amp;lt;/property&amp;gt;
 …………
-&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
-&lt;/div&gt;
-&lt;/div&gt;&lt;p&gt;但这里问题来了，因为journalnode从active的NameNode那里取数据时需要验证身份，而我这里的principal用了**_HOST**，按理说CDH在运行时会自动把 _HOST替换为hostname，而且我在生产keytab时也是根据hostname来生成的，比如对于master2,我会生产下面的principal：&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
-&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;4
-&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
-&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;hdfs/master2@MY-REALM
+&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>但这里问题来了，因为journalnode从active的NameNode那里取数据时需要验证身份，而我这里的principal用了**_HOST**，按理说CDH在运行时会自动把 _HOST替换为hostname，而且我在生产keytab时也是根据hostname来生成的，比如对于master2,我会生产下面的principal：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code class="language-fallback" data-lang="fallback">hdfs/master2@MY-REALM
 HTTP/master2@MY-REALM
 mapred/master2@MY-REALM
 yarn/master2@MY-REALM
-&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
-&lt;/div&gt;
-&lt;/div&gt;&lt;p&gt;但是我这样配置后，开启第一个时namenode就会报错，&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
-&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt; 1
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 2
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 3
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 4
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 5
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 6
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 7
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 8
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 9
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;10
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;11
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;12
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;13
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;14
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;15
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;16
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;17
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;18
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;19
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;20
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;21
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;22
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;23
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;24
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;25
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;26
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;27
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;28
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;29
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;30
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;31
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;32
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;33
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;34
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;35
-&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
-&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;2014-08-06 18:27:05,929 WARN org.apache.hadoop.security.UserGroupInformation: PriviledgedActionException as:hdfs/master@MY-REALM (auth:KERBEROS) cause:java.io.IOException: org.apache.hadoop.security.authentication.client.AuthenticationException: GSSException: No valid credentials provided (Mechanism level: Server not found in Kerberos database (7) - UNKNOWN_SERVER)
+&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>但是我这样配置后，开启第一个时namenode就会报错，&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;span class="lnt">16
+&lt;/span>&lt;span class="lnt">17
+&lt;/span>&lt;span class="lnt">18
+&lt;/span>&lt;span class="lnt">19
+&lt;/span>&lt;span class="lnt">20
+&lt;/span>&lt;span class="lnt">21
+&lt;/span>&lt;span class="lnt">22
+&lt;/span>&lt;span class="lnt">23
+&lt;/span>&lt;span class="lnt">24
+&lt;/span>&lt;span class="lnt">25
+&lt;/span>&lt;span class="lnt">26
+&lt;/span>&lt;span class="lnt">27
+&lt;/span>&lt;span class="lnt">28
+&lt;/span>&lt;span class="lnt">29
+&lt;/span>&lt;span class="lnt">30
+&lt;/span>&lt;span class="lnt">31
+&lt;/span>&lt;span class="lnt">32
+&lt;/span>&lt;span class="lnt">33
+&lt;/span>&lt;span class="lnt">34
+&lt;/span>&lt;span class="lnt">35
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code class="language-fallback" data-lang="fallback">2014-08-06 18:27:05,929 WARN org.apache.hadoop.security.UserGroupInformation: PriviledgedActionException as:hdfs/master@MY-REALM (auth:KERBEROS) cause:java.io.IOException: org.apache.hadoop.security.authentication.client.AuthenticationException: GSSException: No valid credentials provided (Mechanism level: Server not found in Kerberos database (7) - UNKNOWN_SERVER)
 2014-08-06 18:27:05,929 ERROR org.apache.hadoop.hdfs.server.namenode.EditLogInputStream: caught exception initializing http://jn3:8480/getJournal?jid=ljc&amp;amp;segmentTxId=1&amp;amp;storageInfo=-55%3A845458164%3A0%3ACID-b6f3e623-e3c0-45d0-a44c-ec3f01d57ea3
 java.io.IOException: org.apache.hadoop.security.authentication.client.AuthenticationException: GSSException: No valid credentials provided (Mechanism level: Server not found in Kerberos database (7) - UNKNOWN_SERVER)
-    at org.apache.hadoop.hdfs.server.namenode.EditLogFileInputStream$URLLog$1.run(EditLogFileInputStream.java:406) 
-    at org.apache.hadoop.hdfs.server.namenode.EditLogFileInputStream$URLLog$1.run(EditLogFileInputStream.java:398)
-    at java.security.AccessController.doPrivileged(Native Method)
-    at javax.security.auth.Subject.doAs(Subject.java:415)
-    at org.apache.hadoop.security.UserGroupInformation.doAs(UserGroupInformation.java:1554)
-    at org.apache.hadoop.security.SecurityUtil.doAsUser(SecurityUtil.java:448)
-    at org.apache.hadoop.security.SecurityUtil.doAsCurrentUser(SecurityUtil.java:442)
-    at org.apache.hadoop.hdfs.server.namenode.EditLogFileInputStream$URLLog.getInputStream(EditLogFileInputStream.java:397)
-    at org.apache.hadoop.hdfs.server.namenode.EditLogFileInputStream.init(EditLogFileInputStream.java:139)
-    at org.apache.hadoop.hdfs.server.namenode.EditLogFileInputStream.nextOpImpl(EditLogFileInputStream.java:188)
-    at org.apache.hadoop.hdfs.server.namenode.EditLogFileInputStream.nextOp(EditLogFileInputStream.java:239)
-    at org.apache.hadoop.hdfs.server.namenode.EditLogInputStream.readOp(EditLogInputStream.java:83)
-    at org.apache.hadoop.hdfs.server.namenode.EditLogInputStream.skipUntil(EditLogInputStream.java:140)
-    at org.apache.hadoop.hdfs.server.namenode.RedundantEditLogInputStream.nextOp(RedundantEditLogInputStream.java:178)
-    at org.apache.hadoop.hdfs.server.namenode.EditLogInputStream.readOp(EditLogInputStream.java:83)
-
+at org.apache.hadoop.hdfs.server.namenode.EditLogFileInputStream$URLLog$1.run(EditLogFileInputStream.java:406)
+at org.apache.hadoop.hdfs.server.namenode.EditLogFileInputStream$URLLog$1.run(EditLogFileInputStream.java:398)
+at java.security.AccessController.doPrivileged(Native Method)
+at javax.security.auth.Subject.doAs(Subject.java:415)
+at org.apache.hadoop.security.UserGroupInformation.doAs(UserGroupInformation.java:1554)
+at org.apache.hadoop.security.SecurityUtil.doAsUser(SecurityUtil.java:448)
+at org.apache.hadoop.security.SecurityUtil.doAsCurrentUser(SecurityUtil.java:442)
+at org.apache.hadoop.hdfs.server.namenode.EditLogFileInputStream$URLLog.getInputStream(EditLogFileInputStream.java:397)
+at org.apache.hadoop.hdfs.server.namenode.EditLogFileInputStream.init(EditLogFileInputStream.java:139)
+at org.apache.hadoop.hdfs.server.namenode.EditLogFileInputStream.nextOpImpl(EditLogFileInputStream.java:188)
+at org.apache.hadoop.hdfs.server.namenode.EditLogFileInputStream.nextOp(EditLogFileInputStream.java:239)
+at org.apache.hadoop.hdfs.server.namenode.EditLogInputStream.readOp(EditLogInputStream.java:83)
+at org.apache.hadoop.hdfs.server.namenode.EditLogInputStream.skipUntil(EditLogInputStream.java:140)
+at org.apache.hadoop.hdfs.server.namenode.RedundantEditLogInputStream.nextOp(RedundantEditLogInputStream.java:178)
+at org.apache.hadoop.hdfs.server.namenode.EditLogInputStream.readOp(EditLogInputStream.java:83)
 Caused by: org.apache.hadoop.security.authentication.client.AuthenticationException: GSSException: No valid credentials provided (Mechanism level: Server not found in Kerberos database (7) - UNKNOWN_SERVER)
-    at org.apache.hadoop.security.authentication.client.KerberosAuthenticator.doSpnegoSequence(KerberosAuthenticator.java:306)
-    at org.apache.hadoop.security.authentication.client.KerberosAuthenticator.authenticate(KerberosAuthenticator.java:196)
-    at org.apache.hadoop.security.authentication.client.AuthenticatedURL.openConnection(AuthenticatedURL.java:232)
-    at org.apache.hadoop.hdfs.web.URLConnectionFactory.openConnection(URLConnectionFactory.java:164)
-    at org.apache.hadoop.hdfs.server.namenode.EditLogFileInputStream$URLLog$1.run(EditLogFileInputStream.java:403)
-    ... 30 more
+at org.apache.hadoop.security.authentication.client.KerberosAuthenticator.doSpnegoSequence(KerberosAuthenticator.java:306)
+at org.apache.hadoop.security.authentication.client.KerberosAuthenticator.authenticate(KerberosAuthenticator.java:196)
+at org.apache.hadoop.security.authentication.client.AuthenticatedURL.openConnection(AuthenticatedURL.java:232)
+at org.apache.hadoop.hdfs.web.URLConnectionFactory.openConnection(URLConnectionFactory.java:164)
+at org.apache.hadoop.hdfs.server.namenode.EditLogFileInputStream$URLLog$1.run(EditLogFileInputStream.java:403)
+... 30 more
 Caused by: GSSException: No valid credentials provided (Mechanism level: Server not found in Kerberos database (7) - UNKNOWN_SERVER)
-    at sun.security.jgss.krb5.Krb5Context.initSecContext(Krb5Context.java:710)
-    at sun.security.jgss.GSSContextImpl.initSecContext(GSSContextImpl.java:248)
-    at sun.security.jgss.GSSContextImpl.initSecContext(GSSContextImpl.java:179)
-    at org.apache.hadoop.security.authentication.client.KerberosAuthenticator$1.run(KerberosAuthenticator.java:285)
-    at org.apache.hadoop.security.authentication.client.KerberosAuthenticator$1.run(KerberosAuthenticator.java:261)
-    at java.security.AccessController.doPrivileged(Native Method)
-    at javax.security.auth.Subject.doAs(Subject.java:415)
-
-&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
-&lt;/div&gt;
-&lt;/div&gt;&lt;p&gt;大致意思是说无法读取journalnode那里的edits，认证失败了，没有权限。我还以为是我生产的keytab有错，我去jn1所在服务器（hostname为master2）上用kinit加上tabkey也能的到TGT，后来我把配置改成这样：&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
-&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;4
-&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
-&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;&amp;lt;property&amp;gt;
+at sun.security.jgss.krb5.Krb5Context.initSecContext(Krb5Context.java:710)
+at sun.security.jgss.GSSContextImpl.initSecContext(GSSContextImpl.java:248)
+at sun.security.jgss.GSSContextImpl.initSecContext(GSSContextImpl.java:179)
+at org.apache.hadoop.security.authentication.client.KerberosAuthenticator$1.run(KerberosAuthenticator.java:285)
+at org.apache.hadoop.security.authentication.client.KerberosAuthenticator$1.run(KerberosAuthenticator.java:261)
+at java.security.AccessController.doPrivileged(Native Method)
+at javax.security.auth.Subject.doAs(Subject.java:415)
+&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>大致意思是说无法读取journalnode那里的edits，认证失败了，没有权限。我还以为是我生产的keytab有错，我去jn1所在服务器（hostname为master2）上用kinit加上tabkey也能的到TGT，后来我把配置改成这样：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code class="language-fallback" data-lang="fallback">&amp;lt;property&amp;gt;
 &amp;lt;name&amp;gt;dfs.namenode.shared.edits.dir&amp;lt;/name&amp;gt;
 &amp;lt;value&amp;gt;qjournal://master2:8485;zk2:8485;zk3:8485/ljc&amp;lt;/value&amp;gt;
 &amp;lt;/property&amp;gt;
-&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
-&lt;/div&gt;
-&lt;/div&gt;&lt;p&gt;这样就能吧Namenode起来了，证明这里**_HOST**被直接替换成了我这里的domain.name了，而不是每个服务器上的hostname，我这里不用domain.name，直接换为ip，也没问题。要是想了解这个细节，需要看源代码了，以后在看吧。
-4. 如果遇到&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
-&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
-&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
-&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;Exception in thread &amp;#34;main&amp;#34; org.apache.hadoop.HadoopIllegalArgumentException: HA is not enabled for this namenode.
-        at org.apache.hadoop.hdfs.tools.DFSZKFailoverController.create(DFSZKFailoverController.java:121)
-        at org.apache.hadoop.hdfs.tools.DFSZKFailoverController.main(DFSZKFailoverController.java:172)
-&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
-&lt;/div&gt;
-&lt;/div&gt;&lt;p&gt;说明 &lt;strong&gt;dfs.nameservices&lt;/strong&gt; 配置有误，我当时把值配置成 &lt;strong&gt;hdfs://ljc&lt;/strong&gt; 了，其实应该配成 &lt;strong&gt;ljc&lt;/strong&gt; 就可以了。&lt;/p&gt;
-&lt;h2 id=&#34;总结&#34;&gt;总结&lt;/h2&gt;
-&lt;p&gt;从熟悉hadoop各个模块开始，到现在把最基本的环境搭建起来，前前后后也是有一个月的时间了，我发现我耗时比较多的是遇到问题后，没有看源码的意识，去网上搜，虽然有可能有人也遇到这个问题，但是明显和我的不相符，这时我就仔细检查我的配置文件，看看是否遗漏官方教程上的某一项，有些盲目，最近开始把cdh的src导入了eclipse，遇到一些错误后开始慢慢看源代码，我发现这样能很快定位到问题出错的范围，以后一定多尝试。&lt;/p&gt;
-&lt;p&gt;其次就是服务器比较多，hadoop也需要配置不少东西，这就需要自动化来帮助了，我最近把shell脚本又熟悉起来，写了一些用于管理hadoop的脚本，加上使用了&lt;a href=&#34;http://en.wikipedia.org/wiki/Salt_(software)&#34;&gt;salt&lt;/a&gt;这个自动化工具，这样方便多了。但是shell我还不是很熟悉，像数组的使用，很恶心有木有，交互式shell加载环境变量与非交互式（ssh -t -t hostname cmd这种方式就是非交互式）的不一样，等回来还要慢慢总结。&lt;/p&gt;</description>
-    </item>
-    
-    <item>
-      <title>hadoop1.0 高可靠性(HA)安装与总结</title>
-      <link>https://liujiacai.net/blog/2014/07/17/cdh-ha-installation/</link>
-      <pubDate>Thu, 17 Jul 2014 00:00:00 +0000</pubDate>
-      
-      <guid>https://liujiacai.net/blog/2014/07/17/cdh-ha-installation/</guid>
-      <description>&lt;p&gt;继上次&lt;a href=&#34;https://liujiacai.net/blog/2014/07/15/cdh-kerberos-installation/&#34;&gt;安装完Kerberos安全认证&lt;/a&gt;后，现在我在这基础上，又给CDH加上了HA（high availability），也就是高可靠性，具体来讲就是双NameNode，双Jobtracker（我还是在MRv1模式下），有了HA后，这下集群的健壮性就能够得到很好的保证了。&lt;/p&gt;
-&lt;p&gt;我还是按照&lt;a href=&#34;http://www.cloudera.com/content/cloudera-content/cloudera-docs/CDH5/latest/CDH5-High-Availability-Guide/CDH5-High-Availability-Guide.html&#34;&gt;官方文档&lt;/a&gt;来操作的，有了上次的经验，建议大家在具体操作实施前，先快速阅读一遍，做到心中有数，我还阅读了&lt;a href=&#34;http://hadoop.apache.org/docs/r2.3.0/hadoop-yarn/hadoop-yarn-site/HDFSHighAvailabilityWithNFS.html&#34;&gt;Apache官方的说明&lt;/a&gt;，也不用怎么详细，大概知道怎么回事就行了。&lt;/p&gt;
-&lt;p&gt;首先说明一点的就是，CDH5 只支持Quorum Journal Manager(QJM)模式下的HA，不支持NFS模式的，这点和Apache官方的不一样，大家要留意下。&lt;/p&gt;
-&lt;p&gt;下面说说我遇到的坑：&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;按照&lt;a href=&#34;http://www.cloudera.com/content/cloudera-content/cloudera-docs/CDH5/latest/CDH5-High-Availability-Guide/cdh5hag_hdfs_ha_software_config.html&#34;&gt;software_config&lt;/a&gt;上面说的配置一步步来，如果要实现自动的Failover，需要安装zookeeper，安装也很简单，从&lt;a href=&#34;http://archive.cloudera.com/cdh5/cdh/5/&#34;&gt;http://archive.cloudera.com/cdh5/cdh/5/&lt;/a&gt;下载&lt;a href=&#34;http://archive.cloudera.com/cdh5/cdh/5/zookeeper-3.4.5-cdh5.0.2.tar.gz&#34;&gt;zookeeper-3.4.5-cdh5.0.2.tar.gz&lt;/a&gt;，然后按照&lt;a href=&#34;http://archive.cloudera.com/cdh5/cdh/5/zookeeper/zookeeperStarted.html&#34;&gt;zookeeper的安装说明&lt;/a&gt;安装即可，官方推荐zookeeper的集群数目为奇数，推荐值为3,我这样也配置了3台，zookeeper服务在在启动时会向集群内其他服务器发送认证数据，但是在第一次启动时难免有个先后顺序，所以先启动的节点向还没有启动的服务器发生数据时会报错，类型下面的错误信息&lt;/li&gt;
-&lt;/ul&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
-&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt; 1
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 2
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 3
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 4
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 5
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 6
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 7
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 8
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 9
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;10
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;11
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;12
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;13
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;14
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;15
-&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
-&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;2014-07-17 14:49:06,151 [myid:1] - INFO  [WorkerReceiver[myid=1]:FastLeaderElection@542] - Notification: 1 (n.leader), 0x100000106 (n.zxid), 0x1 (n.round), LOOKING (n.state), 1 (n.sid), 0x2 (n.peerEPoch), LOOKING (my state)
-2014-07-17 14:49:06,153 [myid:1] - WARN  [WorkerSender[myid=1]:QuorumCnxManager@368] - Cannot open channel to 2 at election address node1/10.4.13.63:3888
+&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>这样就能吧Namenode起来了，证明这里**_HOST**被直接替换成了我这里的domain.name了，而不是每个服务器上的hostname，我这里不用domain.name，直接换为ip，也没问题。要是想了解这个细节，需要看源代码了，以后在看吧。
+4. 如果遇到&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code class="language-fallback" data-lang="fallback">Exception in thread &amp;#34;main&amp;#34; org.apache.hadoop.HadoopIllegalArgumentException: HA is not enabled for this namenode.
+at org.apache.hadoop.hdfs.tools.DFSZKFailoverController.create(DFSZKFailoverController.java:121)
+at org.apache.hadoop.hdfs.tools.DFSZKFailoverController.main(DFSZKFailoverController.java:172)
+&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>说明 &lt;strong>dfs.nameservices&lt;/strong> 配置有误，我当时把值配置成 &lt;strong>hdfs://ljc&lt;/strong> 了，其实应该配成 &lt;strong>ljc&lt;/strong> 就可以了。&lt;/p>
+&lt;h2 id="总结">总结&lt;/h2>
+&lt;p>从熟悉hadoop各个模块开始，到现在把最基本的环境搭建起来，前前后后也是有一个月的时间了，我发现我耗时比较多的是遇到问题后，没有看源码的意识，去网上搜，虽然有可能有人也遇到这个问题，但是明显和我的不相符，这时我就仔细检查我的配置文件，看看是否遗漏官方教程上的某一项，有些盲目，最近开始把cdh的src导入了eclipse，遇到一些错误后开始慢慢看源代码，我发现这样能很快定位到问题出错的范围，以后一定多尝试。&lt;/p>
+&lt;p>其次就是服务器比较多，hadoop也需要配置不少东西，这就需要自动化来帮助了，我最近把shell脚本又熟悉起来，写了一些用于管理hadoop的脚本，加上使用了&lt;a href="http://en.wikipedia.org/wiki/Salt_(software)">salt&lt;/a>这个自动化工具，这样方便多了。但是shell我还不是很熟悉，像数组的使用，很恶心有木有，交互式shell加载环境变量与非交互式（ssh -t -t hostname cmd这种方式就是非交互式）的不一样，等回来还要慢慢总结。&lt;/p></description></item><item><title>hadoop1.0 高可靠性(HA)安装与总结</title><link>https://liujiacai.net/blog/2014/07/17/cdh-ha-installation/</link><pubDate>Thu, 17 Jul 2014 00:00:00 +0000</pubDate><guid>https://liujiacai.net/blog/2014/07/17/cdh-ha-installation/</guid><description>&lt;p>继上次&lt;a href="https://liujiacai.net/blog/2014/07/15/cdh-kerberos-installation/">安装完Kerberos安全认证&lt;/a>后，现在我在这基础上，又给CDH加上了HA（high availability），也就是高可靠性，具体来讲就是双NameNode，双Jobtracker（我还是在MRv1模式下），有了HA后，这下集群的健壮性就能够得到很好的保证了。&lt;/p>
+&lt;p>我还是按照&lt;a href="http://www.cloudera.com/content/cloudera-content/cloudera-docs/CDH5/latest/CDH5-High-Availability-Guide/CDH5-High-Availability-Guide.html">官方文档&lt;/a>来操作的，有了上次的经验，建议大家在具体操作实施前，先快速阅读一遍，做到心中有数，我还阅读了&lt;a href="http://hadoop.apache.org/docs/r2.3.0/hadoop-yarn/hadoop-yarn-site/HDFSHighAvailabilityWithNFS.html">Apache官方的说明&lt;/a>，也不用怎么详细，大概知道怎么回事就行了。&lt;/p>
+&lt;p>首先说明一点的就是，CDH5 只支持Quorum Journal Manager(QJM)模式下的HA，不支持NFS模式的，这点和Apache官方的不一样，大家要留意下。&lt;/p>
+&lt;p>下面说说我遇到的坑：&lt;/p>
+&lt;ul>
+&lt;li>按照&lt;a href="http://www.cloudera.com/content/cloudera-content/cloudera-docs/CDH5/latest/CDH5-High-Availability-Guide/cdh5hag_hdfs_ha_software_config.html">software_config&lt;/a>上面说的配置一步步来，如果要实现自动的Failover，需要安装zookeeper，安装也很简单，从&lt;a href="http://archive.cloudera.com/cdh5/cdh/5/">http://archive.cloudera.com/cdh5/cdh/5/&lt;/a>下载&lt;a href="http://archive.cloudera.com/cdh5/cdh/5/zookeeper-3.4.5-cdh5.0.2.tar.gz">zookeeper-3.4.5-cdh5.0.2.tar.gz&lt;/a>，然后按照&lt;a href="http://archive.cloudera.com/cdh5/cdh/5/zookeeper/zookeeperStarted.html">zookeeper的安装说明&lt;/a>安装即可，官方推荐zookeeper的集群数目为奇数，推荐值为3,我这样也配置了3台，zookeeper服务在在启动时会向集群内其他服务器发送认证数据，但是在第一次启动时难免有个先后顺序，所以先启动的节点向还没有启动的服务器发生数据时会报错，类型下面的错误信息&lt;/li>
+&lt;/ul>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code class="language-fallback" data-lang="fallback">2014-07-17 14:49:06,151 [myid:1] - INFO [WorkerReceiver[myid=1]:FastLeaderElection@542] - Notification: 1 (n.leader), 0x100000106 (n.zxid), 0x1 (n.round), LOOKING (n.state), 1 (n.sid), 0x2 (n.peerEPoch), LOOKING (my state)
+2014-07-17 14:49:06,153 [myid:1] - WARN [WorkerSender[myid=1]:QuorumCnxManager@368] - Cannot open channel to 2 at election address node1/10.4.13.63:3888
 java.net.ConnectException: Connection refused
-    at java.net.PlainSocketImpl.socketConnect(Native Method)
-    at java.net.AbstractPlainSocketImpl.doConnect(AbstractPlainSocketImpl.java:339)
-    at java.net.AbstractPlainSocketImpl.connectToAddress(AbstractPlainSocketImpl.java:200)
-    at java.net.AbstractPlainSocketImpl.connect(AbstractPlainSocketImpl.java:182)
-    at java.net.SocksSocketImpl.connect(SocksSocketImpl.java:392)
-    at java.net.Socket.connect(Socket.java:579)
-    at org.apache.zookeeper.server.quorum.QuorumCnxManager.connectOne(QuorumCnxManager.java:354)
-    at org.apache.zookeeper.server.quorum.QuorumCnxManager.toSend(QuorumCnxManager.java:327)
-    at org.apache.zookeeper.server.quorum.FastLeaderElection$Messenger$WorkerSender.process(FastLeaderElection.java:393)
-    at org.apache.zookeeper.server.quorum.FastLeaderElection$Messenger$WorkerSender.run(FastLeaderElection.java:365)
-    at java.lang.Thread.run(Thread.java:745)
-
-&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
-&lt;/div&gt;
-&lt;/div&gt;&lt;p&gt;这个是正常的，等3台全部启动后，有如下日志就证明没问题了&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
-&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
-&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
-&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;2014-07-17 11:26:44,425 [myid:3] - INFO  [WorkerReceiver[myid=3]:FastLeaderElection@542] - Notification: 3 (n.leader), 0x0 (n.zxid), 0x1 (n.round), LOOKING (n.state), 3 (n.sid), 0x0 (n.peerEPoch), LOOKING (my state)
-2014-07-17 11:26:44,426 [myid:3] - INFO  [WorkerReceiver[myid=3]:FastLeaderElection@542] - Notification: 2 (n.leader), 0x0 (n.zxid), 0x1 (n.round), LOOKING (n.state), 1 (n.sid), 0x0 (n.peerEPoch), LOOKING (my state)
-&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
-&lt;/div&gt;
-&lt;/div&gt;&lt;ul&gt;
-&lt;li&gt;在配置Securing access to ZooKeeper这步时，我也能得到像官方教程上说的&lt;/li&gt;
-&lt;/ul&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
-&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
-&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
-&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;digest:hdfs-zkfcs:vlUvLnd8MlacsE80rDuu6ONESbM=:rwcda
-&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
-&lt;/div&gt;
-&lt;/div&gt;&lt;p&gt;与这个类似的信息，但是在执行zkfc -formatZK时，老是说的我得到的字符串（&#39;-&amp;gt;&#39; 后面的那部分）不对，我也不知道为什么，不知道是不是哪步少了什么，因为zookeeper集群在内网，集群内安全性一般不用考虑，我这里就直接忽略了这步，以后机会再找原因。&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;
-&lt;p&gt;在配置Fencing Configuration时，我用了sshfence的方式，这里需要配置ssh的密钥，我直接把hdfs用户的密钥路径给上，后来在我验证双Namenode是否生效（通过kill掉active的NN，看看standby的NN能不能变为active的NN）发现不对，老是报错，连接不上另一个Namenode，后来发现需要用root的密钥，但是hdfs用户又不能读取root的密钥，所以我这里直接把root的.ssh文件下的文件全copy到hdfs用户的$HOME下，并设置为hdfs为其owner（我的root用户在集群内也是可以免密码登录的），这样就没问题了。&lt;/p&gt;
-&lt;/li&gt;
-&lt;li&gt;
-&lt;p&gt;需要说明的是，在开启namenode之前，必须先开启journalnode，因为namenode开启时会去连接journalnode&lt;/p&gt;
-&lt;/li&gt;
-&lt;li&gt;
-&lt;p&gt;然后就是开启双Namenode的步骤了，下面记录一些需要用到的命令&lt;/p&gt;
-&lt;/li&gt;
-&lt;/ul&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
-&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt; 1
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 2
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 3
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 4
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 5
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 6
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 7
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 8
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 9
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;10
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;11
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;12
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;13
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;14
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;15
-&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
-&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;sudo -u hdfs bin/hdfs zkfc -formatZK
+at java.net.PlainSocketImpl.socketConnect(Native Method)
+at java.net.AbstractPlainSocketImpl.doConnect(AbstractPlainSocketImpl.java:339)
+at java.net.AbstractPlainSocketImpl.connectToAddress(AbstractPlainSocketImpl.java:200)
+at java.net.AbstractPlainSocketImpl.connect(AbstractPlainSocketImpl.java:182)
+at java.net.SocksSocketImpl.connect(SocksSocketImpl.java:392)
+at java.net.Socket.connect(Socket.java:579)
+at org.apache.zookeeper.server.quorum.QuorumCnxManager.connectOne(QuorumCnxManager.java:354)
+at org.apache.zookeeper.server.quorum.QuorumCnxManager.toSend(QuorumCnxManager.java:327)
+at org.apache.zookeeper.server.quorum.FastLeaderElection$Messenger$WorkerSender.process(FastLeaderElection.java:393)
+at org.apache.zookeeper.server.quorum.FastLeaderElection$Messenger$WorkerSender.run(FastLeaderElection.java:365)
+at java.lang.Thread.run(Thread.java:745)
+&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>这个是正常的，等3台全部启动后，有如下日志就证明没问题了&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code class="language-fallback" data-lang="fallback">2014-07-17 11:26:44,425 [myid:3] - INFO [WorkerReceiver[myid=3]:FastLeaderElection@542] - Notification: 3 (n.leader), 0x0 (n.zxid), 0x1 (n.round), LOOKING (n.state), 3 (n.sid), 0x0 (n.peerEPoch), LOOKING (my state)
+2014-07-17 11:26:44,426 [myid:3] - INFO [WorkerReceiver[myid=3]:FastLeaderElection@542] - Notification: 2 (n.leader), 0x0 (n.zxid), 0x1 (n.round), LOOKING (n.state), 1 (n.sid), 0x0 (n.peerEPoch), LOOKING (my state)
+&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;ul>
+&lt;li>在配置Securing access to ZooKeeper这步时，我也能得到像官方教程上说的&lt;/li>
+&lt;/ul>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code class="language-fallback" data-lang="fallback">digest:hdfs-zkfcs:vlUvLnd8MlacsE80rDuu6ONESbM=:rwcda
+&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>与这个类似的信息，但是在执行zkfc -formatZK时，老是说的我得到的字符串（'-&amp;gt;' 后面的那部分）不对，我也不知道为什么，不知道是不是哪步少了什么，因为zookeeper集群在内网，集群内安全性一般不用考虑，我这里就直接忽略了这步，以后机会再找原因。&lt;/p>
+&lt;ul>
+&lt;li>
+&lt;p>在配置Fencing Configuration时，我用了sshfence的方式，这里需要配置ssh的密钥，我直接把hdfs用户的密钥路径给上，后来在我验证双Namenode是否生效（通过kill掉active的NN，看看standby的NN能不能变为active的NN）发现不对，老是报错，连接不上另一个Namenode，后来发现需要用root的密钥，但是hdfs用户又不能读取root的密钥，所以我这里直接把root的.ssh文件下的文件全copy到hdfs用户的$HOME下，并设置为hdfs为其owner（我的root用户在集群内也是可以免密码登录的），这样就没问题了。&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>需要说明的是，在开启namenode之前，必须先开启journalnode，因为namenode开启时会去连接journalnode&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>然后就是开启双Namenode的步骤了，下面记录一些需要用到的命令&lt;/p>
+&lt;/li>
+&lt;/ul>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code class="language-fallback" data-lang="fallback">sudo -u hdfs bin/hdfs zkfc -formatZK
 sudo -u hdfs sbin/hadoop-daemon.sh start journalnode #开启journalnode进程
-
 sudo -u hdfs sbin/hadoop-daemon.sh start zkfc #开启automatic failover进程
-
 sudo -u hdfs bin/hdfs namenode -initializeSharedEdits #把一个non-HA的NameNode转为HA时用到
-
-sudo -u hdfs bin/hdfs namenode -bootstrapStandby 
+sudo -u hdfs bin/hdfs namenode -bootstrapStandby
 sudo -u hdfs sbin/hadoop-daemon.sh start namenode
-#上面命这两个命令在运行第二个Namenode服务器上执行，必须先执行-bootstrapStandby 这行命令再开启namenode 
-
-
+#上面命这两个命令在运行第二个Namenode服务器上执行，必须先执行-bootstrapStandby 这行命令再开启namenode
 #下面这些命令之前，需要以hdfs用户用kinit拿到TGT，否则会报错
 sudo -u hdfs bin/hdfs haadmin -getServiceState nn1 #查看nn1是active的还是standby的
-
-&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
-&lt;/div&gt;
-&lt;/div&gt;&lt;ul&gt;
-&lt;li&gt;按照&lt;a href=&#34;http://www.cloudera.com/content/cloudera-content/cloudera-docs/CDH5/latest/CDH5-High-Availability-Guide/cdh5hag_jt_ha_config.html&#34;&gt;jobtracker的HA官方配置&lt;/a&gt;进行配置后，使用&lt;/li&gt;
-&lt;/ul&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
-&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
-&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
-&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;sudo -u mapred sbin/hadoop-daemon.sh start jobtrackerha
-&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
-&lt;/div&gt;
-&lt;/div&gt;&lt;p&gt;命令开启jobtrackerha&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;通过&lt;/li&gt;
-&lt;/ul&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
-&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
-&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
-&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;#运行下面这些命令之前，要先以mapred用户用kinit拿到TGT，否则会报错
-
-sudo -u mapred bin/hadoop mrhaadmin -getServiceState jt1 
-&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
-&lt;/div&gt;
-&lt;/div&gt;&lt;p&gt;查看jt1是active的还是standby的&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;
-&lt;p&gt;最后一个，还是关于HDFS的权限问题，因为mapreduce在执行任务时会向HDFS上写一些临时文件，如果权限不对，肯定就会报错了，不过这种错误也很好该，根据错误信息就能知道那个目录权限不对，然后改过来就行了，我这里进行下总结：&lt;/p&gt;
-&lt;/li&gt;
-&lt;li&gt;
-&lt;p&gt;根据官方的教程配置教程，配置了如下选项：&lt;/p&gt;
-&lt;/li&gt;
-&lt;/ul&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
-&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;4
-&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
-&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;  &amp;lt;property&amp;gt;
-    &amp;lt;name&amp;gt;mapred.job.tracker.persist.jobstatus.dir&amp;lt;/name&amp;gt;
-    &amp;lt;value&amp;gt;/jobtracker/jobsInfo&amp;lt;/value&amp;gt;
-  &amp;lt;/property&amp;gt;
-&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
-&lt;/div&gt;
-&lt;/div&gt;&lt;p&gt;所以需要在HDFS上创建相应目录，并修改其owner为mapred&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;其次是staging目录，如果没有配置，其默认值从&lt;a href=&#34;http://archive.cloudera.com/cdh4/cdh/4/hadoop/hadoop-mapreduce-client/hadoop-mapreduce-client-core/mapred-default.xml&#34;&gt;默认配置&lt;/a&gt;可以看到mapreduce.jobtracker.staging.root.dir的值为${hadoop.tmp.dir}/mapred/staging，而${hadoop.tmp.dir}的值从&lt;a href=&#34;http://archive.cloudera.com/cdh4/cdh/4/hadoop/hadoop-project-dist/hadoop-common/core-default.xml&#34;&gt;这里&lt;/a&gt;可以看到值默认是/tmp/hadoop-${user.name}，有因为我们使用mapred用户来执行tasktracker进行的，所以需要创建/tmp/hadoop-mapred/mapred/staging文件夹，并且其owner为mapred，权限为1777，可以用下面的命令来实现：&lt;/li&gt;
-&lt;/ul&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
-&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
-&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
-&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;sudo -u hdfs bin/hdfs dfs -mkdir -p /tmp/hadoop-mapred/mapred/staging
+&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;ul>
+&lt;li>按照&lt;a href="http://www.cloudera.com/content/cloudera-content/cloudera-docs/CDH5/latest/CDH5-High-Availability-Guide/cdh5hag_jt_ha_config.html">jobtracker的HA官方配置&lt;/a>进行配置后，使用&lt;/li>
+&lt;/ul>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code class="language-fallback" data-lang="fallback">sudo -u mapred sbin/hadoop-daemon.sh start jobtrackerha
+&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>命令开启jobtrackerha&lt;/p>
+&lt;ul>
+&lt;li>通过&lt;/li>
+&lt;/ul>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code class="language-fallback" data-lang="fallback">#运行下面这些命令之前，要先以mapred用户用kinit拿到TGT，否则会报错
+sudo -u mapred bin/hadoop mrhaadmin -getServiceState jt1
+&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>查看jt1是active的还是standby的&lt;/p>
+&lt;ul>
+&lt;li>
+&lt;p>最后一个，还是关于HDFS的权限问题，因为mapreduce在执行任务时会向HDFS上写一些临时文件，如果权限不对，肯定就会报错了，不过这种错误也很好该，根据错误信息就能知道那个目录权限不对，然后改过来就行了，我这里进行下总结：&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>根据官方的教程配置教程，配置了如下选项：&lt;/p>
+&lt;/li>
+&lt;/ul>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code class="language-fallback" data-lang="fallback"> &amp;lt;property&amp;gt;
+&amp;lt;name&amp;gt;mapred.job.tracker.persist.jobstatus.dir&amp;lt;/name&amp;gt;
+&amp;lt;value&amp;gt;/jobtracker/jobsInfo&amp;lt;/value&amp;gt;
+&amp;lt;/property&amp;gt;
+&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>所以需要在HDFS上创建相应目录，并修改其owner为mapred&lt;/p>
+&lt;ul>
+&lt;li>其次是staging目录，如果没有配置，其默认值从&lt;a href="http://archive.cloudera.com/cdh4/cdh/4/hadoop/hadoop-mapreduce-client/hadoop-mapreduce-client-core/mapred-default.xml">默认配置&lt;/a>可以看到mapreduce.jobtracker.staging.root.dir的值为${hadoop.tmp.dir}/mapred/staging，而${hadoop.tmp.dir}的值从&lt;a href="http://archive.cloudera.com/cdh4/cdh/4/hadoop/hadoop-project-dist/hadoop-common/core-default.xml">这里&lt;/a>可以看到值默认是/tmp/hadoop-${user.name}，有因为我们使用mapred用户来执行tasktracker进行的，所以需要创建/tmp/hadoop-mapred/mapred/staging文件夹，并且其owner为mapred，权限为1777，可以用下面的命令来实现：&lt;/li>
+&lt;/ul>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code class="language-fallback" data-lang="fallback">sudo -u hdfs bin/hdfs dfs -mkdir -p /tmp/hadoop-mapred/mapred/staging
 sudo -u hdfs bin/hdfs dfs -chown mapred /tmp/hadoop-mapred/mapred/staging
 sudo -u hdfs bin/hdfs dfs -chmod 1777 /tmp/hadoop-mapred/mapred/staging
-&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
-&lt;/div&gt;
-&lt;/div&gt;&lt;p&gt;此外，还需要配置mapreduce.jobtracker.system.dir指定的文件，默认为${hadoop.tmp.dir}/mapred/system，所以还需要执行下面的命令：&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
-&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
-&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
-&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;sudo -u hdfs bin/hdfs dfs -mkdir -p /tmp/hadoop-mapred/mapred/system
+&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>此外，还需要配置mapreduce.jobtracker.system.dir指定的文件，默认为${hadoop.tmp.dir}/mapred/system，所以还需要执行下面的命令：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code class="language-fallback" data-lang="fallback">sudo -u hdfs bin/hdfs dfs -mkdir -p /tmp/hadoop-mapred/mapred/system
 sudo -u hdfs bin/hdfs dfs -chown mapred /tmp/hadoop-mapred/mapred/system
-
-&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
-&lt;/div&gt;
-&lt;/div&gt;&lt;p&gt;这个目录只由mapred用户来写入，所以不用再修改其权限（的755即可）。&lt;/p&gt;
-&lt;p&gt;总结：这次配置HA的整个过程还是比较顺利的，除了烦人的各种权限问题，我觉得这也是我没有弄明白hadoop各个进程是如何工作导致的，通过支持配置HA，算是对job的运行又有了更深的的认识。&lt;/p&gt;</description>
-    </item>
-    
-    <item>
-      <title>hadoop1.0 安全认证(kerberos)安装与总结</title>
-      <link>https://liujiacai.net/blog/2014/07/15/cdh-kerberos-installation/</link>
-      <pubDate>Tue, 15 Jul 2014 00:00:00 +0000</pubDate>
-      
-      <guid>https://liujiacai.net/blog/2014/07/15/cdh-kerberos-installation/</guid>
-      <description>&lt;p&gt;俗话说得好，万事开头难。在软件开发中，环境部署要算是第一门槛了。我最近折腾了一周时间把cdh5.0.2.tar.gz版本在MRv1模式下，成功集成了Kerberos安全认证，并且是在全分布式模式下。经过这次安装过程，对hadoop的了解又深入了一层。现在趁着自己刚搭建完环境，脑子还时不时的闪现遇到的错误，把我的安装过程记录于此，一方面方便自己今后查阅，另一方面希望对今后遇到同样问题人有所启发。&lt;/p&gt;
-&lt;p&gt;首先说下为什么要用tarball安装，cdh提供了一种manager方式进行安装，对Debian系列提供apt-get，对Redhat系列提供yum安装，但是这些安装方式把一些细节都替我们做了，如果我们今后希望遇到出现什么情况，不方便调试。另外，作为一个爱折腾的人，tar.gz也是我按照软件的首选。&lt;/p&gt;
-&lt;p&gt;先说下我的搭建环境，4台Centos6.5服务器，一台做master，运行namenode、jobtracker;另外三台运行datanode、tasktracker。此外master机器上还运行Kerberos服务器。JDK的版本是1.7.60。关于5.0.2版本的环境要求可以参考&lt;a href=&#34;http://www.cloudera.com/content/support/en/downloads/cdh/cdh-5-0-2.html#SystemRequirements&#34;&gt;http://www.cloudera.com/content/support/en/downloads/cdh/cdh-5-0-2.html#SystemRequirements&lt;/a&gt;。&lt;/p&gt;
-&lt;p&gt;这篇文章主要是我在参照cloudera&lt;a href=&#34;http://www.cloudera.com/content/cloudera-content/cloudera-docs/CDH5/latest/CDH5-Security-Guide/cdh5sg_cdh5_hadoop_security.html&#34;&gt;官网的教程&lt;/a&gt;时遇到的坑。大家可以先去看看这个教程，再来看我的文章。&lt;/p&gt;
-&lt;p&gt;cdh5.0.2这里不再使用hadoop用户，取而代之的是mapred用户与hdfs用户，这里需要分别为它们生产ssh的公钥与秘钥，并且配置免密码登录（当然你可以为其中一个生产，然后直接copy过去）。&lt;/p&gt;
-&lt;h2 id=&#34;1-kerberos安装&#34;&gt;1. Kerberos安装&lt;/h2&gt;
-&lt;p&gt;首先，Kerberos的原理、安装什么大家自己去维基百科去查，具体命令像kinit、kadmin怎么用也是大家自己查，以后有时间我会单独抽时间讲讲Kerberos。
-大家现在可以按照这个文章来进行操作：&lt;a href=&#34;https://www.centos.org/docs/5/html/5.2/Deployment_Guide/s1-kerberos-server.html&#34;&gt;Kerberos deploy guide&lt;/a&gt;。&lt;/p&gt;
-&lt;p&gt;后面需要为集群中每个节点的mapred与hdfs用户生成各自的principal与keytab，所以这里大家一定要熟悉kerberos的命令，把这些东西做成脚本，要不能烦死你。&lt;/p&gt;
-&lt;h2 id=&#34;2-cdh502targz安装&#34;&gt;2. CDH5.0.2.tar.gz安装&lt;/h2&gt;
-&lt;h3 id=&#34;21-下载相关tar包&#34;&gt;2.1 下载相关tar包&lt;/h3&gt;
-&lt;p&gt;首先在这里&lt;a href=&#34;http://archive.cloudera.com/cdh5/cdh/5/&#34;&gt;http://archive.cloudera.com/cdh5/cdh/5/&lt;/a&gt;下载5.0.2的hadoop的tar包&lt;a href=&#34;http://archive.cloudera.com/cdh5/cdh/5/hadoop-2.3.0-cdh5.0.2.tar.gz&#34;&gt;hadoop-2.3.0-cdh5.0.2.tar.gz&lt;/a&gt;，除了这个外，为了集成Kerberos，还需要下载&lt;a href=&#34;http://archive.cloudera.com/cdh5/cdh/5/bigtop-jsvc-1.0.10-cdh5.0.2.tar.gz&#34;&gt;bigtop-jsvc-1.0.10-cdh5.0.2.tar.gz&lt;/a&gt;。&lt;/p&gt;
-&lt;h3 id=&#34;22-yarn模式改成mrv1模式&#34;&gt;2.2 YARN模式改成MRv1模式&lt;/h3&gt;
-&lt;p&gt;这里需要讲一点是，5.0.2 tarball版本模式是YARN模式，我这里搭建的是MRv1（也就是普通的MapReduce）模式，所以需要对tar包解压出的文件做一些修改。&lt;/p&gt;
-&lt;p&gt;把hadoop-2.3.0-cdh5.0.2.tar.gz解压，假设你解压到了/opt目录下，把hadoop-2.3.0-cdh5.0.2直接重命名为hadoop（现在你的cdh根目录是/opt/hadoop），下面进行我们的修改工作：&lt;/p&gt;
-&lt;ol&gt;
-&lt;li&gt;把bin-mapreduce1的所以文件拷贝到bin下，对于相同的文件，直接覆盖即可。&lt;/li&gt;
-&lt;li&gt;在/opt/hadoop/share/hadoop文件夹下有如下的文件结构
-&lt;img src=&#34;http://img03.taobaocdn.com/imgextra/i3/581166664/TB20NG9apXXXXaoXXXXXXXXXXXX_!!581166664.png&#34; alt=&#34;share/hadoop目录结构&#34;/&gt;&lt;/li&gt;
-&lt;/ol&gt;
-&lt;p&gt;把其中的mapreduce这个软链接文件删除，然后创建一个同名的软链接指向mapreduce1&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
-&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
-&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
-&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;cd /opt/hadoop/share/hadoop/
+&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>这个目录只由mapred用户来写入，所以不用再修改其权限（的755即可）。&lt;/p>
+&lt;p>总结：这次配置HA的整个过程还是比较顺利的，除了烦人的各种权限问题，我觉得这也是我没有弄明白hadoop各个进程是如何工作导致的，通过支持配置HA，算是对job的运行又有了更深的的认识。&lt;/p></description></item><item><title>hadoop1.0 安全认证(kerberos)安装与总结</title><link>https://liujiacai.net/blog/2014/07/15/cdh-kerberos-installation/</link><pubDate>Tue, 15 Jul 2014 00:00:00 +0000</pubDate><guid>https://liujiacai.net/blog/2014/07/15/cdh-kerberos-installation/</guid><description>&lt;p>俗话说得好，万事开头难。在软件开发中，环境部署要算是第一门槛了。我最近折腾了一周时间把cdh5.0.2.tar.gz版本在MRv1模式下，成功集成了Kerberos安全认证，并且是在全分布式模式下。经过这次安装过程，对hadoop的了解又深入了一层。现在趁着自己刚搭建完环境，脑子还时不时的闪现遇到的错误，把我的安装过程记录于此，一方面方便自己今后查阅，另一方面希望对今后遇到同样问题人有所启发。&lt;/p>
+&lt;p>首先说下为什么要用tarball安装，cdh提供了一种manager方式进行安装，对Debian系列提供apt-get，对Redhat系列提供yum安装，但是这些安装方式把一些细节都替我们做了，如果我们今后希望遇到出现什么情况，不方便调试。另外，作为一个爱折腾的人，tar.gz也是我按照软件的首选。&lt;/p>
+&lt;p>先说下我的搭建环境，4台Centos6.5服务器，一台做master，运行namenode、jobtracker;另外三台运行datanode、tasktracker。此外master机器上还运行Kerberos服务器。JDK的版本是1.7.60。关于5.0.2版本的环境要求可以参考&lt;a href="http://www.cloudera.com/content/support/en/downloads/cdh/cdh-5-0-2.html#SystemRequirements">http://www.cloudera.com/content/support/en/downloads/cdh/cdh-5-0-2.html#SystemRequirements&lt;/a>。&lt;/p>
+&lt;p>这篇文章主要是我在参照cloudera&lt;a href="http://www.cloudera.com/content/cloudera-content/cloudera-docs/CDH5/latest/CDH5-Security-Guide/cdh5sg_cdh5_hadoop_security.html">官网的教程&lt;/a>时遇到的坑。大家可以先去看看这个教程，再来看我的文章。&lt;/p>
+&lt;p>cdh5.0.2这里不再使用hadoop用户，取而代之的是mapred用户与hdfs用户，这里需要分别为它们生产ssh的公钥与秘钥，并且配置免密码登录（当然你可以为其中一个生产，然后直接copy过去）。&lt;/p>
+&lt;h2 id="1-kerberos安装">1. Kerberos安装&lt;/h2>
+&lt;p>首先，Kerberos的原理、安装什么大家自己去维基百科去查，具体命令像kinit、kadmin怎么用也是大家自己查，以后有时间我会单独抽时间讲讲Kerberos。
+大家现在可以按照这个文章来进行操作：&lt;a href="https://www.centos.org/docs/5/html/5.2/Deployment_Guide/s1-kerberos-server.html">Kerberos deploy guide&lt;/a>。&lt;/p>
+&lt;p>后面需要为集群中每个节点的mapred与hdfs用户生成各自的principal与keytab，所以这里大家一定要熟悉kerberos的命令，把这些东西做成脚本，要不能烦死你。&lt;/p>
+&lt;h2 id="2-cdh502targz安装">2. CDH5.0.2.tar.gz安装&lt;/h2>
+&lt;h3 id="21-下载相关tar包">2.1 下载相关tar包&lt;/h3>
+&lt;p>首先在这里&lt;a href="http://archive.cloudera.com/cdh5/cdh/5/">http://archive.cloudera.com/cdh5/cdh/5/&lt;/a>下载5.0.2的hadoop的tar包&lt;a href="http://archive.cloudera.com/cdh5/cdh/5/hadoop-2.3.0-cdh5.0.2.tar.gz">hadoop-2.3.0-cdh5.0.2.tar.gz&lt;/a>，除了这个外，为了集成Kerberos，还需要下载&lt;a href="http://archive.cloudera.com/cdh5/cdh/5/bigtop-jsvc-1.0.10-cdh5.0.2.tar.gz">bigtop-jsvc-1.0.10-cdh5.0.2.tar.gz&lt;/a>。&lt;/p>
+&lt;h3 id="22-yarn模式改成mrv1模式">2.2 YARN模式改成MRv1模式&lt;/h3>
+&lt;p>这里需要讲一点是，5.0.2 tarball版本模式是YARN模式，我这里搭建的是MRv1（也就是普通的MapReduce）模式，所以需要对tar包解压出的文件做一些修改。&lt;/p>
+&lt;p>把hadoop-2.3.0-cdh5.0.2.tar.gz解压，假设你解压到了/opt目录下，把hadoop-2.3.0-cdh5.0.2直接重命名为hadoop（现在你的cdh根目录是/opt/hadoop），下面进行我们的修改工作：&lt;/p>
+&lt;ol>
+&lt;li>把bin-mapreduce1的所以文件拷贝到bin下，对于相同的文件，直接覆盖即可。&lt;/li>
+&lt;li>在/opt/hadoop/share/hadoop文件夹下有如下的文件结构
+&lt;img src="http://img03.taobaocdn.com/imgextra/i3/581166664/TB20NG9apXXXXaoXXXXXXXXXXXX_!!581166664.png" alt="share/hadoop目录结构"/>&lt;/li>
+&lt;/ol>
+&lt;p>把其中的mapreduce这个软链接文件删除，然后创建一个同名的软链接指向mapreduce1&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code class="language-fallback" data-lang="fallback">cd /opt/hadoop/share/hadoop/
 rm mapreduce -rf
 ln -s mapreduce1 mapreduce
-&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
-&lt;/div&gt;
-&lt;/div&gt;&lt;p&gt;经过上面这两步后，就默认启用了MRv1模式了，大家可以先把不带Kerberos安全认证的全分布式搭建起来，等到不带Kerberos安全认证的全分布式搭建起来后（可参考&lt;a href=&#34;http://blog.csdn.net/jiacai2050/article/details/8630329&#34;&gt;Hadoop全分布式搭建&lt;/a&gt;），再进行下面的操作。&lt;/p&gt;
-&lt;h3 id=&#34;23-配置hdfs&#34;&gt;2.3 配置HDFS&lt;/h3&gt;
-&lt;p&gt;下面大家就可以按照&lt;a href=&#34;http://www.cloudera.com/content/cloudera-content/cloudera-docs/CDH5/latest/CDH5-Security-Guide/cdh5sg_cdh5_hadoop_security.html&#34;&gt;官网的教程&lt;/a&gt;进行操作，下面说下我遇到的坑：&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;在STEP 2中，必须参照&lt;a href=&#34;http://www.cloudera.com/content/cloudera-content/cloudera-docs/CDH5/latest/CDH5-Installation-Guide/cdh5ig_mr_cluster_deploy.html#topic_11_3&#34;&gt;MRv1 cluster deploy&lt;/a&gt;，在hdfs中创建/tmp，与mapred.system.dir制定的目录，并且修改为相应的权限。&lt;/li&gt;
-&lt;li&gt;在STEP 7中，最后的dfs.http.policy这个property不用配置，否则在后面启动namnode是会报.keystore文件找不到的异常。&lt;/li&gt;
-&lt;li&gt;STEP 8、9、10可选，配不配都行&lt;/li&gt;
-&lt;li&gt;在STEP 11中，需要配置JSVC_HOME这个属性，这里把我们一开始下载的bigtop-jsvc-1.0.10-cdh5.0.2.tar.gz解压后，放到它制定的位置上即可。&lt;/li&gt;
-&lt;li&gt;在STEP 12、13,启动datanode、namenode时，用sbin下的命令&lt;/li&gt;
-&lt;/ul&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
-&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
-&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
-&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;sbin/hadoop-daemon.sh start namenode
+&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>经过上面这两步后，就默认启用了MRv1模式了，大家可以先把不带Kerberos安全认证的全分布式搭建起来，等到不带Kerberos安全认证的全分布式搭建起来后（可参考&lt;a href="http://blog.csdn.net/jiacai2050/article/details/8630329">Hadoop全分布式搭建&lt;/a>），再进行下面的操作。&lt;/p>
+&lt;h3 id="23-配置hdfs">2.3 配置HDFS&lt;/h3>
+&lt;p>下面大家就可以按照&lt;a href="http://www.cloudera.com/content/cloudera-content/cloudera-docs/CDH5/latest/CDH5-Security-Guide/cdh5sg_cdh5_hadoop_security.html">官网的教程&lt;/a>进行操作，下面说下我遇到的坑：&lt;/p>
+&lt;ul>
+&lt;li>在STEP 2中，必须参照&lt;a href="http://www.cloudera.com/content/cloudera-content/cloudera-docs/CDH5/latest/CDH5-Installation-Guide/cdh5ig_mr_cluster_deploy.html#topic_11_3">MRv1 cluster deploy&lt;/a>，在hdfs中创建/tmp，与mapred.system.dir制定的目录，并且修改为相应的权限。&lt;/li>
+&lt;li>在STEP 7中，最后的dfs.http.policy这个property不用配置，否则在后面启动namnode是会报.keystore文件找不到的异常。&lt;/li>
+&lt;li>STEP 8、9、10可选，配不配都行&lt;/li>
+&lt;li>在STEP 11中，需要配置JSVC_HOME这个属性，这里把我们一开始下载的bigtop-jsvc-1.0.10-cdh5.0.2.tar.gz解压后，放到它制定的位置上即可。&lt;/li>
+&lt;li>在STEP 12、13,启动datanode、namenode时，用sbin下的命令&lt;/li>
+&lt;/ul>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code class="language-fallback" data-lang="fallback">sbin/hadoop-daemon.sh start namenode
 sbin/hadoop-daemons.sh start datanode
-&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
-&lt;/div&gt;
-&lt;/div&gt;&lt;p&gt;这两条命令都是用root用户执行。&lt;/p&gt;
-&lt;p&gt;在这过程中，如果遇到什么logs文件夹不能写入，将其权限改为777即可。&lt;/p&gt;
-&lt;h3 id=&#34;24-配置mapreduce&#34;&gt;2.4 配置mapreduce&lt;/h3&gt;
-&lt;p&gt;配置mapreduce接着参考官方的&lt;a href=&#34;http://www.cloudera.com/content/cloudera-content/cloudera-docs/CDH5/latest/CDH5-Security-Guide/cdh5sg_mrv1_security.html&#34;&gt;教程&lt;/a&gt;，下面继续说我遇到的坑：&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;首先是taskcontroller.cfg文件问题，hadoop会在&lt;path of task-controller binary&gt;/../../conf/下去找这个文件，所以我们需要在/opt/hadoop下面（也就是我们解压后的根目录下），创建一个conf文件，然后在按照官方说的配置就行了，官方教程中有一条&lt;/li&gt;
-&lt;/ul&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
-&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
-&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
-&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;banned.users=mapred,hdfs,bin
-&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
-&lt;/div&gt;
-&lt;/div&gt;&lt;p&gt;这里这样配置后，后面运行wordcount会报异常，这里可直接将其值配置为bin即可&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;然后就是task-controller这个文件的权限问题了，一定要用下面命令进行修改&lt;/li&gt;
-&lt;/ul&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
-&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
-&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
-&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;chown root:mapred task-controller
+&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>这两条命令都是用root用户执行。&lt;/p>
+&lt;p>在这过程中，如果遇到什么logs文件夹不能写入，将其权限改为777即可。&lt;/p>
+&lt;h3 id="24-配置mapreduce">2.4 配置mapreduce&lt;/h3>
+&lt;p>配置mapreduce接着参考官方的&lt;a href="http://www.cloudera.com/content/cloudera-content/cloudera-docs/CDH5/latest/CDH5-Security-Guide/cdh5sg_mrv1_security.html">教程&lt;/a>，下面继续说我遇到的坑：&lt;/p>
+&lt;ul>
+&lt;li>首先是taskcontroller.cfg文件问题，hadoop会在&lt;path of task-controller binary>/../../conf/下去找这个文件，所以我们需要在/opt/hadoop下面（也就是我们解压后的根目录下），创建一个conf文件，然后在按照官方说的配置就行了，官方教程中有一条&lt;/li>
+&lt;/ul>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code class="language-fallback" data-lang="fallback">banned.users=mapred,hdfs,bin
+&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>这里这样配置后，后面运行wordcount会报异常，这里可直接将其值配置为bin即可&lt;/p>
+&lt;ul>
+&lt;li>然后就是task-controller这个文件的权限问题了，一定要用下面命令进行修改&lt;/li>
+&lt;/ul>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code class="language-fallback" data-lang="fallback">chown root:mapred task-controller
 chmod 4754 task-controller
-&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
-&lt;/div&gt;
-&lt;/div&gt;&lt;p&gt;其解释也在&lt;a href=&#34;http://www.cloudera.com/content/cloudera-content/cloudera-docs/CDH5/latest/CDH5-Security-Guide/cdh5sg_other_hadoop_security.html#topic_18_unique_2&#34;&gt;官网&lt;/a&gt;上有。&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;当这一切都配置好后，启动jobtracker与tasktracker还是有错，这个错误是&lt;/li&gt;
-&lt;/ul&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
-&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;4
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;5
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;6
-&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
-&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;2014-07-15 18:15:25,722 ERROR org.apache.hadoop.mapred.TaskTracker: Can not start task tracker because java.io.IOException: Secure IO is necessary to run a secure task tracker.
-        at org.apache.hadoop.mapred.TaskTracker.checkSecurityRequirements(TaskTracker.java:943)
-        at org.apache.hadoop.mapred.TaskTracker.initialize(TaskTracker.java:976)
-        at org.apache.hadoop.mapred.TaskTracker.&amp;lt;init&amp;gt;(TaskTracker.java:1780)
-        at org.apache.hadoop.mapred.TaskTracker.main(TaskTracker.java:4124)
-
-&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
-&lt;/div&gt;
-&lt;/div&gt;&lt;p&gt;这个错误是因为缺少native包所致，这个包应该是在/opt/hadoop/lib/native/，很遗憾，这些东西需要我们自己编译，因为每个版本都不一样，我把apache hadoop的native直接copy过去也不行。&lt;del&gt;这里我偷了个懒，直接从同事那里copy过来了。以后会说说如何从源码编译。&lt;/del&gt;下面说说如何编译。
-cdh的源码都放在src文件夹下，安装好maven后直接到这个文件夹下编译就可以，我这里使用的是centos6.5编译的，遇到的问题主要有：&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
-&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;4
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;5
-&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
-&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-go&#34; data-lang=&#34;go&#34;&gt; &lt;span class=&#34;mf&#34;&gt;1.&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;maven&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;repository经常连接不上&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;，&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;需要多次重复操作&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;。&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;以后最好做一个本地repo&lt;/span&gt;
- &lt;span class=&#34;mf&#34;&gt;2.&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;centos上需要自己安装一些依赖&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;，&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;否则回报各种错误&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;，&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;可以用下面这条命令&lt;/span&gt; 
-    &lt;span class=&#34;nx&#34;&gt;yum&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;install&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;-&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;y&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;glibc&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;-&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;headers&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;gcc&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;-&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;c&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;++&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;zlib&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;-&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;devel&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;openssl&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;-&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;devel&lt;/span&gt; 
- &lt;span class=&#34;mf&#34;&gt;3.&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;一些test通过不了&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;，&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;需要跳过&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;，&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;用下面这条命令进行编译&lt;/span&gt;
-    &lt;span class=&#34;nx&#34;&gt;mvn&lt;/span&gt; &lt;span class=&#34;kn&#34;&gt;package&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;-&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;Pdist&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;native&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;-&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;DskipTests&lt;/span&gt;
-&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
-&lt;/div&gt;
-&lt;/div&gt;&lt;p&gt;好了，如果在编译过程中还是遇到什么依赖缺失，直接去google下就ok了。&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;在用root启动jobtracker与tasktracker命令行会有错误信息，提示我们不能直接用root启动这两个进程，在haooop-env.sh配置下面的信息就好了&lt;/li&gt;
-&lt;/ul&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
-&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
-&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
-&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;export HADOOP_JOBTRACKER_USER=mapred
+&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>其解释也在&lt;a href="http://www.cloudera.com/content/cloudera-content/cloudera-docs/CDH5/latest/CDH5-Security-Guide/cdh5sg_other_hadoop_security.html#topic_18_unique_2">官网&lt;/a>上有。&lt;/p>
+&lt;ul>
+&lt;li>当这一切都配置好后，启动jobtracker与tasktracker还是有错，这个错误是&lt;/li>
+&lt;/ul>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;span class="lnt">6
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code class="language-fallback" data-lang="fallback">2014-07-15 18:15:25,722 ERROR org.apache.hadoop.mapred.TaskTracker: Can not start task tracker because java.io.IOException: Secure IO is necessary to run a secure task tracker.
+at org.apache.hadoop.mapred.TaskTracker.checkSecurityRequirements(TaskTracker.java:943)
+at org.apache.hadoop.mapred.TaskTracker.initialize(TaskTracker.java:976)
+at org.apache.hadoop.mapred.TaskTracker.&amp;lt;init&amp;gt;(TaskTracker.java:1780)
+at org.apache.hadoop.mapred.TaskTracker.main(TaskTracker.java:4124)
+&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>这个错误是因为缺少native包所致，这个包应该是在/opt/hadoop/lib/native/，很遗憾，这些东西需要我们自己编译，因为每个版本都不一样，我把apache hadoop的native直接copy过去也不行。&lt;del>这里我偷了个懒，直接从同事那里copy过来了。以后会说说如何从源码编译。&lt;/del>下面说说如何编译。
+cdh的源码都放在src文件夹下，安装好maven后直接到这个文件夹下编译就可以，我这里使用的是centos6.5编译的，遇到的问题主要有：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code class="language-go" data-lang="go"> &lt;span class="mf">1.&lt;/span> &lt;span class="nx">maven&lt;/span> &lt;span class="nx">repository经常连接不上&lt;/span>&lt;span class="err">，&lt;/span>&lt;span class="nx">需要多次重复操作&lt;/span>&lt;span class="err">。&lt;/span>&lt;span class="nx">以后最好做一个本地repo&lt;/span>
+&lt;span class="mf">2.&lt;/span> &lt;span class="nx">centos上需要自己安装一些依赖&lt;/span>&lt;span class="err">，&lt;/span>&lt;span class="nx">否则回报各种错误&lt;/span>&lt;span class="err">，&lt;/span>&lt;span class="nx">可以用下面这条命令&lt;/span>
+&lt;span class="nx">yum&lt;/span> &lt;span class="nx">install&lt;/span> &lt;span class="o">-&lt;/span>&lt;span class="nx">y&lt;/span> &lt;span class="nx">glibc&lt;/span>&lt;span class="o">-&lt;/span>&lt;span class="nx">headers&lt;/span> &lt;span class="nx">gcc&lt;/span>&lt;span class="o">-&lt;/span>&lt;span class="nx">c&lt;/span>&lt;span class="o">++&lt;/span> &lt;span class="nx">zlib&lt;/span>&lt;span class="o">-&lt;/span>&lt;span class="nx">devel&lt;/span> &lt;span class="nx">openssl&lt;/span>&lt;span class="o">-&lt;/span>&lt;span class="nx">devel&lt;/span>
+&lt;span class="mf">3.&lt;/span> &lt;span class="nx">一些test通过不了&lt;/span>&lt;span class="err">，&lt;/span>&lt;span class="nx">需要跳过&lt;/span>&lt;span class="err">，&lt;/span>&lt;span class="nx">用下面这条命令进行编译&lt;/span>
+&lt;span class="nx">mvn&lt;/span> &lt;span class="kn">package&lt;/span> &lt;span class="o">-&lt;/span>&lt;span class="nx">Pdist&lt;/span>&lt;span class="p">,&lt;/span>&lt;span class="nx">native&lt;/span> &lt;span class="o">-&lt;/span>&lt;span class="nx">DskipTests&lt;/span>
+&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>好了，如果在编译过程中还是遇到什么依赖缺失，直接去google下就ok了。&lt;/p>
+&lt;ul>
+&lt;li>在用root启动jobtracker与tasktracker命令行会有错误信息，提示我们不能直接用root启动这两个进程，在haooop-env.sh配置下面的信息就好了&lt;/li>
+&lt;/ul>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code class="language-fallback" data-lang="fallback">export HADOOP_JOBTRACKER_USER=mapred
 export HADOOP_TASKTRACKER_USER=mapred
-&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
-&lt;/div&gt;
-&lt;/div&gt;&lt;p&gt;启动的命令是&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
-&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
-&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
-&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;sbin/hadoop-daemon.sh start jobtracker
+&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>启动的命令是&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code class="language-fallback" data-lang="fallback">sbin/hadoop-daemon.sh start jobtracker
 sbin/hadoop-daemons.sh start tasktracker
-&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
-&lt;/div&gt;
-&lt;/div&gt;&lt;p&gt;也有由root启动。&lt;/p&gt;
-&lt;h2 id=&#34;3-总结&#34;&gt;3. 总结&lt;/h2&gt;
-&lt;p&gt;这次搭建过程前前后后用了一个星期，麻烦是一回事，各种权限问题，最主要是还是我对hadoop的基本组成不够了解，hadoop的各个部分都是分开的，在share/hadoop目录下的每个文件夹都对应与一个功能，我一开始就想着把他们都放一起，导致不同模块的配置文件重复并产生冲突，最后导致进程起不来，今后还是要加强对基本概念的理解。其次是遇到错误多看看日志文件，很多错误能够直接根据错误信息就能够改正。&lt;/p&gt;
-&lt;p&gt;还有需要吐槽的就是不能完全按部就班的照着教程来操作，应该先看看像faq这些信息，做到有个整体上的把握，不至于拆了东墙补西墙，到最后也没能完全解决问题。&lt;/p&gt;
-&lt;p&gt;下面进行&lt;a href=&#34;http://www.cloudera.com/content/cloudera-content/cloudera-docs/CDH5/latest/CDH5-High-Availability-Guide/CDH5-High-Availability-Guide.html&#34;&gt;HA的环境搭建&lt;/a&gt;，这次一定要提高效率了！！！&lt;/p&gt;</description>
-    </item>
-    
-  </channel>
-</rss>
+&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>也有由root启动。&lt;/p>
+&lt;h2 id="3-总结">3. 总结&lt;/h2>
+&lt;p>这次搭建过程前前后后用了一个星期，麻烦是一回事，各种权限问题，最主要是还是我对hadoop的基本组成不够了解，hadoop的各个部分都是分开的，在share/hadoop目录下的每个文件夹都对应与一个功能，我一开始就想着把他们都放一起，导致不同模块的配置文件重复并产生冲突，最后导致进程起不来，今后还是要加强对基本概念的理解。其次是遇到错误多看看日志文件，很多错误能够直接根据错误信息就能够改正。&lt;/p>
+&lt;p>还有需要吐槽的就是不能完全按部就班的照着教程来操作，应该先看看像faq这些信息，做到有个整体上的把握，不至于拆了东墙补西墙，到最后也没能完全解决问题。&lt;/p>
+&lt;p>下面进行&lt;a href="http://www.cloudera.com/content/cloudera-content/cloudera-docs/CDH5/latest/CDH5-High-Availability-Guide/CDH5-High-Availability-Guide.html">HA的环境搭建&lt;/a>，这次一定要提高效率了！！！&lt;/p></description></item></channel></rss>

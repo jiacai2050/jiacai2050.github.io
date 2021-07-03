@@ -1,539 +1,495 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?>
-<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
-  <channel>
-    <title>Ruby on Keep Coding</title>
-    <link>https://liujiacai.net/tags/ruby/</link>
-    <description>Recent content in Ruby on Keep Coding</description>
-    <generator>Hugo -- gohugo.io</generator>
-    <language>zh-cn</language>
-    <lastBuildDate>Sun, 05 Mar 2017 00:00:00 +0000</lastBuildDate><atom:link href="https://liujiacai.net/tags/ruby/atom.xml" rel="self" type="application/rss+xml" />
-    <item>
-      <title>辨析 Ruby 中的 Method 与 Proc</title>
-      <link>https://liujiacai.net/blog/2017/03/05/method-vs-proc-in-ruby/</link>
-      <pubDate>Sun, 05 Mar 2017 00:00:00 +0000</pubDate>
-      
-      <guid>https://liujiacai.net/blog/2017/03/05/method-vs-proc-in-ruby/</guid>
-      <description>&lt;blockquote&gt;
-&lt;p&gt;Ruby is simple in appearance, but is very complex inside, just like our human body.&lt;/p&gt;
-&lt;blockquote&gt;
-&lt;p&gt;&amp;ndash; Matz  &lt;a href=&#34;https://www.ruby-lang.org/en/about&#34;&gt;https://www.ruby-lang.org/en/about&lt;/a&gt;&lt;/p&gt;
-&lt;/blockquote&gt;
-&lt;/blockquote&gt;
-&lt;p&gt;Ruby 与 Python、Scala 类似，在一切皆是对象（Seeing Everything as an Object）的基础上，支持函数式编程，这意味着函数是一等成员，可以作为参数传入，也可以作为函数值返回。&lt;/p&gt;
-&lt;p&gt;但是，Ruby 中的函数并没有其他动态语言中那么简单，它提供了 &lt;a href=&#34;http://ruby-doc.org/core-2.4.0/Method.html&#34;&gt;Method&lt;/a&gt; 与 &lt;a href=&#34;http://ruby-doc.org/core-2.4.0/Proc.html&#34;&gt;Proc&lt;/a&gt; 两个类来表示函数的概念，对于这两个类的区别无论是官方文档还是 Stackoverflow 上的问题，解释的都非常模糊。在其他语言函数很习以为常的用法在 Ruby 中却行不通，就其原因还是不清楚这两个类的区别，希望这篇文章能够帮助大家理解好 Ruby 中的“函数”概念，做到深入浅出，与其他函数式语言融会贯通。&lt;/p&gt;
-&lt;h2 id=&#34;block-oriented-programming&#34;&gt;Block-oriented Programming&lt;/h2&gt;
-&lt;p&gt;Ruby 中代码块最常见的形式既不是 Proc 也不是 Method，而是 &lt;code&gt;block&lt;/code&gt;。比如：&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
-&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt; 1
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 2
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 3
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 4
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 5
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 6
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 7
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 8
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 9
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;10
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;11
-&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
-&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;# 遍历 Range/Array 等
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Ruby on Keep Coding</title><link>https://liujiacai.net/tags/ruby/</link><description>Recent content in Ruby on Keep Coding</description><generator>Hugo -- gohugo.io</generator><language>zh-cn</language><lastBuildDate>Sun, 05 Mar 2017 00:00:00 +0000</lastBuildDate><atom:link href="https://liujiacai.net/tags/ruby/atom.xml" rel="self" type="application/rss+xml"/><item><title>辨析 Ruby 中的 Method 与 Proc</title><link>https://liujiacai.net/blog/2017/03/05/method-vs-proc-in-ruby/</link><pubDate>Sun, 05 Mar 2017 00:00:00 +0000</pubDate><guid>https://liujiacai.net/blog/2017/03/05/method-vs-proc-in-ruby/</guid><description>&lt;blockquote>
+&lt;p>Ruby is simple in appearance, but is very complex inside, just like our human body.&lt;/p>
+&lt;blockquote>
+&lt;p>&amp;ndash; Matz &lt;a href="https://www.ruby-lang.org/en/about">https://www.ruby-lang.org/en/about&lt;/a>&lt;/p>
+&lt;/blockquote>
+&lt;/blockquote>
+&lt;p>Ruby 与 Python、Scala 类似，在一切皆是对象（Seeing Everything as an Object）的基础上，支持函数式编程，这意味着函数是一等成员，可以作为参数传入，也可以作为函数值返回。&lt;/p>
+&lt;p>但是，Ruby 中的函数并没有其他动态语言中那么简单，它提供了 &lt;a href="http://ruby-doc.org/core-2.4.0/Method.html">Method&lt;/a> 与 &lt;a href="http://ruby-doc.org/core-2.4.0/Proc.html">Proc&lt;/a> 两个类来表示函数的概念，对于这两个类的区别无论是官方文档还是 Stackoverflow 上的问题，解释的都非常模糊。在其他语言函数很习以为常的用法在 Ruby 中却行不通，就其原因还是不清楚这两个类的区别，希望这篇文章能够帮助大家理解好 Ruby 中的“函数”概念，做到深入浅出，与其他函数式语言融会贯通。&lt;/p>
+&lt;h2 id="block-oriented-programming">Block-oriented Programming&lt;/h2>
+&lt;p>Ruby 中代码块最常见的形式既不是 Proc 也不是 Method，而是 &lt;code>block&lt;/code>。比如：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code class="language-fallback" data-lang="fallback"># 遍历 Range/Array 等
 (0..10).each do |num|
-    puts num
+puts num
 end
-
-#  读取文件
+# 读取文件
 File.foreach(&amp;#39;README.md&amp;#39;).with_index do |line, line_num|
-  puts &amp;#34;#{line_num}: #{line}&amp;#34;
+puts &amp;#34;#{line_num}: #{line}&amp;#34;
 end
-#  遍历文件
+# 遍历文件
 Dir.glob(&amp;#39;*.rb&amp;#39;) {|ruby_src| puts &amp;#34;found #{ruby_src}&amp;#34;}
-&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
-&lt;/div&gt;
-&lt;/div&gt;&lt;p&gt;上面示例演示了&lt;code&gt;block&lt;/code&gt;的两种字面量（literal）形式，非常方便简洁。但有一点需要注意，&lt;code&gt;block&lt;/code&gt; 仅仅是 Ruby 提供的一语法糖衣，并不把其赋值给某一变量。如果自定义函数需要调用传入的&lt;code&gt;block&lt;/code&gt;，需要采用&lt;code&gt;yield&lt;/code&gt;方式。&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
-&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt; 1
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 2
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 3
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 4
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 5
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 6
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 7
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 8
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 9
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;10
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;11
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;12
-&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
-&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;# 在 Array 类中添加自定义函数
+&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>上面示例演示了&lt;code>block&lt;/code>的两种字面量（literal）形式，非常方便简洁。但有一点需要注意，&lt;code>block&lt;/code> 仅仅是 Ruby 提供的一语法糖衣，并不把其赋值给某一变量。如果自定义函数需要调用传入的&lt;code>block&lt;/code>，需要采用&lt;code>yield&lt;/code>方式。&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code class="language-fallback" data-lang="fallback"># 在 Array 类中添加自定义函数
 class Array
-  def my_each
-    0.upto(size) do |i|
-      yield self[i]
-    end
-  end
+def my_each
+0.upto(size) do |i|
+yield self[i]
 end
-
+end
+end
 %w(a b c).my_each do |item|
-  puts item
+puts item
 end
-&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
-&lt;/div&gt;
-&lt;/div&gt;&lt;h2 id=&#34;面向函数式的-proc&#34;&gt;面向函数式的 Proc&lt;/h2&gt;
-&lt;p&gt;&lt;code&gt;block&lt;/code&gt; 的优势是简洁，但是有个缺点就是无法复用，因为并不存在&lt;code&gt;block&lt;/code&gt;类型。但在其他语言中，函数名可以随意传递，下面举一 Python 的例子：&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
-&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;4
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;5
-&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
-&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;def myinc(x):
-	return x + 1
-
+&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;h2 id="面向函数式的-proc">面向函数式的 Proc&lt;/h2>
+&lt;p>&lt;code>block&lt;/code> 的优势是简洁，但是有个缺点就是无法复用，因为并不存在&lt;code>block&lt;/code>类型。但在其他语言中，函数名可以随意传递，下面举一 Python 的例子：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code class="language-fallback" data-lang="fallback">def myinc(x):
+return x + 1
 map(myinc, [1,2,3]) # =&amp;gt; [2, 3, 4]
-map(myinc, [4,5,6])	# =&amp;gt; [5, 6, 7]
-&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
-&lt;/div&gt;
-&lt;/div&gt;&lt;p&gt;Ruby 中与其对应的是&lt;code&gt;过程&lt;/code&gt;（Proc），与上面功能等价的 Ruby 代码为：&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
-&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;4
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;5
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;6
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;7
-&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
-&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;myinc = Proc.new {|num| num + 1}
+map(myinc, [4,5,6]) # =&amp;gt; [5, 6, 7]
+&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>Ruby 中与其对应的是&lt;code>过程&lt;/code>（Proc），与上面功能等价的 Ruby 代码为：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;span class="lnt">6
+&lt;/span>&lt;span class="lnt">7
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code class="language-fallback" data-lang="fallback">myinc = Proc.new {|num| num + 1}
 # 或下面两种方式
 # myinc = proc {|num| num + 1}
 # myinc = lambda {|num| num + 1}
-
 [1,2,3].map(&amp;amp;myinc)
-
-&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
-&lt;/div&gt;
-&lt;/div&gt;&lt;p&gt;上面代码最关键的是&lt;code&gt;&amp;amp;myinc&lt;/code&gt;中的&lt;code&gt;&amp;amp;&lt;/code&gt;，由于 map 函数后面可以跟一个 block，所以需要把 Proc 转为 block。&lt;/p&gt;
-&lt;blockquote&gt;
-&lt;p&gt;当&lt;code&gt;&amp;amp;&lt;/code&gt;符号出现在函数参数列表中时，会把其后面的参数转为 Proc，并且把转化后的参数作为 block 传递给调用者。&lt;/p&gt;
-&lt;blockquote&gt;
-&lt;p&gt;&lt;a href=&#34;http://stackoverflow.com/a/9429972/2163429&#34;&gt;http://stackoverflow.com/a/9429972/2163429&lt;/a&gt;&lt;/p&gt;
-&lt;/blockquote&gt;
-&lt;/blockquote&gt;
-&lt;p&gt;我这里有个更好的理解大家可以参考：&lt;/p&gt;
-&lt;blockquote&gt;
-&lt;p&gt;&lt;code&gt;&amp;amp;&lt;/code&gt;在C语言中为取地址符，Ruby 中的函数参数后面可以跟一个 block，由于这个 block 不是参数的一部分，所以没有名字，这很理所当然可以把 block 理解为一内存地址，&lt;code&gt;block_given?&lt;/code&gt; 函数可以检查这个&lt;code&gt;block&lt;/code&gt;是否存在。&lt;code&gt;&amp;amp;myinc&lt;/code&gt; 可以理解为取 Proc 的地址传给 map 函数。&lt;/p&gt;
-&lt;/blockquote&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
-&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;4
-&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
-&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;[1,2,3].map(myinc)
+&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>上面代码最关键的是&lt;code>&amp;amp;myinc&lt;/code>中的&lt;code>&amp;amp;&lt;/code>，由于 map 函数后面可以跟一个 block，所以需要把 Proc 转为 block。&lt;/p>
+&lt;blockquote>
+&lt;p>当&lt;code>&amp;amp;&lt;/code>符号出现在函数参数列表中时，会把其后面的参数转为 Proc，并且把转化后的参数作为 block 传递给调用者。&lt;/p>
+&lt;blockquote>
+&lt;p>&lt;a href="http://stackoverflow.com/a/9429972/2163429">http://stackoverflow.com/a/9429972/2163429&lt;/a>&lt;/p>
+&lt;/blockquote>
+&lt;/blockquote>
+&lt;p>我这里有个更好的理解大家可以参考：&lt;/p>
+&lt;blockquote>
+&lt;p>&lt;code>&amp;amp;&lt;/code>在C语言中为取地址符，Ruby 中的函数参数后面可以跟一个 block，由于这个 block 不是参数的一部分，所以没有名字，这很理所当然可以把 block 理解为一内存地址，&lt;code>block_given?&lt;/code> 函数可以检查这个&lt;code>block&lt;/code>是否存在。&lt;code>&amp;amp;myinc&lt;/code> 可以理解为取 Proc 的地址传给 map 函数。&lt;/p>
+&lt;/blockquote>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code class="language-fallback" data-lang="fallback">[1,2,3].map(myinc)
 # 这种写法会报下面的错误
 # in `map&amp;#39;: wrong number of arguments (given 1, expected 0) (ArgumentError)
-
-&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
-&lt;/div&gt;
-&lt;/div&gt;&lt;p&gt;所以，Ruby 中的 Proc 和其他动态语言的函数是等价的，下面再举一例说明&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
-&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt; 1
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 2
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 3
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 4
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 5
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 6
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 7
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 8
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 9
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;10
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;11
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;12
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;13
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;14
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;15
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;16
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;17
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;18
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;19
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;20
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;21
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;22
-&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
-&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;def myfilter(arr, validator)
-  arr.each do |item|
-    if validator.call(item)
-      puts item
-    end
-  end
+&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>所以，Ruby 中的 Proc 和其他动态语言的函数是等价的，下面再举一例说明&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;span class="lnt">16
+&lt;/span>&lt;span class="lnt">17
+&lt;/span>&lt;span class="lnt">18
+&lt;/span>&lt;span class="lnt">19
+&lt;/span>&lt;span class="lnt">20
+&lt;/span>&lt;span class="lnt">21
+&lt;/span>&lt;span class="lnt">22
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code class="language-fallback" data-lang="fallback">def myfilter(arr, validator)
+arr.each do |item|
+if validator.call(item)
+puts item
 end
-
-myfilter([1,2,3,4], lambda {|num| num &amp;gt; 3})  # 输出 4
-
+end
+end
+myfilter([1,2,3,4], lambda {|num| num &amp;gt; 3}) # 输出 4
 # 此外， 还可以在定义 myfilter 时，利用 &amp;amp; 将最后的 block 转为 Proc
-
 def myfilter(arr, &amp;amp;validator)
-  arr.each do |item|
-    if validator.call(item)
-      puts item
-    end
-  end
+arr.each do |item|
+if validator.call(item)
+puts item
 end
-
+end
+end
 myfilter([1,2,3,4]) {|num| num &amp;gt; 3}
 # 输出 4
-&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
-&lt;/div&gt;
-&lt;/div&gt;&lt;h3 id=&#34;proc-vs-lambda&#34;&gt;proc vs. lambda&lt;/h3&gt;
-&lt;p&gt;上面介绍过，Proc 有两种字面量形式：&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
-&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
-&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
-&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;myinc = proc {|num| num + 1}   # 与 Proc.new 等价
+&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;h3 id="proc-vs-lambda">proc vs. lambda&lt;/h3>
+&lt;p>上面介绍过，Proc 有两种字面量形式：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code class="language-fallback" data-lang="fallback">myinc = proc {|num| num + 1} # 与 Proc.new 等价
 myinc = lambda {|num| num + 1}
-&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
-&lt;/div&gt;
-&lt;/div&gt;&lt;p&gt;这两种形式的 Proc 有以下两点不同：&lt;/p&gt;
-&lt;ol&gt;
-&lt;li&gt;
-&lt;p&gt;&lt;code&gt;proc&lt;/code&gt;形式不限制参数个数；而&lt;code&gt;lambda&lt;/code&gt;形式严格要求一致&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
-&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt; 1
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 2
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 3
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 4
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 5
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 6
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 7
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 8
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 9
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;10
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;11
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;12
-&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
-&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;myadd = proc {|x, y| puts x}
-
-myadd.call(1)        # ok
-myadd.call(1, 2)     # ok
-myadd.call(1, 2, 3)  # ok
-
-
+&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>这两种形式的 Proc 有以下两点不同：&lt;/p>
+&lt;ol>
+&lt;li>
+&lt;p>&lt;code>proc&lt;/code>形式不限制参数个数；而&lt;code>lambda&lt;/code>形式严格要求一致&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code class="language-fallback" data-lang="fallback">myadd = proc {|x, y| puts x}
+myadd.call(1) # ok
+myadd.call(1, 2) # ok
+myadd.call(1, 2, 3) # ok
 myadd = lambda {|x, y| puts x}
-
-myadd.call(1)        # ArgumentError
-myadd.call(1, 2)     # ok
-myadd.call(1, 2, 3)  #ArgumentError
-&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
-&lt;/div&gt;
-&lt;/div&gt;&lt;/li&gt;
-&lt;li&gt;
-&lt;p&gt;&lt;code&gt;proc&lt;/code&gt;中的&lt;code&gt;return&lt;/code&gt;语句对调用方有效；而&lt;code&gt;lambda&lt;/code&gt;仅仅对其本身起作用&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
-&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt; 1
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 2
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 3
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 4
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 5
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 6
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 7
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 8
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 9
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;10
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;11
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;12
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;13
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;14
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;15
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;16
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;17
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;18
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;19
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;20
-&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
-&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;def foo(some_proc)
-  some_proc.call
-  puts &amp;#34;foo over&amp;#34;
+myadd.call(1) # ArgumentError
+myadd.call(1, 2) # ok
+myadd.call(1, 2, 3) #ArgumentError
+&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;/li>
+&lt;li>
+&lt;p>&lt;code>proc&lt;/code>中的&lt;code>return&lt;/code>语句对调用方有效；而&lt;code>lambda&lt;/code>仅仅对其本身起作用&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;span class="lnt">16
+&lt;/span>&lt;span class="lnt">17
+&lt;/span>&lt;span class="lnt">18
+&lt;/span>&lt;span class="lnt">19
+&lt;/span>&lt;span class="lnt">20
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code class="language-fallback" data-lang="fallback">def foo(some_proc)
+some_proc.call
+puts &amp;#34;foo over&amp;#34;
 end
-
 # 1. 正常输出 in lambda、foo over
 foo(lambda do
-  puts &amp;#34;in lambda&amp;#34;
-  return
+puts &amp;#34;in lambda&amp;#34;
+return
 end)
-# 2. 输出 in new 后报  unexpected return (LocalJumpError)
+# 2. 输出 in new 后报 unexpected return (LocalJumpError)
 foo(Proc.new do
-  puts &amp;#34;in new&amp;#34;
-  return
+puts &amp;#34;in new&amp;#34;
+return
 end)
-# 3. 输出 in proc 后报  unexpected return (LocalJumpError)
+# 3. 输出 in proc 后报 unexpected return (LocalJumpError)
 foo(proc do
-  puts &amp;#34;in proc&amp;#34;
-  return
+puts &amp;#34;in proc&amp;#34;
+return
 end)
-&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
-&lt;/div&gt;
-&lt;/div&gt;&lt;/li&gt;
-&lt;/ol&gt;
-&lt;h2 id=&#34;面向对象的-method&#34;&gt;面向对象的 Method&lt;/h2&gt;
-&lt;p&gt;Ruby 中使用&lt;code&gt;def&lt;/code&gt;定义的“函数”为&lt;code&gt;Method&lt;/code&gt;类型，专为面向对象特性设计，面向对象更一般的说法是消息传递，通过给一对象发送不同消息，对象作出不同相应，这一点与 &lt;a href=&#34;https://liujiacai.net/blog/2015/12/26/sicp-chapter3-summary/#%E7%94%A8%E5%8F%98%E5%8A%A8%E7%9A%84%E6%95%B0%E6%8D%AE%E5%81%9A%E6%A8%A1%E6%8B%9F&#34;&gt;SICP 第三章&lt;/a&gt;的内容不谋而合。&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
-&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt; 1
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 2
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 3
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 4
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 5
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 6
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 7
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 8
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 9
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;10
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;11
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;12
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;13
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;14
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;15
-&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
-&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;class Rectangle
-  def initialize(width, height)
-    @width = width
-    @height = height
-  end
-  def area
-    @width * @height
-  end
+&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;/li>
+&lt;/ol>
+&lt;h2 id="面向对象的-method">面向对象的 Method&lt;/h2>
+&lt;p>Ruby 中使用&lt;code>def&lt;/code>定义的“函数”为&lt;code>Method&lt;/code>类型，专为面向对象特性设计，面向对象更一般的说法是消息传递，通过给一对象发送不同消息，对象作出不同相应，这一点与 &lt;a href="https://liujiacai.net/blog/2015/12/26/sicp-chapter3-summary/#%E7%94%A8%E5%8F%98%E5%8A%A8%E7%9A%84%E6%95%B0%E6%8D%AE%E5%81%9A%E6%A8%A1%E6%8B%9F">SICP 第三章&lt;/a>的内容不谋而合。&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code class="language-fallback" data-lang="fallback">class Rectangle
+def initialize(width, height)
+@width = width
+@height = height
 end
-
+def area
+@width * @height
+end
+end
 rect = Rectangle.new 10, 20
 # 传统方式
 puts rect.area
 # 消息传递方式
 puts rect.send :area
-&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
-&lt;/div&gt;
-&lt;/div&gt;&lt;p&gt;由于 Ruby 中方法名表示的是调用，所以一般可用与方法同名的 &lt;a href=&#34;http://ruby-doc.org/core-2.4.0/Symbol.html&#34;&gt;Symbol&lt;/a&gt; 来表示。&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
-&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
-&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
-&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;puts rect.method(:area)
-
-#&amp;lt;Method: Rectangle#area&amp;gt;    
-&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
-&lt;/div&gt;
-&lt;/div&gt;&lt;p&gt;可以通过 &lt;code&gt;Method&lt;/code&gt; 的 &lt;code&gt;to_proc&lt;/code&gt; 方法可以将 Method 转为功能等价的 Proc。比如：&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
-&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;4
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;5
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;6
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;7
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;8
-&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
-&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;def myinc(num)
-  num + 1
+&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>由于 Ruby 中方法名表示的是调用，所以一般可用与方法同名的 &lt;a href="http://ruby-doc.org/core-2.4.0/Symbol.html">Symbol&lt;/a> 来表示。&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code class="language-fallback" data-lang="fallback">puts rect.method(:area)
+#&amp;lt;Method: Rectangle#area&amp;gt;
+&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>可以通过 &lt;code>Method&lt;/code> 的 &lt;code>to_proc&lt;/code> 方法可以将 Method 转为功能等价的 Proc。比如：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;span class="lnt">6
+&lt;/span>&lt;span class="lnt">7
+&lt;/span>&lt;span class="lnt">8
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code class="language-fallback" data-lang="fallback">def myinc(num)
+num + 1
 end
-
 [1,2,3].map(&amp;amp;method(:myinc).to_proc)
 # =&amp;gt; [2,3,4]
 # 在 Ruby 源文件的顶层定义的函数属于 main 对象（Object 类），所以上面的调用相当于：
 # [1,2,3].map(&amp;amp;Object.method(:myinc))
-&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
-&lt;/div&gt;
-&lt;/div&gt;&lt;p&gt;通过 &lt;code&gt;define_method&lt;/code&gt; 可以将 Proc 转为某对象的实例方法&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
-&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;4
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;5
-&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
-&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;class Foo
-  define_method :pp { puts &amp;#34;p&amp;#34; }
+&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>通过 &lt;code>define_method&lt;/code> 可以将 Proc 转为某对象的实例方法&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code class="language-fallback" data-lang="fallback">class Foo
+define_method :pp { puts &amp;#34;p&amp;#34; }
 end
 Foo.new.pp
 =&amp;gt; p
-&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
-&lt;/div&gt;
-&lt;/div&gt;&lt;h2 id=&#34;总结&#34;&gt;总结&lt;/h2&gt;
-&lt;ul&gt;
-&lt;li&gt;&lt;code&gt;block&lt;/code&gt; 为 Proc 的语法糖衣，用于单次使用时&lt;/li&gt;
-&lt;li&gt;&lt;code&gt;Proc&lt;/code&gt; 专为函数式编程设计，与其他动态语言的函数等价&lt;/li&gt;
-&lt;li&gt;&lt;code&gt;Method&lt;/code&gt; 专为面向对象设计，消息传递的第一个参数&lt;/li&gt;
-&lt;/ul&gt;
-&lt;p&gt;弄清 Method 与 Proc 的区别后，不得不欣赏 Ruby 语言设计的巧妙，兼具函数式与面向对象的精髓。实在是程序员必备利器。&lt;/p&gt;
-&lt;h2 id=&#34;参考&#34;&gt;参考&lt;/h2&gt;
-&lt;ul&gt;
-&lt;li&gt;&lt;a href=&#34;https://en.wikibooks.org/wiki/Ruby_Programming/Syntax/Method_Calls&#34;&gt;https://en.wikibooks.org/wiki/Ruby_Programming/Syntax/Method_Calls&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
-</description>
-    </item>
-    
-    <item>
-      <title>python, ruby, javascript 浅析</title>
-      <link>https://liujiacai.net/blog/2016/03/26/python-ruby-javascript/</link>
-      <pubDate>Sat, 26 Mar 2016 00:00:00 +0000</pubDate>
-      
-      <guid>https://liujiacai.net/blog/2016/03/26/python-ruby-javascript/</guid>
-      <description>&lt;p&gt;最近一直在看红宝石（ruby）语言，到现在为止，算是对其设计有一些了解。作为一动态语言，ruby 经常会拿来与 python 对比，确实这两门语言在语法层面、实现层面有很多共同的地方，但是它们也在很多设计理念上存在重要差异，通过对比这些相同点、异同点，更加有助于理解这两门语言。同时，Node.js、React Native 的出现，将 javascript 这门“前端”语言推向了全栈，同样作为一门动态语言，javascript 与 ruby、python 在很多概念上也存在很多相同点、异同点。&lt;/p&gt;
-&lt;p&gt;本篇文章着重从编程语言设计的角度进行阐述，希望对编程语言爱好者理解这三门语言有所帮助，做到融会贯通。&lt;/p&gt;
-&lt;center&gt;
-&lt;img src=&#34;https://img.alicdn.com/imgextra/i4/581166664/TB2kVcxcByN.eBjSZFgXXXmGXXa_!!581166664.png&#34; alt=&#34; js_python_ruby&#34;/&gt;
-&lt;/center&gt;
-&lt;h2 id=&#34;讨论范围&#34;&gt;讨论范围&lt;/h2&gt;
-&lt;p&gt;Python、Ruby、Javascript(ECMAScript) 准确说是一种语言规范，规范可以有多种实现，这体现在不同的解释器上。&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;Python 的解释器主要有 CPython、IronPython、Jython、PyPy&lt;/li&gt;
-&lt;li&gt;Ruby 的解释器主要有 Ruby MRI(CRuby)、JRuby、MacRuby、IronRuby&lt;/li&gt;
-&lt;li&gt;Javascript 的解释器主要有 Chakra, SpiderMonkey, V8&lt;/li&gt;
-&lt;/ul&gt;
-&lt;p&gt;本文主要讨论的是 CPython、CRuby，它们是其语言作者亲自设计的，也是应用场景最广的。
-Javascript 在语言设计之初根本没考虑到其应用范围会如此之广，所以相比其他语言，它语言内置的功能要弱很多，&lt;a href=&#34;http://es6-features.org/&#34;&gt;ES6&lt;/a&gt; 的出现就是为了解决这个问题，本文所涉及的 javascript 运行在基于 V8 引擎的 Node.js 中，且具备 ES6 语法。&lt;/p&gt;
-&lt;h2 id=&#34;语言定义&#34;&gt;语言定义&lt;/h2&gt;
-&lt;p&gt;首先看一下 wikipedia 上对这三门语言的定义：&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;Python is a widely used &lt;code&gt;high-level&lt;/code&gt;, &lt;code&gt;general-purpose&lt;/code&gt;, &lt;code&gt;interpreted&lt;/code&gt;, &lt;code&gt;dynamic&lt;/code&gt; programming language&lt;/li&gt;
-&lt;li&gt;Ruby is a &lt;code&gt;dynamic&lt;/code&gt;, &lt;code&gt;reflective&lt;/code&gt;, &lt;code&gt;object-oriented&lt;/code&gt;, &lt;code&gt;general-purpose&lt;/code&gt; programming language.&lt;/li&gt;
-&lt;li&gt;JavaScript is a &lt;code&gt;high-level&lt;/code&gt;, &lt;code&gt;dynamic&lt;/code&gt;, &lt;code&gt;untyped&lt;/code&gt;, and &lt;code&gt;interpreted&lt;/code&gt; programming language.&lt;/li&gt;
-&lt;/ul&gt;
-&lt;p&gt;其实上面标红的关键字对于这三门语言来说都适用，只是每个语言的强调点不一样而已。&lt;/p&gt;
-&lt;p&gt;通常会称这三门语言为&lt;code&gt;动态语言&lt;/code&gt;，支持&lt;code&gt;函数式&lt;/code&gt;、&lt;code&gt;面向对象&lt;/code&gt;两种编程范式，这两点其实是最重要的。&lt;/p&gt;
-&lt;h2 id=&#34;设计理念&#34;&gt;设计理念&lt;/h2&gt;
-&lt;p&gt;&lt;code&gt;既轻量又强大&lt;/code&gt;是大多数动态语言相通的设计理念，关于 javascript 设计理念更多的介绍可以参考我的&lt;a href=&#34;http://liujiacai.net/blog/2015/02/01/javascript-oop/#%E8%AE%BE%E8%AE%A1%E7%90%86%E5%BF%B5&#34;&gt;这篇文章介绍&lt;/a&gt;。至于 Python 与 Ruby 设计理念的区别，一句话即可概括：&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;Python: 一件事情只有一种方法做&lt;/li&gt;
-&lt;li&gt;Ruby: 一件事情有多种方法做&lt;/li&gt;
-&lt;/ul&gt;
-&lt;p&gt;比如，Python 中 Tuple, Array, String 没有相应获取大小的方法，而是提供了统一的&lt;code&gt;len&lt;/code&gt;来解决这个问题&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
-&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;4
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;5
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;6
-&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
-&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;&amp;gt;&amp;gt;&amp;gt; len([1,2])
+&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;h2 id="总结">总结&lt;/h2>
+&lt;ul>
+&lt;li>&lt;code>block&lt;/code> 为 Proc 的语法糖衣，用于单次使用时&lt;/li>
+&lt;li>&lt;code>Proc&lt;/code> 专为函数式编程设计，与其他动态语言的函数等价&lt;/li>
+&lt;li>&lt;code>Method&lt;/code> 专为面向对象设计，消息传递的第一个参数&lt;/li>
+&lt;/ul>
+&lt;p>弄清 Method 与 Proc 的区别后，不得不欣赏 Ruby 语言设计的巧妙，兼具函数式与面向对象的精髓。实在是程序员必备利器。&lt;/p>
+&lt;h2 id="参考">参考&lt;/h2>
+&lt;ul>
+&lt;li>&lt;a href="https://en.wikibooks.org/wiki/Ruby_Programming/Syntax/Method_Calls">https://en.wikibooks.org/wiki/Ruby_Programming/Syntax/Method_Calls&lt;/a>&lt;/li>
+&lt;/ul></description></item><item><title>python, ruby, javascript 浅析</title><link>https://liujiacai.net/blog/2016/03/26/python-ruby-javascript/</link><pubDate>Sat, 26 Mar 2016 00:00:00 +0000</pubDate><guid>https://liujiacai.net/blog/2016/03/26/python-ruby-javascript/</guid><description>&lt;p>最近一直在看红宝石（ruby）语言，到现在为止，算是对其设计有一些了解。作为一动态语言，ruby 经常会拿来与 python 对比，确实这两门语言在语法层面、实现层面有很多共同的地方，但是它们也在很多设计理念上存在重要差异，通过对比这些相同点、异同点，更加有助于理解这两门语言。同时，Node.js、React Native 的出现，将 javascript 这门“前端”语言推向了全栈，同样作为一门动态语言，javascript 与 ruby、python 在很多概念上也存在很多相同点、异同点。&lt;/p>
+&lt;p>本篇文章着重从编程语言设计的角度进行阐述，希望对编程语言爱好者理解这三门语言有所帮助，做到融会贯通。&lt;/p>
+&lt;center>
+&lt;img src="https://img.alicdn.com/imgextra/i4/581166664/TB2kVcxcByN.eBjSZFgXXXmGXXa_!!581166664.png" alt=" js_python_ruby"/>
+&lt;/center>
+&lt;h2 id="讨论范围">讨论范围&lt;/h2>
+&lt;p>Python、Ruby、Javascript(ECMAScript) 准确说是一种语言规范，规范可以有多种实现，这体现在不同的解释器上。&lt;/p>
+&lt;ul>
+&lt;li>Python 的解释器主要有 CPython、IronPython、Jython、PyPy&lt;/li>
+&lt;li>Ruby 的解释器主要有 Ruby MRI(CRuby)、JRuby、MacRuby、IronRuby&lt;/li>
+&lt;li>Javascript 的解释器主要有 Chakra, SpiderMonkey, V8&lt;/li>
+&lt;/ul>
+&lt;p>本文主要讨论的是 CPython、CRuby，它们是其语言作者亲自设计的，也是应用场景最广的。
+Javascript 在语言设计之初根本没考虑到其应用范围会如此之广，所以相比其他语言，它语言内置的功能要弱很多，&lt;a href="http://es6-features.org/">ES6&lt;/a> 的出现就是为了解决这个问题，本文所涉及的 javascript 运行在基于 V8 引擎的 Node.js 中，且具备 ES6 语法。&lt;/p>
+&lt;h2 id="语言定义">语言定义&lt;/h2>
+&lt;p>首先看一下 wikipedia 上对这三门语言的定义：&lt;/p>
+&lt;ul>
+&lt;li>Python is a widely used &lt;code>high-level&lt;/code>, &lt;code>general-purpose&lt;/code>, &lt;code>interpreted&lt;/code>, &lt;code>dynamic&lt;/code> programming language&lt;/li>
+&lt;li>Ruby is a &lt;code>dynamic&lt;/code>, &lt;code>reflective&lt;/code>, &lt;code>object-oriented&lt;/code>, &lt;code>general-purpose&lt;/code> programming language.&lt;/li>
+&lt;li>JavaScript is a &lt;code>high-level&lt;/code>, &lt;code>dynamic&lt;/code>, &lt;code>untyped&lt;/code>, and &lt;code>interpreted&lt;/code> programming language.&lt;/li>
+&lt;/ul>
+&lt;p>其实上面标红的关键字对于这三门语言来说都适用，只是每个语言的强调点不一样而已。&lt;/p>
+&lt;p>通常会称这三门语言为&lt;code>动态语言&lt;/code>，支持&lt;code>函数式&lt;/code>、&lt;code>面向对象&lt;/code>两种编程范式，这两点其实是最重要的。&lt;/p>
+&lt;h2 id="设计理念">设计理念&lt;/h2>
+&lt;p>&lt;code>既轻量又强大&lt;/code>是大多数动态语言相通的设计理念，关于 javascript 设计理念更多的介绍可以参考我的&lt;a href="http://liujiacai.net/blog/2015/02/01/javascript-oop/#%E8%AE%BE%E8%AE%A1%E7%90%86%E5%BF%B5">这篇文章介绍&lt;/a>。至于 Python 与 Ruby 设计理念的区别，一句话即可概括：&lt;/p>
+&lt;ul>
+&lt;li>Python: 一件事情只有一种方法做&lt;/li>
+&lt;li>Ruby: 一件事情有多种方法做&lt;/li>
+&lt;/ul>
+&lt;p>比如，Python 中 Tuple, Array, String 没有相应获取大小的方法，而是提供了统一的&lt;code>len&lt;/code>来解决这个问题&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;span class="lnt">6
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code class="language-fallback" data-lang="fallback">&amp;gt;&amp;gt;&amp;gt; len([1,2])
 2
 &amp;gt;&amp;gt;&amp;gt; len(&amp;#34;hello world&amp;#34;)
 11
 &amp;gt;&amp;gt;&amp;gt; len((1,2))
 2
-&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
-&lt;/div&gt;
-&lt;/div&gt;&lt;p&gt;至于 Ruby 的&lt;code&gt;一件事情有多种方法做&lt;/code&gt;的理念，后面我在讲解 lambda 与字符串拼接时再介绍。&lt;/p&gt;
-&lt;h2 id=&#34;语法&#34;&gt;语法&lt;/h2&gt;
-&lt;p&gt;如果你之前没接触过 ruby、python 的语法，推荐先去了解下：&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;官方文档 &lt;a href=&#34;https://www.ruby-lang.org/en/documentation/quickstart/&#34;&gt;Ruby in Twenty Minutes&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;http://www.techotopia.com/index.php/Ruby_Essentials&#34;&gt;Ruby Essentials&lt;/a&gt;，两个小时绝对看完了&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;http://python-best-practice.liujiacai.net&#34;&gt;python 最佳实践&lt;/a&gt;，应该用不了半个小时&lt;/li&gt;
-&lt;/ul&gt;
-&lt;p&gt;javascript 实在是太简单了，就不用特别看了。&lt;/p&gt;
-&lt;p&gt;综合来说，python、javascript 还是比较中规中矩的，即使 ES6 里面加了&lt;a href=&#34;https://github.com/lukehoban/es6features&#34;&gt;很多花哨的语法糖衣&lt;/a&gt;，但是也比较直观，但是 ruby 这个语言就比较变态了，各种符号，像&lt;code&gt;class Son &amp;lt; Father&lt;/code&gt;表示类的基础，&lt;code&gt;&amp;quot;hello&amp;quot; &amp;lt;&amp;lt; &amp;quot; world&amp;quot;&lt;/code&gt;表示字符串的拼接，&lt;code&gt;@var&lt;/code&gt;表示对象的成员变量，&lt;code&gt;@@var&lt;/code&gt;表示类的成员变量，&lt;code&gt;$var&lt;/code&gt;表示全局变量。&lt;/p&gt;
-&lt;p&gt;而且在 ruby 中，方法调用时的括号可有可无，即使有参数也可以省略：&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
-&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;4
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;5
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;6
-&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
-&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;&amp;gt; def add(a, b)
-&amp;gt;     a + b
+&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>至于 Ruby 的&lt;code>一件事情有多种方法做&lt;/code>的理念，后面我在讲解 lambda 与字符串拼接时再介绍。&lt;/p>
+&lt;h2 id="语法">语法&lt;/h2>
+&lt;p>如果你之前没接触过 ruby、python 的语法，推荐先去了解下：&lt;/p>
+&lt;ul>
+&lt;li>官方文档 &lt;a href="https://www.ruby-lang.org/en/documentation/quickstart/">Ruby in Twenty Minutes&lt;/a>&lt;/li>
+&lt;li>&lt;a href="http://www.techotopia.com/index.php/Ruby_Essentials">Ruby Essentials&lt;/a>，两个小时绝对看完了&lt;/li>
+&lt;li>&lt;a href="http://python-best-practice.liujiacai.net">python 最佳实践&lt;/a>，应该用不了半个小时&lt;/li>
+&lt;/ul>
+&lt;p>javascript 实在是太简单了，就不用特别看了。&lt;/p>
+&lt;p>综合来说，python、javascript 还是比较中规中矩的，即使 ES6 里面加了&lt;a href="https://github.com/lukehoban/es6features">很多花哨的语法糖衣&lt;/a>，但是也比较直观，但是 ruby 这个语言就比较变态了，各种符号，像&lt;code>class Son &amp;lt; Father&lt;/code>表示类的基础，&lt;code>&amp;quot;hello&amp;quot; &amp;lt;&amp;lt; &amp;quot; world&amp;quot;&lt;/code>表示字符串的拼接，&lt;code>@var&lt;/code>表示对象的成员变量，&lt;code>@@var&lt;/code>表示类的成员变量，&lt;code>$var&lt;/code>表示全局变量。&lt;/p>
+&lt;p>而且在 ruby 中，方法调用时的括号可有可无，即使有参数也可以省略：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;span class="lnt">6
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code class="language-fallback" data-lang="fallback">&amp;gt; def add(a, b)
+&amp;gt; a + b
 &amp;gt; end
 &amp;gt;
 &amp;gt; add 1, 2
 =&amp;gt; 3
-&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
-&lt;/div&gt;
-&lt;/div&gt;&lt;p&gt;如果你对 Scheme 熟悉，上面的代码还能像下面这么写，是不是很亲切&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
-&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;4
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;5
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;6
-&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
-&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;&amp;gt; (def add a, b
-&amp;gt;     a + b
+&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>如果你对 Scheme 熟悉，上面的代码还能像下面这么写，是不是很亲切&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;span class="lnt">6
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code class="language-fallback" data-lang="fallback">&amp;gt; (def add a, b
+&amp;gt; a + b
 &amp;gt; end)
-
 &amp;gt; (add 1, 2)
 =&amp;gt; 3
-&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
-&lt;/div&gt;
-&lt;/div&gt;&lt;p&gt;这也就是充分说明，括号在 ruby 中只是起到了“分割”的作用，并没有什么语法含义。&lt;/p&gt;
-&lt;h3 id=&#34;面向对象&#34;&gt;面向对象&lt;/h3&gt;
-&lt;p&gt;面向对象主要的核心是用&lt;code&gt;对象&lt;/code&gt;来达到数据封装的目的。&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;javascript 基于原型链实现面向对象，更详细的介绍可以参考&lt;a href=&#34;http://liujiacai.net/blog/2015/02/01/javascript-oop/&#34;&gt;《javascript中的面向对象编程》&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;python、ruby 基于类来实现面向对象，和 java 类似，但是更纯粹些。&lt;/li&gt;
-&lt;/ul&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
-&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt; 1
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 2
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 3
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 4
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 5
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 6
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 7
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 8
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 9
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;10
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;11
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;12
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;13
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;14
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;15
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;16
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;17
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;18
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;19
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;20
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;21
-&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
-&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;$ python
+&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>这也就是充分说明，括号在 ruby 中只是起到了“分割”的作用，并没有什么语法含义。&lt;/p>
+&lt;h3 id="面向对象">面向对象&lt;/h3>
+&lt;p>面向对象主要的核心是用&lt;code>对象&lt;/code>来达到数据封装的目的。&lt;/p>
+&lt;ul>
+&lt;li>javascript 基于原型链实现面向对象，更详细的介绍可以参考&lt;a href="http://liujiacai.net/blog/2015/02/01/javascript-oop/">《javascript中的面向对象编程》&lt;/a>&lt;/li>
+&lt;li>python、ruby 基于类来实现面向对象，和 java 类似，但是更纯粹些。&lt;/li>
+&lt;/ul>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;span class="lnt">16
+&lt;/span>&lt;span class="lnt">17
+&lt;/span>&lt;span class="lnt">18
+&lt;/span>&lt;span class="lnt">19
+&lt;/span>&lt;span class="lnt">20
+&lt;/span>&lt;span class="lnt">21
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code class="language-fallback" data-lang="fallback">$ python
 &amp;gt;&amp;gt;&amp;gt; def func(): return 1
 &amp;gt;&amp;gt;&amp;gt; type(func)
 &amp;lt;type &amp;#39;function&amp;#39;&amp;gt;
@@ -547,34 +503,34 @@ Javascript 在语言设计之初根本没考虑到其应用范围会如此之广
 #--------------------------------------------------#
 $ irb
 &amp;gt; def add(a, b)
-&amp;gt;    a + b
+&amp;gt; a + b
 &amp;gt; end
 &amp;gt; method(:add)
 =&amp;gt; #&amp;lt;Method: Object#add&amp;gt;
 # 上面 ruby 的例子中，使用了 Symbol 来表示 add 方法，这是由于 ruby 中直接写 add 表示函数调用
 &amp;gt; 1.methods
 =&amp;gt; [:%, :&amp;amp;, :*, :+, :-, :/, .....]
-&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
-&lt;/div&gt;
-&lt;/div&gt;&lt;p&gt;可以看到，在 python、ruby 中，像&lt;code&gt;1&lt;/code&gt;这样的数字字面量也是对象。&lt;/p&gt;
-&lt;h3 id=&#34;lambda-表达式&#34;&gt;lambda 表达式&lt;/h3&gt;
-&lt;p&gt;lambda 表达式表示的是匿名函数。由于在这三门语言中，函数均是一等成员，所以可以很方便的进行函数式编程&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
-&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt; 1
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 2
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 3
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 4
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 5
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 6
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 7
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 8
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 9
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;10
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;11
-&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
-&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;$ node
+&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>可以看到，在 python、ruby 中，像&lt;code>1&lt;/code>这样的数字字面量也是对象。&lt;/p>
+&lt;h3 id="lambda-表达式">lambda 表达式&lt;/h3>
+&lt;p>lambda 表达式表示的是匿名函数。由于在这三门语言中，函数均是一等成员，所以可以很方便的进行函数式编程&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code class="language-fallback" data-lang="fallback">$ node
 &amp;gt; [1,2,3].map((x) =&amp;gt; x + 1)
 [ 2, 3, 4 ]
 #--------------------------------------------------#
@@ -584,319 +540,309 @@ $ python
 #--------------------------------------------------#
 $ irb
 &amp;gt; [1,2,3].map &amp;amp;(lambda {|x| x+1})
- =&amp;gt; [2, 3, 4]
-&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
-&lt;/div&gt;
-&lt;/div&gt;&lt;p&gt;Python 的 lambda 表达式是这三者中最弱的一个，只能包含一个表达式，javascript 与 ruby 的则没有这种限制。&lt;/p&gt;
-&lt;p&gt;细心的读者会发现上面 ruby 版本的 lambda 前有个&lt;code&gt;&amp;amp;&lt;/code&gt;，这是必须的，否则会报下面的错误&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
-&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
-&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
-&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;ArgumentError: wrong number of arguments (given 1, expected 0)
-&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
-&lt;/div&gt;
-&lt;/div&gt;&lt;p&gt;这是因为在 ruby 中，方法除了接受参数外，还可以接受一个代码块(block)，代码块在 ruby 中有两种写法：&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;一行的话用&lt;code&gt;{}&lt;/code&gt;&lt;/li&gt;
-&lt;li&gt;多行的话用&lt;code&gt;do ... end&lt;/code&gt;&lt;/li&gt;
-&lt;/ul&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
-&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;4
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;5
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;6
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;7
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;8
-&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
-&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;&amp;gt; [1,2,3].each { |num| print &amp;#34;#{num}! &amp;#34; }
+=&amp;gt; [2, 3, 4]
+&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>Python 的 lambda 表达式是这三者中最弱的一个，只能包含一个表达式，javascript 与 ruby 的则没有这种限制。&lt;/p>
+&lt;p>细心的读者会发现上面 ruby 版本的 lambda 前有个&lt;code>&amp;amp;&lt;/code>，这是必须的，否则会报下面的错误&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code class="language-fallback" data-lang="fallback">ArgumentError: wrong number of arguments (given 1, expected 0)
+&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>这是因为在 ruby 中，方法除了接受参数外，还可以接受一个代码块(block)，代码块在 ruby 中有两种写法：&lt;/p>
+&lt;ul>
+&lt;li>一行的话用&lt;code>{}&lt;/code>&lt;/li>
+&lt;li>多行的话用&lt;code>do ... end&lt;/code>&lt;/li>
+&lt;/ul>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;span class="lnt">6
+&lt;/span>&lt;span class="lnt">7
+&lt;/span>&lt;span class="lnt">8
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code class="language-fallback" data-lang="fallback">&amp;gt; [1,2,3].each { |num| print &amp;#34;#{num}! &amp;#34; }
 1! 2! 3!
 =&amp;gt;[1,2,3]
 &amp;gt; [1,2,3].each do |num|
-&amp;gt;    print &amp;#34;#{num}!&amp;#34;
+&amp;gt; print &amp;#34;#{num}!&amp;#34;
 &amp;gt; end
 1! 2! 3!
- =&amp;gt;[1,2,3]         # Identical to the first case.
-&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
-&lt;/div&gt;
-&lt;/div&gt;&lt;p&gt;&lt;code&gt;&amp;amp;&lt;/code&gt; 的作用是告诉解释器，现在传入的不是正常的参数，而是一个代码块。这个传入的代码块在方法内通过&lt;code&gt;yield&lt;/code&gt;进行调用。这里可以做个演示：&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
-&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt; 1
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 2
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 3
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 4
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 5
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 6
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 7
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 8
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 9
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;10
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;11
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;12
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;13
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;14
-&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
-&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;class Array
-  def my_each
-    i = 0
-    while i &amp;lt; self.size
-        yield(self[i])  
-        i+=1      
-    end
-    self
-  end
+=&amp;gt;[1,2,3] # Identical to the first case.
+&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>&lt;code>&amp;amp;&lt;/code> 的作用是告诉解释器，现在传入的不是正常的参数，而是一个代码块。这个传入的代码块在方法内通过&lt;code>yield&lt;/code>进行调用。这里可以做个演示：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code class="language-fallback" data-lang="fallback">class Array
+def my_each
+i = 0
+while i &amp;lt; self.size
+yield(self[i])
+i+=1
 end
-
+self
+end
+end
 &amp;gt; [1,2,3].my_each { |num| print &amp;#34;#{num}!&amp;#34; }
 1! 2! 3!
 =&amp;gt; [1,2,3]
-&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
-&lt;/div&gt;
-&lt;/div&gt;&lt;p&gt;Ruby 中 lambda 表达式属于 &lt;a href=&#34;http://ruby-doc.org/core-2.2.0/Proc.html&#34;&gt;Proc 类型&lt;/a&gt;，&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
-&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
-&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
-&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;&amp;gt; lambda {|x| x}.class
+&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>Ruby 中 lambda 表达式属于 &lt;a href="http://ruby-doc.org/core-2.2.0/Proc.html">Proc 类型&lt;/a>，&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code class="language-fallback" data-lang="fallback">&amp;gt; lambda {|x| x}.class
 =&amp;gt; Proc
-&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
-&lt;/div&gt;
-&lt;/div&gt;&lt;p&gt;这里可以看到，只是对于闭包的支持，Ruby 就提供了多种方案。更多可以参考：&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;&lt;a href=&#34;http://www.eriktrautman.com/posts/ruby-explained-blocks-procs-and-lambdas-aka-closures&#34;&gt;Ruby Explained: Blocks, Procs, and Lambdas, aka &amp;ldquo;Closures&amp;rdquo;&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;https://blog.newrelic.com/2015/04/30/weird-ruby-part-4-code-pods/&#34;&gt;Weird Ruby Part 4: Code Pods (Blocks, Procs, and Lambdas)&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
-&lt;h3 id=&#34;yield&#34;&gt;yield&lt;/h3&gt;
-&lt;p&gt;就像上面说的，ruby 中 &lt;code&gt;yield&lt;/code&gt; 就是表示代码块的调用，没有其他含义。而在 python 与 javascript &lt;code&gt;yield&lt;/code&gt; 是用来构造&lt;a href=&#34;https://wiki.python.org/moin/Generators&#34;&gt;生成器（generator）&lt;/a&gt;的，都是用来控制程序运行流程，相当于用户态的“线程”：&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
-&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt; 1
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 2
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 3
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 4
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 5
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 6
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 7
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 8
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 9
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;10
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;11
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;12
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;13
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;14
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;15
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;16
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;17
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;18
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;19
-&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
-&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;$ python
+&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>这里可以看到，只是对于闭包的支持，Ruby 就提供了多种方案。更多可以参考：&lt;/p>
+&lt;ul>
+&lt;li>&lt;a href="http://www.eriktrautman.com/posts/ruby-explained-blocks-procs-and-lambdas-aka-closures">Ruby Explained: Blocks, Procs, and Lambdas, aka &amp;ldquo;Closures&amp;rdquo;&lt;/a>&lt;/li>
+&lt;li>&lt;a href="https://blog.newrelic.com/2015/04/30/weird-ruby-part-4-code-pods/">Weird Ruby Part 4: Code Pods (Blocks, Procs, and Lambdas)&lt;/a>&lt;/li>
+&lt;/ul>
+&lt;h3 id="yield">yield&lt;/h3>
+&lt;p>就像上面说的，ruby 中 &lt;code>yield&lt;/code> 就是表示代码块的调用，没有其他含义。而在 python 与 javascript &lt;code>yield&lt;/code> 是用来构造&lt;a href="https://wiki.python.org/moin/Generators">生成器（generator）&lt;/a>的，都是用来控制程序运行流程，相当于用户态的“线程”：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;span class="lnt">16
+&lt;/span>&lt;span class="lnt">17
+&lt;/span>&lt;span class="lnt">18
+&lt;/span>&lt;span class="lnt">19
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code class="language-fallback" data-lang="fallback">$ python
 def iter():
-    for x in xrange(10):
-        yield x
-
+for x in xrange(10):
+yield x
 foo = iter()
 print next(foo)
 print next(foo)
 #--------------------------------------------------#
-
 $ node
 function* iter() {
- for (var i = 0; i &amp;lt; 10; i++)
-    yield i
+for (var i = 0; i &amp;lt; 10; i++)
+yield i
 }
 var foo = iter()
 console.log(foo.next().value)
 console.log(foo.next().value)
-
-&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
-&lt;/div&gt;
-&lt;/div&gt;&lt;p&gt;上面两份代码都依次打印出&lt;code&gt;0&lt;/code&gt;, &lt;code&gt;1&lt;/code&gt;。&lt;/p&gt;
-&lt;p&gt;关于生成器的更多资料，可以参考：&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;&lt;a href=&#34;https://strongloop.com/strongblog/how-to-generators-node-js-yield-use-cases/&#34;&gt;Generators in Node.js: Common Misconceptions and Three Good Use Cases&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;http://www.dabeaz.com/coroutines/Coroutines.pdf&#34;&gt;More details on Python generators and coroutines&lt;/a&gt;（强烈推荐 Python 读者看）&lt;/li&gt;
-&lt;/ul&gt;
-&lt;p&gt;在 ruby 中，与生成器对应的概念是 &lt;a href=&#34;http://ruby-doc.org/core-2.2.0/Fiber.html&#34;&gt;Fiber&lt;/a&gt;，例如：&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
-&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;4
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;5
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;6
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;7
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;8
-&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
-&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;iter = Fiber.new do
-  (0..10).each do |x|
-    Fiber.yield x
-  end
+&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>上面两份代码都依次打印出&lt;code>0&lt;/code>, &lt;code>1&lt;/code>。&lt;/p>
+&lt;p>关于生成器的更多资料，可以参考：&lt;/p>
+&lt;ul>
+&lt;li>&lt;a href="https://strongloop.com/strongblog/how-to-generators-node-js-yield-use-cases/">Generators in Node.js: Common Misconceptions and Three Good Use Cases&lt;/a>&lt;/li>
+&lt;li>&lt;a href="http://www.dabeaz.com/coroutines/Coroutines.pdf">More details on Python generators and coroutines&lt;/a>（强烈推荐 Python 读者看）&lt;/li>
+&lt;/ul>
+&lt;p>在 ruby 中，与生成器对应的概念是 &lt;a href="http://ruby-doc.org/core-2.2.0/Fiber.html">Fiber&lt;/a>，例如：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;span class="lnt">6
+&lt;/span>&lt;span class="lnt">7
+&lt;/span>&lt;span class="lnt">8
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code class="language-fallback" data-lang="fallback">iter = Fiber.new do
+(0..10).each do |x|
+Fiber.yield x
 end
-
+end
 puts iter.resume
 puts iter.resume
-&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
-&lt;/div&gt;
-&lt;/div&gt;&lt;p&gt;上面的代码也依次打印出&lt;code&gt;0&lt;/code&gt;, &lt;code&gt;1&lt;/code&gt;。&lt;/p&gt;
-&lt;p&gt;关于生成器与 Fiber 的关系，可以参考：&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;&lt;a href=&#34;https://nikolaygrozev.wordpress.com/2015/07/14/overview-of-modern-concurrency-and-parallelism-concepts/comment-page-1&#34;&gt;Overview of Modern Concurrency and Parallelism Concepts&lt;/a&gt; （需翻墙，强烈推荐读者看）&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;http://merbist.com/2011/02/22/concurrency-in-ruby-explained/&#34;&gt;http://merbist.com/2011/02/22/concurrency-in-ruby-explained/&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
-&lt;p&gt;其实，生成器、Fiber 以及相关概念背后的理论基础是 &lt;a href=&#34;https://en.wikipedia.org/wiki/Continuation&#34;&gt;continuation&lt;/a&gt;，continuation 的应用场景非常广泛，各种编程语言中的&lt;a href=&#34;https://en.wikipedia.org/wiki/Exception_handling&#34;&gt;异常处理&lt;/a&gt;也是基于它来实现的。鉴于这个话题比较大，这里不再展开叙述，感兴趣的读者可以参考&lt;a href=&#34;http://matt.might.net/articles/programming-with-continuations--exceptions-backtracking-search-threads-generators-coroutines/&#34;&gt;这篇文章&lt;/a&gt;，后面我也会单独再写一篇文章进行介绍。
-这里仅仅给出 continuation 的一个简单示例以飨读者：&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
-&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;4
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;5
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;6
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;7
-&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
-&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;; Scheme 语言中没有 return 语句，利用 continuation 可以模拟 return
+&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>上面的代码也依次打印出&lt;code>0&lt;/code>, &lt;code>1&lt;/code>。&lt;/p>
+&lt;p>关于生成器与 Fiber 的关系，可以参考：&lt;/p>
+&lt;ul>
+&lt;li>&lt;a href="https://nikolaygrozev.wordpress.com/2015/07/14/overview-of-modern-concurrency-and-parallelism-concepts/comment-page-1">Overview of Modern Concurrency and Parallelism Concepts&lt;/a> （需翻墙，强烈推荐读者看）&lt;/li>
+&lt;li>&lt;a href="http://merbist.com/2011/02/22/concurrency-in-ruby-explained/">http://merbist.com/2011/02/22/concurrency-in-ruby-explained/&lt;/a>&lt;/li>
+&lt;/ul>
+&lt;p>其实，生成器、Fiber 以及相关概念背后的理论基础是 &lt;a href="https://en.wikipedia.org/wiki/Continuation">continuation&lt;/a>，continuation 的应用场景非常广泛，各种编程语言中的&lt;a href="https://en.wikipedia.org/wiki/Exception_handling">异常处理&lt;/a>也是基于它来实现的。鉴于这个话题比较大，这里不再展开叙述，感兴趣的读者可以参考&lt;a href="http://matt.might.net/articles/programming-with-continuations--exceptions-backtracking-search-threads-generators-coroutines/">这篇文章&lt;/a>，后面我也会单独再写一篇文章进行介绍。
+这里仅仅给出 continuation 的一个简单示例以飨读者：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;span class="lnt">6
+&lt;/span>&lt;span class="lnt">7
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code class="language-fallback" data-lang="fallback">; Scheme 语言中没有 return 语句，利用 continuation 可以模拟 return
 (define (f return)
-  (return 2)
-  3)
-
+(return 2)
+3)
 (display (f (lambda (x) x))) ; displays 3
 (display (call-with-current-continuation f)) ; displays 2
-&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
-&lt;/div&gt;
-&lt;/div&gt;&lt;p&gt;关于这里例子详细的解释可以参考&lt;a href=&#34;https://en.wikipedia.org/wiki/Call-with-current-continuation#Examples&#34;&gt;WIKI Call-with-current-continuation&lt;/a&gt;。&lt;/p&gt;
-&lt;h3 id=&#34;字符串&#34;&gt;字符串&lt;/h3&gt;
-&lt;h4 id=&#34;immutable-vs-mutable&#34;&gt;immutable vs mutable&lt;/h4&gt;
-&lt;p&gt;&lt;a href=&#34;https://liujiacai.net/blog/2015/11/20/strings/&#34;&gt;字符串&lt;/a&gt;作为对字符的一种抽象，实现时有两种选择：可变的与不可变的。这两种实现的优缺点如下：&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;
-&lt;p&gt;可变的字符串，这意味着对字符串进行修改、追加等操作时可在原有字符串基础上直接操作，比较节省空间。但是可变的特点会导致如下几个问题：&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;
-&lt;p&gt;相等性（equality）。如果一个对象是可变的，我们应该如何判断两个对象是相等的呢？这里还有个容易混淆的概念：同一性（identity），同一性是指两个变量指向同一个对象，相等性指两个变量指向不同的两个对象，但这两个对象的值是一样的。
-
-  &lt;figure&gt;
-    &lt;img src=&#34;https://img.alicdn.com/imgextra/i3/581166664/TB29NApmFXXXXbvXpXXXXXXXXXX_!!581166664.png&#34; alt=&#34;string_identity_equal&#34;&gt;
-    &lt;figcaption&gt;&lt;center&gt;string_identity_equal&lt;/center&gt;&lt;/figcaption&gt;
-  &lt;/figure&gt;
-
-&lt;/p&gt;
-&lt;/li&gt;
-&lt;li&gt;
-&lt;p&gt;并发性（concurrence）。在多线程的环境中，需要对可变对象进行各种复杂的锁机制来保障其正确性。&lt;/p&gt;
-&lt;/li&gt;
-&lt;/ul&gt;
-&lt;/li&gt;
-&lt;li&gt;
-&lt;p&gt;不可变字符串没有上面的两个问题，但是不可变字符串在进行修改时由于会新生成一个对象，所以会比较消耗空间，所以这采用不可变字符串实现的语言一般都会提供一个具备 buffer 的字符串构造对象来生成字符串，像 Java 中的 &lt;a href=&#34;https://docs.oracle.com/javase/7/docs/api/java/lang/StringBuffer.html&#34;&gt;StringBuffer&lt;/a&gt;，Python 中的 &lt;a href=&#34;https://docs.python.org/2/library/stringio.html&#34;&gt;StringIO&lt;/a&gt;。&lt;/p&gt;
-&lt;/li&gt;
-&lt;/ul&gt;
-&lt;p&gt;Ruby 中字符串是&lt;code&gt;可变&lt;/code&gt;的，但是 Ruby 中提供了不可变字符串的替代品 Symbol，而且 Ruby 2.3 也提供了&lt;code&gt;--enable-frozen-string-literal&lt;/code&gt; 选项用以声明字符串是不可变的。具体可参考：&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;&lt;a href=&#34;https://wyeworks.com/blog/2015/12/1/-strings-in-ruby-2-dot-3&#34;&gt;https://wyeworks.com/blog/2015/12/1/-strings-in-ruby-2-dot-3&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
-&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt; 1
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 2
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 3
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 4
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 5
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 6
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 7
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 8
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 9
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;10
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;11
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;12
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;13
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;14
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;15
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;16
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;17
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;18
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;19
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;20
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;21
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;22
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;23
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;24
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;25
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;26
-&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
-&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;$ irb
-&amp;gt; &amp;#34;a&amp;#34;.equal? &amp;#34;a&amp;#34;   # equals?--- identity comparison
- =&amp;gt; false
-&amp;gt; &amp;#34;a&amp;#34;.eql? &amp;#34;a&amp;#34;     # eql?   --- hash equality
- =&amp;gt; true
-&amp;gt; &amp;#34;a&amp;#34; == &amp;#34;a&amp;#34;       # ==     --- generic &amp;#34;equality&amp;#34;
- =&amp;gt; true
+&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>关于这里例子详细的解释可以参考&lt;a href="https://en.wikipedia.org/wiki/Call-with-current-continuation#Examples">WIKI Call-with-current-continuation&lt;/a>。&lt;/p>
+&lt;h3 id="字符串">字符串&lt;/h3>
+&lt;h4 id="immutable-vs-mutable">immutable vs mutable&lt;/h4>
+&lt;p>&lt;a href="https://liujiacai.net/blog/2015/11/20/strings/">字符串&lt;/a>作为对字符的一种抽象，实现时有两种选择：可变的与不可变的。这两种实现的优缺点如下：&lt;/p>
+&lt;ul>
+&lt;li>
+&lt;p>可变的字符串，这意味着对字符串进行修改、追加等操作时可在原有字符串基础上直接操作，比较节省空间。但是可变的特点会导致如下几个问题：&lt;/p>
+&lt;ul>
+&lt;li>
+&lt;p>相等性（equality）。如果一个对象是可变的，我们应该如何判断两个对象是相等的呢？这里还有个容易混淆的概念：同一性（identity），同一性是指两个变量指向同一个对象，相等性指两个变量指向不同的两个对象，但这两个对象的值是一样的。
+&lt;figure>
+&lt;img src="https://img.alicdn.com/imgextra/i3/581166664/TB29NApmFXXXXbvXpXXXXXXXXXX_!!581166664.png" alt="string_identity_equal">
+&lt;figcaption>&lt;center>string_identity_equal&lt;/center>&lt;/figcaption>
+&lt;/figure>
+&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>并发性（concurrence）。在多线程的环境中，需要对可变对象进行各种复杂的锁机制来保障其正确性。&lt;/p>
+&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;li>
+&lt;p>不可变字符串没有上面的两个问题，但是不可变字符串在进行修改时由于会新生成一个对象，所以会比较消耗空间，所以这采用不可变字符串实现的语言一般都会提供一个具备 buffer 的字符串构造对象来生成字符串，像 Java 中的 &lt;a href="https://docs.oracle.com/javase/7/docs/api/java/lang/StringBuffer.html">StringBuffer&lt;/a>，Python 中的 &lt;a href="https://docs.python.org/2/library/stringio.html">StringIO&lt;/a>。&lt;/p>
+&lt;/li>
+&lt;/ul>
+&lt;p>Ruby 中字符串是&lt;code>可变&lt;/code>的，但是 Ruby 中提供了不可变字符串的替代品 Symbol，而且 Ruby 2.3 也提供了&lt;code>--enable-frozen-string-literal&lt;/code> 选项用以声明字符串是不可变的。具体可参考：&lt;/p>
+&lt;ul>
+&lt;li>&lt;a href="https://wyeworks.com/blog/2015/12/1/-strings-in-ruby-2-dot-3">https://wyeworks.com/blog/2015/12/1/-strings-in-ruby-2-dot-3&lt;/a>&lt;/li>
+&lt;/ul>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;span class="lnt">16
+&lt;/span>&lt;span class="lnt">17
+&lt;/span>&lt;span class="lnt">18
+&lt;/span>&lt;span class="lnt">19
+&lt;/span>&lt;span class="lnt">20
+&lt;/span>&lt;span class="lnt">21
+&lt;/span>&lt;span class="lnt">22
+&lt;/span>&lt;span class="lnt">23
+&lt;/span>&lt;span class="lnt">24
+&lt;/span>&lt;span class="lnt">25
+&lt;/span>&lt;span class="lnt">26
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code class="language-fallback" data-lang="fallback">$ irb
+&amp;gt; &amp;#34;a&amp;#34;.equal? &amp;#34;a&amp;#34; # equals?--- identity comparison
+=&amp;gt; false
+&amp;gt; &amp;#34;a&amp;#34;.eql? &amp;#34;a&amp;#34; # eql? --- hash equality
+=&amp;gt; true
+&amp;gt; &amp;#34;a&amp;#34; == &amp;#34;a&amp;#34; # == --- generic &amp;#34;equality&amp;#34;
+=&amp;gt; true
 &amp;gt; str = &amp;#34;hello&amp;#34;
- =&amp;gt; &amp;#34;hello&amp;#34;
+=&amp;gt; &amp;#34;hello&amp;#34;
 &amp;gt; str.__id__
- =&amp;gt; 70099860517540
+=&amp;gt; 70099860517540
 &amp;gt; &amp;#34;hello&amp;#34;.__id__
- =&amp;gt; 70099856137920
+=&amp;gt; 70099856137920
 &amp;gt; str &amp;lt;&amp;lt; &amp;#34; world&amp;#34;
- =&amp;gt; &amp;#34;hello world&amp;#34;
+=&amp;gt; &amp;#34;hello world&amp;#34;
 &amp;gt; str.__id__
- =&amp;gt; 70099860517540     # 与之前的 id 一样，说明 str 所指向的对象没变
-
+=&amp;gt; 70099860517540 # 与之前的 id 一样，说明 str 所指向的对象没变
 &amp;gt; str = &amp;#34;hello&amp;#34;
- =&amp;gt; &amp;#34;hello&amp;#34;
+=&amp;gt; &amp;#34;hello&amp;#34;
 &amp;gt; str.__id__
- =&amp;gt; 70099860630880
+=&amp;gt; 70099860630880
 &amp;gt; str += &amp;#34; world&amp;#34;
- =&amp;gt; &amp;#34;hello world&amp;#34;
+=&amp;gt; &amp;#34;hello world&amp;#34;
 &amp;gt; str.__id__
- =&amp;gt; 70099856250160    # 与之前的 id 不一样，说明 += 在进行字符串拼接时，会生成一新对象
-&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
-&lt;/div&gt;
-&lt;/div&gt;&lt;p&gt;Python、Javascript 中字符串都是&lt;code&gt;不可变&lt;/code&gt;的。&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
-&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt; 1
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 2
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 3
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 4
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 5
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 6
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 7
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 8
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 9
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;10
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;11
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;12
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;13
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;14
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;15
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;16
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;17
-&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
-&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;$ python
+=&amp;gt; 70099856250160 # 与之前的 id 不一样，说明 += 在进行字符串拼接时，会生成一新对象
+&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>Python、Javascript 中字符串都是&lt;code>不可变&lt;/code>的。&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;span class="lnt">16
+&lt;/span>&lt;span class="lnt">17
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code class="language-fallback" data-lang="fallback">$ python
 &amp;gt;&amp;gt;&amp;gt; str = &amp;#34;hello world&amp;#34;
 &amp;gt;&amp;gt;&amp;gt; str2 = str.replace(&amp;#34;o&amp;#34;, &amp;#34;oo&amp;#34;)
 &amp;gt;&amp;gt;&amp;gt; str
 &amp;#39;hello world&amp;#39;
 &amp;gt;&amp;gt;&amp;gt; str2
 &amp;#39;helloo woorld&amp;#39;
-
 $ node
 &amp;gt; str = &amp;#34;hello world&amp;#34;
 &amp;#39;hello world&amp;#39;
@@ -906,34 +852,34 @@ $ node
 &amp;#39;hello world&amp;#39;
 &amp;gt; str2
 &amp;#39;helloo world&amp;#39;
-&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
-&lt;/div&gt;
-&lt;/div&gt;&lt;h4 id=&#34;拼接&#34;&gt;拼接&lt;/h4&gt;
-&lt;p&gt;大多数语言都可以直接通过&lt;code&gt;+&lt;/code&gt;进行字符串的拼接，但是这样做既不优雅，效率也低，所以一些语言会有些替代方案。
-Ruby 与 Python 中对这块的支持比较强大，ES6 中借鉴了以上两门语言的语法，引入了 &lt;a href=&#34;https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_literals&#34;&gt;template_string&lt;/a&gt;，这在极大程度上方便了字符串的拼接。&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
-&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt; 1
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 2
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 3
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 4
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 5
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 6
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 7
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 8
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 9
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;10
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;11
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;12
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;13
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;14
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;15
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;16
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;17
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;18
-&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
-&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;$ node
+&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;h4 id="拼接">拼接&lt;/h4>
+&lt;p>大多数语言都可以直接通过&lt;code>+&lt;/code>进行字符串的拼接，但是这样做既不优雅，效率也低，所以一些语言会有些替代方案。
+Ruby 与 Python 中对这块的支持比较强大，ES6 中借鉴了以上两门语言的语法，引入了 &lt;a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_literals">template_string&lt;/a>，这在极大程度上方便了字符串的拼接。&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;span class="lnt">16
+&lt;/span>&lt;span class="lnt">17
+&lt;/span>&lt;span class="lnt">18
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code class="language-fallback" data-lang="fallback">$ node
 &amp;gt; var a = 5;
 &amp;gt; var b = 10;
 &amp;gt; console.log(`Fifteen is ${a + b} and\nnot ${2 * a + b}.`);
@@ -951,268 +897,255 @@ $ irb
 &amp;gt; my name is %{username},
 &amp;gt; my age is %{age}
 &amp;gt; &amp;#34;&amp;#34;&amp;#34; % {username: &amp;#34;zhangsan&amp;#34;, age:10}
-&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
-&lt;/div&gt;
-&lt;/div&gt;&lt;p&gt;就是上面不可变字符串缺点中说的，对字符串进行追加时效率比较低，那么在 Python 与 Javascript 中进行大量字符串拼接时该采用什么方式呢？下面给出我的两组测试：&lt;/p&gt;
-&lt;h5 id=&#34;python&#34;&gt;Python&lt;/h5&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
-&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt; 1
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 2
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 3
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 4
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 5
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 6
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 7
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 8
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 9
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;10
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;11
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;12
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;13
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;14
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;15
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;16
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;17
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;18
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;19
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;20
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;21
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;22
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;23
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;24
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;25
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;26
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;27
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;28
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;29
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;30
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;31
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;32
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;33
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;34
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;35
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;36
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;37
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;38
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;39
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;40
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;41
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;42
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;43
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;44
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;45
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;46
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;47
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;48
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;49
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;50
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;51
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;52
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;53
-&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
-&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-go&#34; data-lang=&#34;go&#34;&gt;&lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;time&lt;/span&gt;
-&lt;span class=&#34;nx&#34;&gt;try&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;
-    &lt;span class=&#34;nx&#34;&gt;from&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;StringIO&lt;/span&gt; &lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;StringIO&lt;/span&gt;
-&lt;span class=&#34;nx&#34;&gt;except&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;ImportError&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;
-    &lt;span class=&#34;nx&#34;&gt;from&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;io&lt;/span&gt; &lt;span class=&#34;kn&#34;&gt;import&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;StringIO&lt;/span&gt;  &lt;span class=&#34;err&#34;&gt;#&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;StringIO&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;is&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;in&lt;/span&gt; &lt;span class=&#34;kn&#34;&gt;package&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;io&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;in&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;python&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;3&lt;/span&gt;
-
-&lt;span class=&#34;nx&#34;&gt;try&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;
-    &lt;span class=&#34;nx&#34;&gt;xrange&lt;/span&gt;
-&lt;span class=&#34;nx&#34;&gt;except&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;NameError&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;
-    &lt;span class=&#34;nx&#34;&gt;xrange&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;range&lt;/span&gt;  &lt;span class=&#34;err&#34;&gt;#&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;xrange&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;is&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;gone&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;in&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;python&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;3&lt;/span&gt;
-
-
-&lt;span class=&#34;nx&#34;&gt;def&lt;/span&gt; &lt;span class=&#34;nf&#34;&gt;method1&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;loop_count&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;):&lt;/span&gt;
-    &lt;span class=&#34;nx&#34;&gt;start&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;time&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nf&#34;&gt;time&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;()&lt;/span&gt;
-    &lt;span class=&#34;nx&#34;&gt;out_str&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;err&#34;&gt;&amp;#39;&amp;#39;&lt;/span&gt;
-    &lt;span class=&#34;k&#34;&gt;for&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;num&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;in&lt;/span&gt; &lt;span class=&#34;nf&#34;&gt;xrange&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;loop_count&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;):&lt;/span&gt;
-        &lt;span class=&#34;nx&#34;&gt;out_str&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;+=&lt;/span&gt; &lt;span class=&#34;nf&#34;&gt;repr&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;num&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
-
-    &lt;span class=&#34;nb&#34;&gt;print&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s&#34;&gt;&amp;#34;+= : %f seconds&amp;#34;&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;%&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;time&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nf&#34;&gt;time&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;()&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;-&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;start&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;))&lt;/span&gt;
-    &lt;span class=&#34;k&#34;&gt;return&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;out_str&lt;/span&gt;
-
-
-&lt;span class=&#34;nx&#34;&gt;def&lt;/span&gt; &lt;span class=&#34;nf&#34;&gt;method2&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;loop_count&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;):&lt;/span&gt;
-    &lt;span class=&#34;nx&#34;&gt;start&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;time&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nf&#34;&gt;time&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;()&lt;/span&gt;
-    &lt;span class=&#34;nx&#34;&gt;str_list&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;[]&lt;/span&gt;
-    &lt;span class=&#34;k&#34;&gt;for&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;num&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;in&lt;/span&gt; &lt;span class=&#34;nf&#34;&gt;xrange&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;loop_count&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;):&lt;/span&gt;
-        &lt;span class=&#34;nx&#34;&gt;str_list&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nb&#34;&gt;append&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nf&#34;&gt;repr&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;num&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;))&lt;/span&gt;
-    &lt;span class=&#34;nx&#34;&gt;out_str&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;err&#34;&gt;&amp;#39;&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nf&#34;&gt;join&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;str_list&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
-    &lt;span class=&#34;nb&#34;&gt;print&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s&#34;&gt;&amp;#34;list + join : %f seconds&amp;#34;&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;%&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;time&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nf&#34;&gt;time&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;()&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;-&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;start&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;))&lt;/span&gt;
-    &lt;span class=&#34;k&#34;&gt;return&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;out_str&lt;/span&gt;
-
-
-&lt;span class=&#34;nx&#34;&gt;def&lt;/span&gt; &lt;span class=&#34;nf&#34;&gt;method3&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;loop_count&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;):&lt;/span&gt;
-    &lt;span class=&#34;nx&#34;&gt;start&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;time&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nf&#34;&gt;time&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;()&lt;/span&gt;
-    &lt;span class=&#34;nx&#34;&gt;out_str&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;err&#34;&gt;&amp;#39;&amp;#39;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nf&#34;&gt;join&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;([&lt;/span&gt;&lt;span class=&#34;nf&#34;&gt;repr&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;num&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;for&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;num&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;in&lt;/span&gt; &lt;span class=&#34;nf&#34;&gt;xrange&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;loop_count&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)])&lt;/span&gt;
-    &lt;span class=&#34;nb&#34;&gt;print&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s&#34;&gt;&amp;#34;list comprehension + join : %f seconds&amp;#34;&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;%&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;time&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nf&#34;&gt;time&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;()&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;-&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;start&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;))&lt;/span&gt;
-    &lt;span class=&#34;k&#34;&gt;return&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;out_str&lt;/span&gt;
-
-&lt;span class=&#34;nx&#34;&gt;def&lt;/span&gt; &lt;span class=&#34;nf&#34;&gt;method4&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;loop_count&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;):&lt;/span&gt;
-    &lt;span class=&#34;nx&#34;&gt;start&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;time&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nf&#34;&gt;time&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;()&lt;/span&gt;
-    &lt;span class=&#34;nx&#34;&gt;file_str&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;nf&#34;&gt;StringIO&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;()&lt;/span&gt;
-    &lt;span class=&#34;k&#34;&gt;for&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;num&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;in&lt;/span&gt; &lt;span class=&#34;nf&#34;&gt;xrange&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;loop_count&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;):&lt;/span&gt;
-        &lt;span class=&#34;nx&#34;&gt;file_str&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nf&#34;&gt;write&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nf&#34;&gt;repr&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;num&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;))&lt;/span&gt;
-
-    &lt;span class=&#34;nx&#34;&gt;out_str&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;file_str&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nf&#34;&gt;getvalue&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;()&lt;/span&gt;
-    &lt;span class=&#34;nb&#34;&gt;print&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s&#34;&gt;&amp;#34;StringIO : %f seconds&amp;#34;&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;%&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;time&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nf&#34;&gt;time&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;()&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;-&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;start&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;))&lt;/span&gt;
-    &lt;span class=&#34;k&#34;&gt;return&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;out_str&lt;/span&gt;
-
-&lt;span class=&#34;nx&#34;&gt;loop_count&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;1000000&lt;/span&gt;
-&lt;span class=&#34;nf&#34;&gt;method1&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;loop_count&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
-&lt;span class=&#34;nf&#34;&gt;method2&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;loop_count&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
-&lt;span class=&#34;nf&#34;&gt;method3&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;loop_count&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
-&lt;span class=&#34;nf&#34;&gt;method4&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;loop_count&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
-&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
-&lt;/div&gt;
-&lt;/div&gt;&lt;p&gt;下面给出统计结果&lt;/p&gt;
-&lt;table&gt;
-&lt;thead&gt;
-&lt;tr&gt;
-&lt;th&gt;python版本&lt;/th&gt;
-&lt;th&gt;+=&lt;/th&gt;
-&lt;th&gt;list + join&lt;/th&gt;
-&lt;th&gt;list comprehension + join&lt;/th&gt;
-&lt;th&gt;stringIO&lt;/th&gt;
-&lt;/tr&gt;
-&lt;/thead&gt;
-&lt;tbody&gt;
-&lt;tr&gt;
-&lt;td&gt;2.7.6&lt;/td&gt;
-&lt;td&gt;0.181868&lt;/td&gt;
-&lt;td&gt;0.219901&lt;/td&gt;
-&lt;td&gt;0.194387&lt;/td&gt;
-&lt;td&gt;1.085162&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr&gt;
-&lt;td&gt;3.5.0&lt;/td&gt;
-&lt;td&gt;0.330583&lt;/td&gt;
-&lt;td&gt;0.271803&lt;/td&gt;
-&lt;td&gt;0.229952&lt;/td&gt;
-&lt;td&gt;0.313573&lt;/td&gt;
-&lt;/tr&gt;
-&lt;/tbody&gt;
-&lt;/table&gt;
-&lt;p&gt;从上面的比较可以看出，&lt;code&gt;list comprehension + join&lt;/code&gt; 的方式时最快，而且写法也比较优雅的。&lt;/p&gt;
-&lt;h5 id=&#34;javascript&#34;&gt;Javascript&lt;/h5&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
-&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt; 1
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 2
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 3
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 4
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 5
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 6
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 7
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 8
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 9
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;10
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;11
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;12
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;13
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;14
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;15
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;16
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;17
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;18
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;19
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;20
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;21
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;22
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;23
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;24
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;25
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;26
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;27
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;28
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;29
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;30
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;31
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;32
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;33
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;34
-&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
-&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;function method1(loop_count) {
-    var out_str = &amp;#34;&amp;#34;;
-    var start = Date.now()
-    for (i=0;i&amp;lt;loop_count;i++) {
-        out_str += i;
-    }
-    console.log(`+= cost : ${Date.now() - start} ms`);
-    return out_str;
+&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>就是上面不可变字符串缺点中说的，对字符串进行追加时效率比较低，那么在 Python 与 Javascript 中进行大量字符串拼接时该采用什么方式呢？下面给出我的两组测试：&lt;/p>
+&lt;h5 id="python">Python&lt;/h5>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;span class="lnt">16
+&lt;/span>&lt;span class="lnt">17
+&lt;/span>&lt;span class="lnt">18
+&lt;/span>&lt;span class="lnt">19
+&lt;/span>&lt;span class="lnt">20
+&lt;/span>&lt;span class="lnt">21
+&lt;/span>&lt;span class="lnt">22
+&lt;/span>&lt;span class="lnt">23
+&lt;/span>&lt;span class="lnt">24
+&lt;/span>&lt;span class="lnt">25
+&lt;/span>&lt;span class="lnt">26
+&lt;/span>&lt;span class="lnt">27
+&lt;/span>&lt;span class="lnt">28
+&lt;/span>&lt;span class="lnt">29
+&lt;/span>&lt;span class="lnt">30
+&lt;/span>&lt;span class="lnt">31
+&lt;/span>&lt;span class="lnt">32
+&lt;/span>&lt;span class="lnt">33
+&lt;/span>&lt;span class="lnt">34
+&lt;/span>&lt;span class="lnt">35
+&lt;/span>&lt;span class="lnt">36
+&lt;/span>&lt;span class="lnt">37
+&lt;/span>&lt;span class="lnt">38
+&lt;/span>&lt;span class="lnt">39
+&lt;/span>&lt;span class="lnt">40
+&lt;/span>&lt;span class="lnt">41
+&lt;/span>&lt;span class="lnt">42
+&lt;/span>&lt;span class="lnt">43
+&lt;/span>&lt;span class="lnt">44
+&lt;/span>&lt;span class="lnt">45
+&lt;/span>&lt;span class="lnt">46
+&lt;/span>&lt;span class="lnt">47
+&lt;/span>&lt;span class="lnt">48
+&lt;/span>&lt;span class="lnt">49
+&lt;/span>&lt;span class="lnt">50
+&lt;/span>&lt;span class="lnt">51
+&lt;/span>&lt;span class="lnt">52
+&lt;/span>&lt;span class="lnt">53
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code class="language-go" data-lang="go">&lt;span class="kn">import&lt;/span> &lt;span class="nx">time&lt;/span>
+&lt;span class="nx">try&lt;/span>&lt;span class="p">:&lt;/span>
+&lt;span class="nx">from&lt;/span> &lt;span class="nx">StringIO&lt;/span> &lt;span class="kn">import&lt;/span> &lt;span class="nx">StringIO&lt;/span>
+&lt;span class="nx">except&lt;/span> &lt;span class="nx">ImportError&lt;/span>&lt;span class="p">:&lt;/span>
+&lt;span class="nx">from&lt;/span> &lt;span class="nx">io&lt;/span> &lt;span class="kn">import&lt;/span> &lt;span class="nx">StringIO&lt;/span> &lt;span class="err">#&lt;/span> &lt;span class="nx">StringIO&lt;/span> &lt;span class="nx">is&lt;/span> &lt;span class="nx">in&lt;/span> &lt;span class="kn">package&lt;/span> &lt;span class="nx">io&lt;/span> &lt;span class="nx">in&lt;/span> &lt;span class="nx">python&lt;/span> &lt;span class="mi">3&lt;/span>
+&lt;span class="nx">try&lt;/span>&lt;span class="p">:&lt;/span>
+&lt;span class="nx">xrange&lt;/span>
+&lt;span class="nx">except&lt;/span> &lt;span class="nx">NameError&lt;/span>&lt;span class="p">:&lt;/span>
+&lt;span class="nx">xrange&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="k">range&lt;/span> &lt;span class="err">#&lt;/span> &lt;span class="nx">xrange&lt;/span> &lt;span class="nx">is&lt;/span> &lt;span class="nx">gone&lt;/span> &lt;span class="nx">in&lt;/span> &lt;span class="nx">python&lt;/span> &lt;span class="mi">3&lt;/span>
+&lt;span class="nx">def&lt;/span> &lt;span class="nf">method1&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="nx">loop_count&lt;/span>&lt;span class="p">):&lt;/span>
+&lt;span class="nx">start&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="nx">time&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nf">time&lt;/span>&lt;span class="p">()&lt;/span>
+&lt;span class="nx">out_str&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="err">&amp;#39;&amp;#39;&lt;/span>
+&lt;span class="k">for&lt;/span> &lt;span class="nx">num&lt;/span> &lt;span class="nx">in&lt;/span> &lt;span class="nf">xrange&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="nx">loop_count&lt;/span>&lt;span class="p">):&lt;/span>
+&lt;span class="nx">out_str&lt;/span> &lt;span class="o">+=&lt;/span> &lt;span class="nf">repr&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="nx">num&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;span class="nb">print&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;+= : %f seconds&amp;#34;&lt;/span> &lt;span class="o">%&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="nx">time&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nf">time&lt;/span>&lt;span class="p">()&lt;/span> &lt;span class="o">-&lt;/span> &lt;span class="nx">start&lt;/span>&lt;span class="p">))&lt;/span>
+&lt;span class="k">return&lt;/span> &lt;span class="nx">out_str&lt;/span>
+&lt;span class="nx">def&lt;/span> &lt;span class="nf">method2&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="nx">loop_count&lt;/span>&lt;span class="p">):&lt;/span>
+&lt;span class="nx">start&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="nx">time&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nf">time&lt;/span>&lt;span class="p">()&lt;/span>
+&lt;span class="nx">str_list&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="p">[]&lt;/span>
+&lt;span class="k">for&lt;/span> &lt;span class="nx">num&lt;/span> &lt;span class="nx">in&lt;/span> &lt;span class="nf">xrange&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="nx">loop_count&lt;/span>&lt;span class="p">):&lt;/span>
+&lt;span class="nx">str_list&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nb">append&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="nf">repr&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="nx">num&lt;/span>&lt;span class="p">))&lt;/span>
+&lt;span class="nx">out_str&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="err">&amp;#39;&amp;#39;&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nf">join&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="nx">str_list&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;span class="nb">print&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;list + join : %f seconds&amp;#34;&lt;/span> &lt;span class="o">%&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="nx">time&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nf">time&lt;/span>&lt;span class="p">()&lt;/span> &lt;span class="o">-&lt;/span> &lt;span class="nx">start&lt;/span>&lt;span class="p">))&lt;/span>
+&lt;span class="k">return&lt;/span> &lt;span class="nx">out_str&lt;/span>
+&lt;span class="nx">def&lt;/span> &lt;span class="nf">method3&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="nx">loop_count&lt;/span>&lt;span class="p">):&lt;/span>
+&lt;span class="nx">start&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="nx">time&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nf">time&lt;/span>&lt;span class="p">()&lt;/span>
+&lt;span class="nx">out_str&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="err">&amp;#39;&amp;#39;&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nf">join&lt;/span>&lt;span class="p">([&lt;/span>&lt;span class="nf">repr&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="nx">num&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="k">for&lt;/span> &lt;span class="nx">num&lt;/span> &lt;span class="nx">in&lt;/span> &lt;span class="nf">xrange&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="nx">loop_count&lt;/span>&lt;span class="p">)])&lt;/span>
+&lt;span class="nb">print&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;list comprehension + join : %f seconds&amp;#34;&lt;/span> &lt;span class="o">%&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="nx">time&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nf">time&lt;/span>&lt;span class="p">()&lt;/span> &lt;span class="o">-&lt;/span> &lt;span class="nx">start&lt;/span>&lt;span class="p">))&lt;/span>
+&lt;span class="k">return&lt;/span> &lt;span class="nx">out_str&lt;/span>
+&lt;span class="nx">def&lt;/span> &lt;span class="nf">method4&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="nx">loop_count&lt;/span>&lt;span class="p">):&lt;/span>
+&lt;span class="nx">start&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="nx">time&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nf">time&lt;/span>&lt;span class="p">()&lt;/span>
+&lt;span class="nx">file_str&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="nf">StringIO&lt;/span>&lt;span class="p">()&lt;/span>
+&lt;span class="k">for&lt;/span> &lt;span class="nx">num&lt;/span> &lt;span class="nx">in&lt;/span> &lt;span class="nf">xrange&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="nx">loop_count&lt;/span>&lt;span class="p">):&lt;/span>
+&lt;span class="nx">file_str&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nf">write&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="nf">repr&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="nx">num&lt;/span>&lt;span class="p">))&lt;/span>
+&lt;span class="nx">out_str&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="nx">file_str&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nf">getvalue&lt;/span>&lt;span class="p">()&lt;/span>
+&lt;span class="nb">print&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;StringIO : %f seconds&amp;#34;&lt;/span> &lt;span class="o">%&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="nx">time&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nf">time&lt;/span>&lt;span class="p">()&lt;/span> &lt;span class="o">-&lt;/span> &lt;span class="nx">start&lt;/span>&lt;span class="p">))&lt;/span>
+&lt;span class="k">return&lt;/span> &lt;span class="nx">out_str&lt;/span>
+&lt;span class="nx">loop_count&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="mi">1000000&lt;/span>
+&lt;span class="nf">method1&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="nx">loop_count&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;span class="nf">method2&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="nx">loop_count&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;span class="nf">method3&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="nx">loop_count&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;span class="nf">method4&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="nx">loop_count&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>下面给出统计结果&lt;/p>
+&lt;table>
+&lt;thead>
+&lt;tr>
+&lt;th>python版本&lt;/th>
+&lt;th>+=&lt;/th>
+&lt;th>list + join&lt;/th>
+&lt;th>list comprehension + join&lt;/th>
+&lt;th>stringIO&lt;/th>
+&lt;/tr>
+&lt;/thead>
+&lt;tbody>
+&lt;tr>
+&lt;td>2.7.6&lt;/td>
+&lt;td>0.181868&lt;/td>
+&lt;td>0.219901&lt;/td>
+&lt;td>0.194387&lt;/td>
+&lt;td>1.085162&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>3.5.0&lt;/td>
+&lt;td>0.330583&lt;/td>
+&lt;td>0.271803&lt;/td>
+&lt;td>0.229952&lt;/td>
+&lt;td>0.313573&lt;/td>
+&lt;/tr>
+&lt;/tbody>
+&lt;/table>
+&lt;p>从上面的比较可以看出，&lt;code>list comprehension + join&lt;/code> 的方式时最快，而且写法也比较优雅的。&lt;/p>
+&lt;h5 id="javascript">Javascript&lt;/h5>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;span class="lnt">16
+&lt;/span>&lt;span class="lnt">17
+&lt;/span>&lt;span class="lnt">18
+&lt;/span>&lt;span class="lnt">19
+&lt;/span>&lt;span class="lnt">20
+&lt;/span>&lt;span class="lnt">21
+&lt;/span>&lt;span class="lnt">22
+&lt;/span>&lt;span class="lnt">23
+&lt;/span>&lt;span class="lnt">24
+&lt;/span>&lt;span class="lnt">25
+&lt;/span>&lt;span class="lnt">26
+&lt;/span>&lt;span class="lnt">27
+&lt;/span>&lt;span class="lnt">28
+&lt;/span>&lt;span class="lnt">29
+&lt;/span>&lt;span class="lnt">30
+&lt;/span>&lt;span class="lnt">31
+&lt;/span>&lt;span class="lnt">32
+&lt;/span>&lt;span class="lnt">33
+&lt;/span>&lt;span class="lnt">34
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code class="language-fallback" data-lang="fallback">function method1(loop_count) {
+var out_str = &amp;#34;&amp;#34;;
+var start = Date.now()
+for (i=0;i&amp;lt;loop_count;i++) {
+out_str += i;
+}
+console.log(`+= cost : ${Date.now() - start} ms`);
+return out_str;
 }
 function method2(loop_count) {
-    var arr = []
-    var start = Date.now()
-    for (i=0;i&amp;lt;loop_count;i++) {
-        arr.push(i);
-    }
-    var out_str = arr.join(&amp;#34;&amp;#34;);
-    console.log(`arr + join cost : ${Date.now() - start} ms`);
-    return out_str;
+var arr = []
+var start = Date.now()
+for (i=0;i&amp;lt;loop_count;i++) {
+arr.push(i);
+}
+var out_str = arr.join(&amp;#34;&amp;#34;);
+console.log(`arr + join cost : ${Date.now() - start} ms`);
+return out_str;
 }
 function method3(loop_count) {
-    var out_str = &amp;#34;&amp;#34;;
-    var start = Date.now()
-    for (i=0;i&amp;lt;loop_count;i++) {
-        out_str.concat(i);
-    }
-    console.log(`str.concat cost: ${Date.now() - start} ms`);
-    return out_str;
+var out_str = &amp;#34;&amp;#34;;
+var start = Date.now()
+for (i=0;i&amp;lt;loop_count;i++) {
+out_str.concat(i);
 }
-
+console.log(`str.concat cost: ${Date.now() - start} ms`);
+return out_str;
+}
 var loop_count = 1000000;
 method1(loop_count)
 method2(loop_count)
 method3(loop_count)
-
-&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
-&lt;/div&gt;
-&lt;/div&gt;&lt;table&gt;
-&lt;thead&gt;
-&lt;tr&gt;
-&lt;th&gt;&lt;/th&gt;
-&lt;th&gt;+=&lt;/th&gt;
-&lt;th&gt;arr + join&lt;/th&gt;
-&lt;th&gt;str.concat&lt;/th&gt;
-&lt;/tr&gt;
-&lt;/thead&gt;
-&lt;tbody&gt;
-&lt;tr&gt;
-&lt;td&gt;耗时（单位：ms）&lt;/td&gt;
-&lt;td&gt;199&lt;/td&gt;
-&lt;td&gt;230&lt;/td&gt;
-&lt;td&gt;126&lt;/td&gt;
-&lt;/tr&gt;
-&lt;/tbody&gt;
-&lt;/table&gt;
-&lt;p&gt;上面的测试结果使用 Node v5.9.1 测试出来的，从结果来看，&lt;code&gt;str.concat&lt;/code&gt; 是速度最快的。&lt;/p&gt;
-&lt;h3 id=&#34;查看值类型&#34;&gt;查看值类型&lt;/h3&gt;
-&lt;p&gt;动态语言最主要的特点就是&lt;code&gt;变量无类型&lt;/code&gt;，利用&lt;a href=&#34;https://en.wikipedia.org/wiki/Reflection_%28computer_programming%29&#34;&gt;反射机制&lt;/a&gt;可以查看&lt;code&gt;运行时变量的值的类型&lt;/code&gt;。&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
-&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt; 1
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 2
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 3
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 4
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 5
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 6
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 7
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 8
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 9
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;10
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;11
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;12
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;13
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;14
-&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
-&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;$ node
+&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;table>
+&lt;thead>
+&lt;tr>
+&lt;th>&lt;/th>
+&lt;th>+=&lt;/th>
+&lt;th>arr + join&lt;/th>
+&lt;th>str.concat&lt;/th>
+&lt;/tr>
+&lt;/thead>
+&lt;tbody>
+&lt;tr>
+&lt;td>耗时（单位：ms）&lt;/td>
+&lt;td>199&lt;/td>
+&lt;td>230&lt;/td>
+&lt;td>126&lt;/td>
+&lt;/tr>
+&lt;/tbody>
+&lt;/table>
+&lt;p>上面的测试结果使用 Node v5.9.1 测试出来的，从结果来看，&lt;code>str.concat&lt;/code> 是速度最快的。&lt;/p>
+&lt;h3 id="查看值类型">查看值类型&lt;/h3>
+&lt;p>动态语言最主要的特点就是&lt;code>变量无类型&lt;/code>，利用&lt;a href="https://en.wikipedia.org/wiki/Reflection_%28computer_programming%29">反射机制&lt;/a>可以查看&lt;code>运行时变量的值的类型&lt;/code>。&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code class="language-fallback" data-lang="fallback">$ node
 &amp;gt; str = &amp;#34;hello world&amp;#34;
-&amp;gt; typeof str     
+&amp;gt; typeof str
 &amp;#39;string&amp;#39;
 #------------------------------#
 $ irb
@@ -1224,29 +1157,24 @@ $ python
 &amp;gt; str = &amp;#34;hello world&amp;#34;
 &amp;gt; type(str)
 &amp;lt;type &amp;#39;str&amp;#39;&amp;gt;
-&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
-&lt;/div&gt;
-&lt;/div&gt;&lt;h2 id=&#34;包管理&#34;&gt;包管理&lt;/h2&gt;
-&lt;ul&gt;
-&lt;li&gt;Python，&lt;a href=&#34;https://pypi.python.org/pypi&#34;&gt;PyPI&lt;/a&gt;，多版本兼容推荐使用 &lt;a href=&#34;https://virtualenv.pypa.io&#34;&gt;virtualenv&lt;/a&gt; 管理&lt;/li&gt;
-&lt;li&gt;Ruby， &lt;a href=&#34;https://rubygems.org/&#34;&gt;GEMS&lt;/a&gt;，多版本兼容，推荐使用 &lt;a href=&#34;https://rvm.io/&#34;&gt;rvm&lt;/a&gt; + &lt;a href=&#34;http://bundler.io/&#34;&gt;bundler&lt;/a&gt; 管理&lt;/li&gt;
-&lt;li&gt;Node.js，由于 Node.js 出现较晚，它避免了Python、Ruby 包全局污染的问题，而是选择将第三份模块安装在项目内的&lt;code&gt;node_modules&lt;/code&gt;文件夹内&lt;/li&gt;
-&lt;/ul&gt;
-&lt;h2 id=&#34;总结&#34;&gt;总结&lt;/h2&gt;
-&lt;p&gt;经过上面简短的介绍，我相信大家对这三门语言有了全面的理解，多了解一门语言，也就是多个解决问题的思路。&lt;/p&gt;
-&lt;p&gt;个人感觉，Python、Javascript 的语法比较中规中矩，适合大部分程序员学习。Ruby 更适合 geek 去学，因为它的很多奇特语法会让你思考语言的设计细节，而不仅仅是使用这么简单。&lt;/p&gt;
-&lt;p&gt;最近我在看&lt;a href=&#34;https://book.douban.com/subject/7056800/&#34;&gt;Ruby元编程&lt;/a&gt;，里面的很多内容就很有意思，一些内容在看 SICP 时就已经遇到，这种似曾相识的感觉很棒，我相信对编程语言的了解又加深了一步。谢谢 &lt;a href=&#34;https://en.wikipedia.org/wiki/Yukihiro_Matsumoto&#34;&gt;Yukihiro Matsumoto&lt;/a&gt;大叔，带给我们 ruby 这么美妙的语言。&lt;/p&gt;
-&lt;h2 id=&#34;参考&#34;&gt;参考&lt;/h2&gt;
-&lt;ul&gt;
-&lt;li&gt;&lt;a href=&#34;http://stackoverflow.com/questions/7299010/why-is-string-concatenation-faster-than-array-join&#34;&gt;http://stackoverflow.com/questions/7299010/why-is-string-concatenation-faster-than-array-join&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;https://waymoot.org/home/python_string/&#34;&gt;https://waymoot.org/home/python_string/&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;https://wyeworks.com/blog/2015/12/1/immutable-strings-in-ruby-2-dot-3&#34;&gt;https://wyeworks.com/blog/2015/12/1/immutable-strings-in-ruby-2-dot-3&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;http://stackoverflow.com/questions/7156955/whats-the-difference-between-equal-eql-and&#34;&gt;http://stackoverflow.com/questions/7156955/whats-the-difference-between-equal-eql-and&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;http://stackoverflow.com/questions/214714/mutable-vs-immutable-objects&#34;&gt;http://stackoverflow.com/questions/214714/mutable-vs-immutable-objects&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;https://kentreis.wordpress.com/2007/02/08/identity-and-equality-in-ruby-and-smalltalk/&#34;&gt;https://kentreis.wordpress.com/2007/02/08/identity-and-equality-in-ruby-and-smalltalk/&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
-</description>
-    </item>
-    
-  </channel>
-</rss>
+&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;h2 id="包管理">包管理&lt;/h2>
+&lt;ul>
+&lt;li>Python，&lt;a href="https://pypi.python.org/pypi">PyPI&lt;/a>，多版本兼容推荐使用 &lt;a href="https://virtualenv.pypa.io">virtualenv&lt;/a> 管理&lt;/li>
+&lt;li>Ruby， &lt;a href="https://rubygems.org/">GEMS&lt;/a>，多版本兼容，推荐使用 &lt;a href="https://rvm.io/">rvm&lt;/a> + &lt;a href="http://bundler.io/">bundler&lt;/a> 管理&lt;/li>
+&lt;li>Node.js，由于 Node.js 出现较晚，它避免了Python、Ruby 包全局污染的问题，而是选择将第三份模块安装在项目内的&lt;code>node_modules&lt;/code>文件夹内&lt;/li>
+&lt;/ul>
+&lt;h2 id="总结">总结&lt;/h2>
+&lt;p>经过上面简短的介绍，我相信大家对这三门语言有了全面的理解，多了解一门语言，也就是多个解决问题的思路。&lt;/p>
+&lt;p>个人感觉，Python、Javascript 的语法比较中规中矩，适合大部分程序员学习。Ruby 更适合 geek 去学，因为它的很多奇特语法会让你思考语言的设计细节，而不仅仅是使用这么简单。&lt;/p>
+&lt;p>最近我在看&lt;a href="https://book.douban.com/subject/7056800/">Ruby元编程&lt;/a>，里面的很多内容就很有意思，一些内容在看 SICP 时就已经遇到，这种似曾相识的感觉很棒，我相信对编程语言的了解又加深了一步。谢谢 &lt;a href="https://en.wikipedia.org/wiki/Yukihiro_Matsumoto">Yukihiro Matsumoto&lt;/a>大叔，带给我们 ruby 这么美妙的语言。&lt;/p>
+&lt;h2 id="参考">参考&lt;/h2>
+&lt;ul>
+&lt;li>&lt;a href="http://stackoverflow.com/questions/7299010/why-is-string-concatenation-faster-than-array-join">http://stackoverflow.com/questions/7299010/why-is-string-concatenation-faster-than-array-join&lt;/a>&lt;/li>
+&lt;li>&lt;a href="https://waymoot.org/home/python_string/">https://waymoot.org/home/python_string/&lt;/a>&lt;/li>
+&lt;li>&lt;a href="https://wyeworks.com/blog/2015/12/1/immutable-strings-in-ruby-2-dot-3">https://wyeworks.com/blog/2015/12/1/immutable-strings-in-ruby-2-dot-3&lt;/a>&lt;/li>
+&lt;li>&lt;a href="http://stackoverflow.com/questions/7156955/whats-the-difference-between-equal-eql-and">http://stackoverflow.com/questions/7156955/whats-the-difference-between-equal-eql-and&lt;/a>&lt;/li>
+&lt;li>&lt;a href="http://stackoverflow.com/questions/214714/mutable-vs-immutable-objects">http://stackoverflow.com/questions/214714/mutable-vs-immutable-objects&lt;/a>&lt;/li>
+&lt;li>&lt;a href="https://kentreis.wordpress.com/2007/02/08/identity-and-equality-in-ruby-and-smalltalk/">https://kentreis.wordpress.com/2007/02/08/identity-and-equality-in-ruby-and-smalltalk/&lt;/a>&lt;/li>
+&lt;/ul></description></item></channel></rss>

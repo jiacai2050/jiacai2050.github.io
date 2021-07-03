@@ -1,779 +1,246 @@
-<!DOCTYPE html>
-<html lang="zh-cn">
-<head>
-  <meta charset="utf-8">
-  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
-  <title>Emacs 包管理指南 - Keep Coding</title>
-  <meta name="renderer" content="webkit" />
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<!doctype html><html lang=zh-cn><head><meta charset=utf-8><meta http-equiv=x-ua-compatible content="IE=edge,chrome=1"><title>Emacs 包管理指南 - Keep Coding</title><meta name=renderer content="webkit"><meta name=viewport content="width=device-width,initial-scale=1,maximum-scale=1"><meta http-equiv=cache-control content="no-transform"><meta http-equiv=cache-control content="no-siteapp"><meta name=theme-color content="#f8f5ec"><meta name=msapplication-navbutton-color content="#f8f5ec"><meta name=apple-mobile-web-app-capable content="yes"><meta name=apple-mobile-web-app-status-bar-style content="#f8f5ec"><meta name=author content="刘家财"><meta name=description content="对于 Emacs 用户来说，优化自己的配置是件乐趣无穷的事情，而且也是成为 Emacs 高手的必经之路。一般来说，新手的配置都是东拼西凑出来的，这是最快最有效的学习"><meta name=keywords content="lisp,clojure,emacs,database,life"><meta name=generator content="Hugo 0.83.1 with theme even"><link rel=canonical href=https://liujiacai.net/blog/2021/05/05/emacs-package/><link rel=apple-touch-icon sizes=180x180 href=/apple-touch-icon.png><link rel=icon type=image/png sizes=32x32 href=/favicon-32x32.png><link rel=icon type=image/png sizes=16x16 href=/favicon-16x16.png><link rel=manifest href=/manifest.json><link rel=mask-icon href=/safari-pinned-tab.svg color=#5bbad5><link href=/sass/main.min.154ed883776547b0e136be39b3037f61350da06f888d0868d1756a9463cd9520.css rel=stylesheet><link rel=stylesheet href=https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin=anonymous><link rel=stylesheet href=/css/jiacai.css><meta property="og:title" content="Emacs 包管理指南"><meta property="og:description" content="对于 Emacs 用户来说，优化自己的配置是件乐趣无穷的事情，而且也是成为 Emacs 高手的必经之路。一般来说，新手的配置都是东拼西凑出来的，这是最快最有效的学习"><meta property="og:type" content="article"><meta property="og:url" content="https://liujiacai.net/blog/2021/05/05/emacs-package/"><meta property="article:section" content="post"><meta property="article:published_time" content="2021-05-05T20:29:08+08:00"><meta property="article:modified_time" content="2021-05-06T22:34:17+08:00"><meta itemprop=name content="Emacs 包管理指南"><meta itemprop=description content="对于 Emacs 用户来说，优化自己的配置是件乐趣无穷的事情，而且也是成为 Emacs 高手的必经之路。一般来说，新手的配置都是东拼西凑出来的，这是最快最有效的学习"><meta itemprop=datePublished content="2021-05-05T20:29:08+08:00"><meta itemprop=dateModified content="2021-05-06T22:34:17+08:00"><meta itemprop=wordCount content="1981"><meta itemprop=keywords content="emacs,"><meta name=twitter:card content="summary"><meta name=twitter:title content="Emacs 包管理指南"><meta name=twitter:description content="对于 Emacs 用户来说，优化自己的配置是件乐趣无穷的事情，而且也是成为 Emacs 高手的必经之路。一般来说，新手的配置都是东拼西凑出来的，这是最快最有效的学习"><!--[if lte IE 9]><script src=https://cdnjs.cloudflare.com/ajax/libs/classlist/1.1.20170427/classList.min.js></script><![endif]--><!--[if lt IE 9]><script src=https://cdn.jsdelivr.net/npm/html5shiv@3.7.3/dist/html5shiv.min.js></script><script src=https://cdn.jsdelivr.net/npm/respond.js@1.4.2/dest/respond.min.js></script><![endif]--></head><body><div id=mobile-navbar class=mobile-navbar><div class=mobile-header-logo><a href=/ class=logo>Keep Coding</a></div><div class=mobile-navbar-icon><span></span><span></span><span></span></div></div><nav id=mobile-menu class="mobile-menu slideout-menu"><ul class=mobile-menu-list><a href=/post/><li class=mobile-menu-item>归档</li></a><a href=/tags/><li class=mobile-menu-item>标签</li></a><a href=/categories/><li class=mobile-menu-item>分类</li></a><a href=/podcast/><li class=mobile-menu-item>Podcast</li></a><a href=/blogrolls/><li class=mobile-menu-item>友链</li></a><a href=/about/><li class=mobile-menu-item>关于</li></a></ul></nav><div class=container id=mobile-panel><header id=header class=header><div class=logo-wrapper><a href=/ class=logo>Keep Coding</a></div><nav class=site-navbar><ul id=menu class=menu><li class=menu-item><a class=menu-item-link href=/post/>归档</a></li><li class=menu-item><a class=menu-item-link href=/tags/>标签</a></li><li class=menu-item><a class=menu-item-link href=/categories/>分类</a></li><li class=menu-item><a class=menu-item-link href=/podcast/>Podcast</a></li><li class=menu-item><a class=menu-item-link href=/blogrolls/>友链</a></li><li class=menu-item><a class=menu-item-link href=/about/>关于</a></li></ul></nav></header><main id=main class=main><div class=content-wrapper><div id=content class=content><article class=post><header class=post-header><h1 class=post-title>Emacs 包管理指南</h1><div class=post-meta><span class=post-time>2021-05-05</span>
+<span class=more-meta>约 1981 字</span>
+<span class=more-meta>预计阅读 4 分钟</span></div></header><div class=post-toc id=post-toc><h2 class=post-toc-title>文章目录</h2><div class="post-toc-content always-active"><nav id=TableOfContents><ul><li><a href=#headline-1>Package.el 问题</a></li><li><a href=#headline-2>包加载原理</a><ul><li><a href=#headline-3>Autoload</a></li><li><a href=#headline-4>Feature</a></li><li><a href=#headline-5>Load</a></li></ul></li><li><a href=#headline-6>Submodule 管理包</a><ul><li><a href=#headline-7>use-package bootstrap</a></li><li><a href=#headline-8>常用 Git 命令</a></li></ul></li><li><a href=#headline-9>参考</a></li></ul></nav></div></div><div class=post-content><p>对于 Emacs 用户来说，优化自己的配置是件乐趣无穷的事情，而且也是成为 Emacs 高手的必经之路。一般来说，新手的配置都是东拼西凑出来的，这是最快最有效的学习途径。随着对 Emacs 使用的加深，配置逐渐复杂，如果不对之前杂乱无章的配置进行重构，很难想象可以继续愉快地使用 Emacs。</p><p>这篇文章就来介绍一下我个人优化<a href=https://github.com/jiacai2050/dotfiles/tree/master/.emacs.d>配置</a>的心得，主要内容：包的加载原理与管理实践，希望对读者优化自己的配置有些帮助。</p><div id=outline-container-headline-1 class=outline-2><h2 id=headline-1>Package.el 问题</h2><div id=outline-text-headline-1 class=outline-text-2><p>毫不夸张地说，高度的扩展性是 Emacs 延续几十年生生不息的主要原因， <code class=verbatim>(length package-alist)</code> 可以统计通过 <a href=https://wikemacs.org/wiki/Package.el>package.el</a> 安装的包数量，我是 137 个。</p><p>尽管 package.el 提供了一种便捷的方式来安装包，但它并不提供版本管理的功能，这是任何一个包管理器最基础的功能，我曾经多次因为包升级导致功能失效，这是十分让人沮丧的事情，参考<a href="https://emacs-china.org/t/package-el-autoloads/8049/12?u=jiacai2050">这里</a>。</p><p>社区有一些解决方案，比如 <a href=https://github.com/raxod502/straight.el>straight</a>、<a href=https://github.com/emacscollective/borg>borg</a> ，但为了避免引入新问题，减轻学习负担，我目前没有采用这些方案，而是用 git 自带的 submodule 来管理一些<a href=https://github.com/jiacai2050/dotfiles/tree/master/.emacs.d/vendor>重度使用的包</a>（比如 lsp-mode/magit），闲暇时再专门去做升级工作，升级出问题直接回退到之前的 commit 即可，再也不用担心被工具打断的烦恼。</p></div></div><div id=outline-container-headline-2 class=outline-2><h2 id=headline-2>包加载原理</h2><div id=outline-text-headline-2 class=outline-text-2><p>对于 package.el 管理的包，用户是无须了解 Emacs 加载包的方式就可以使用，但是如何要自己完全管理，就需要了解这些细节了。首先明确下包的定义：</p><blockquote><p>包是<a href=https://www.gnu.org/software/emacs/manual/html_node/elisp/Simple-Packages.html>一个</a>或<a href=https://www.gnu.org/software/emacs/manual/html_node/elisp/Multi_002dfile-Packages.html>多个</a> ELisp 文件的集合，Emacs 在 <a href=https://www.gnu.org/software/emacs/manual/html_node/elisp/Library-Search.html>load-path</a> 指定的文件夹中进行搜索。</p></blockquote><p>Emacs 提供了两类高阶接口来进行包的自动加载：Autoload 与 Feature。</p><div id=outline-container-headline-3 class=outline-3><h3 id=headline-3><a href=https://www.gnu.org/software/emacs/manual/html_node/elisp/Autoload.html>Autoload</a></h3><div id=outline-text-headline-3 class=outline-text-3><p>Autoload 函数可以声明函数或宏，在真正使用时再去加载其对应的文件。</p><div class="src src-lisp"><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-lisp data-lang=lisp><span class=p>(</span><span class=nv>autoload</span> <span class=nv>filename</span> <span class=nv>docstring</span> <span class=nv>interactive</span> <span class=k>type</span><span class=p>)</span></code></pre></td></tr></table></div></div></div><p>一般不直接使用 autoload 函数，而是 autoload 魔法注释，然后用一些函数来解析魔法注释自动生成 autoload 函数，比如在 my-mode 文件夹内有一文件 <code class=verbatim>hello-world.el</code> ，内容为：</p><div class="src src-lisp"><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-lisp data-lang=lisp><span class=c1>;;;###autoload</span>
+<span class=p>(</span><span class=nb>defun</span> <span class=nv>my-hello</span> <span class=p>()</span>
+<span class=p>(</span><span class=nv>interactive</span><span class=p>)</span>
+<span class=p>(</span><span class=nv>message</span> <span class=s>&#34;hello world&#34;</span><span class=p>))</span></code></pre></td></tr></table></div></div></div><p>使用下面的命令生成 autoloads 文件</p><div class="src src-lisp"><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-lisp data-lang=lisp><span class=p>(</span><span class=nv>package-generate-autoloads</span> <span class=s>&#34;hello-world&#34;</span> <span class=s>&#34;~/my-mode&#34;</span><span class=p>)</span></code></pre></td></tr></table></div></div></div><p>在同一目录生成 <code class=verbatim>hello-world-autoloads.el</code> 文件，内容为：</p><div class="src src-lisp"><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-lisp data-lang=lisp><span class=c1>;;; hello-world-autoloads.el --- automatically extracted autoloads</span>
+<span class=c1>;;</span>
+<span class=c1>;;; Code:</span>
 
-<meta http-equiv="Cache-Control" content="no-transform" />
-<meta http-equiv="Cache-Control" content="no-siteapp" />
-
-<meta name="theme-color" content="#f8f5ec" />
-<meta name="msapplication-navbutton-color" content="#f8f5ec">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
-
-
-<meta name="author" content="刘家财" /><meta name="description" content="对于 Emacs 用户来说，优化自己的配置是件乐趣无穷的事情，而且也是成为 Emacs 高手的必经之路。一般来说，新手的配置都是东拼西凑出来的，这是最快最有效的学习" /><meta name="keywords" content="lisp, clojure, emacs, database, life" />
-
-
-
-
-
-
-<meta name="generator" content="Hugo 0.79.0 with theme even" />
-
-
-<link rel="canonical" href="https://liujiacai.net/blog/2021/05/05/emacs-package/" />
-<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
-<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
-<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
-<link rel="manifest" href="/manifest.json">
-<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
-
-
-
-<link href="/sass/main.min.c7bc1becf36bcf6a9ebd25d2947e43a2eb745ddb0c9a32b43126fd7fa460c351.css" rel="stylesheet">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
-<link rel="stylesheet" href="/css/jiacai.css">
-
-
-<meta property="og:title" content="Emacs 包管理指南" />
-<meta property="og:description" content="对于 Emacs 用户来说，优化自己的配置是件乐趣无穷的事情，而且也是成为 Emacs 高手的必经之路。一般来说，新手的配置都是东拼西凑出来的，这是最快最有效的学习" />
-<meta property="og:type" content="article" />
-<meta property="og:url" content="https://liujiacai.net/blog/2021/05/05/emacs-package/" />
-<meta property="article:published_time" content="2021-05-05T20:29:08+08:00" />
-<meta property="article:modified_time" content="2021-05-06T22:34:17+08:00" />
-<meta itemprop="name" content="Emacs 包管理指南">
-<meta itemprop="description" content="对于 Emacs 用户来说，优化自己的配置是件乐趣无穷的事情，而且也是成为 Emacs 高手的必经之路。一般来说，新手的配置都是东拼西凑出来的，这是最快最有效的学习">
-<meta itemprop="datePublished" content="2021-05-05T20:29:08+08:00" />
-<meta itemprop="dateModified" content="2021-05-06T22:34:17+08:00" />
-<meta itemprop="wordCount" content="1981">
+<span class=p>(</span><span class=nv>add-to-list</span> <span class=ss>&#39;load-path</span> <span class=p>(</span><span class=nv>directory-file-name</span>
+                      <span class=p>(</span><span class=nb>or</span> <span class=p>(</span><span class=nv>file-name-directory</span> <span class=err>#</span><span class=nv>$</span><span class=p>)</span> <span class=p>(</span><span class=nf>car</span> <span class=nv>load-path</span><span class=p>))))</span>
 
 
+<span class=c1>;;;### (autoloads nil &#34;hello-world&#34; &#34;hello-world.el&#34; (0 0 0 0))</span>
+<span class=c1>;;; Generated autoloads from hello-world.el</span>
 
-<meta itemprop="keywords" content="emacs," />
-<meta name="twitter:card" content="summary"/>
-<meta name="twitter:title" content="Emacs 包管理指南"/>
-<meta name="twitter:description" content="对于 Emacs 用户来说，优化自己的配置是件乐趣无穷的事情，而且也是成为 Emacs 高手的必经之路。一般来说，新手的配置都是东拼西凑出来的，这是最快最有效的学习"/>
+<span class=p>(</span><span class=nv>autoload</span> <span class=ss>&#39;my-hello</span> <span class=s>&#34;hello-world&#34;</span> <span class=no>nil</span> <span class=no>t</span> <span class=no>nil</span><span class=p>)</span>
 
-<!--[if lte IE 9]>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/classlist/1.1.20170427/classList.min.js"></script>
-<![endif]-->
+<span class=c1>;;;***</span>
 
-<!--[if lt IE 9]>
-  <script src="https://cdn.jsdelivr.net/npm/html5shiv@3.7.3/dist/html5shiv.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/respond.js@1.4.2/dest/respond.min.js"></script>
-<![endif]-->
+<span class=c1>;; Local Variables:</span>
+<span class=c1>;; version-control: never</span>
+<span class=c1>;; no-byte-compile: t</span>
+<span class=c1>;; no-update-autoloads: t</span>
+<span class=c1>;; coding: utf-8</span>
+<span class=c1>;; End:</span>
+<span class=c1>;;; hello-world-autoloads.el ends here</span></code></pre></td></tr></table></div></div></div><p>这意味着只在第一次 <code class=verbatim>M-x my-hello</code> 时，才回去加载 <code class=verbatim>hello-world.el</code> 文件。</p><p>这里需要注意，为了让 Emacs 识别到 my-hello 函数的声明，需要去加载 hello-world-autoloads.el 文件，对于通过 package.el 管理的包，package.el 在下载该包时，会进行下面的操作：</p><ol><li><p>解析依赖，递归下载</p></li><li><p>把包目录追加到 load-path 中</p></li><li><p>自动生成 autoloads 文件，并且加载它</p></li></ol><p>这样用户就能够直接使用该包提供的函数了。如果使用 submodule 管理，上述操作则需要自己实现，后文会介绍。</p></div></div><div id=outline-container-headline-4 class=outline-3><h3 id=headline-4><a href=https://www.gnu.org/software/emacs/manual/html_node/elisp/Named-Features.html>Feature</a></h3><div id=outline-text-headline-4 class=outline-text-3><p>Feature 是 Emacs 提供的另一种自动加载 ELisp 文件的机制，使用示例：</p><div class="src src-lisp"><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span><span class=lnt>5
+</span><span class=lnt>6
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-lisp data-lang=lisp><span class=p>(</span><span class=nb>defun</span> <span class=nv>my-hello</span> <span class=p>()</span>
+  <span class=p>(</span><span class=nv>interactive</span><span class=p>)</span>
+  <span class=p>(</span><span class=nv>message</span> <span class=s>&#34;hello world&#34;</span><span class=p>))</span>
 
-</head>
-<body>
-  <div id="mobile-navbar" class="mobile-navbar">
-  <div class="mobile-header-logo">
-    <a href="/" class="logo">Keep Coding</a>
-  </div>
-  <div class="mobile-navbar-icon">
-    <span></span>
-    <span></span>
-    <span></span>
-  </div>
-</div>
-<nav id="mobile-menu" class="mobile-menu slideout-menu">
-  <ul class="mobile-menu-list">
-    <a href="/">
-        <li class="mobile-menu-item">主页</li>
-      </a><a href="/post/">
-        <li class="mobile-menu-item">归档</li>
-      </a><a href="/tags/">
-        <li class="mobile-menu-item">标签</li>
-      </a><a href="/categories/">
-        <li class="mobile-menu-item">分类</li>
-      </a><a href="/podcast/">
-        <li class="mobile-menu-item">Podcast</li>
-      </a><a href="/blogrolls/">
-        <li class="mobile-menu-item">友链</li>
-      </a><a href="/about/">
-        <li class="mobile-menu-item">关于</li>
-      </a>
-  </ul>
-</nav>
-  <div class="container" id="mobile-panel">
-    <header id="header" class="header">
-        <div class="logo-wrapper">
-  <a href="/" class="logo">Keep Coding</a>
-</div>
+<span class=c1>;; feature 名与文件名相同</span>
+<span class=p>(</span><span class=nf>provide</span> <span class=ss>&#39;hello-world</span><span class=p>)</span></code></pre></td></tr></table></div></div></div><p>上述代码即生成了一个 feature，名为 hello-world，由于与文件同名，只需在使用 my-hello 前 <code class=verbatim>(require 'hello-world)</code> 即可，这样就会去自动加载 hello-world.el。</p></div></div><div id=outline-container-headline-5 class=outline-3><h3 id=headline-5><a href=https://www.gnu.org/software/emacs/manual/html_node/elisp/How-Programs-Do-Loading.html>Load</a></h3><div id=outline-text-headline-5 class=outline-text-3><div class="src src-lisp"><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-lisp data-lang=lisp><span class=p>(</span><span class=nf>load</span> <span class=nv>filename</span> <span class=k>&amp;optional</span> <span class=nv>missing-ok</span> <span class=nv>nomessage</span> <span class=nv>nosuffix</span> <span class=nv>must-suffix</span><span class=p>)</span></code></pre></td></tr></table></div></div></div><p>上面的 autoload 与 feature 都会调用 load 函数去加载文件，load 为相对低级的 API，不推荐上层直接调用。</p></div></div></div></div><div id=outline-container-headline-6 class=outline-2><h2 id=headline-6>Submodule 管理包</h2><div id=outline-text-headline-6 class=outline-text-2><p>在上面介绍 autoload 时，介绍了 package.el 下载一个包时的大致步骤，这里重新温故下：</p><ol><li><p>解析依赖，递归下载</p></li><li><p>把包目录追加到 load-path 中</p></li><li><p>自动生成 autoloads 文件，并且加载它</p></li></ol><p>使用 submodule 的话，只能下载包本身，上述三步都需要自己做，我目前使用 <a href=https://github.com/jwiegley/use-package>use-package</a> 来下载、配置包，下面通过一个示例来介绍其用法：</p><div class="src src-lisp"><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-lisp data-lang=lisp><span class=p>(</span><span class=nf>use-package</span> <span class=nv>lsp-mode</span>
+  <span class=c1>;; 配置 load-path，lsp-mode 通过 submodule 下载到 ~/.emacs.d/vendor/lsp-mode 目录内</span>
+  <span class=ss>:load-path</span> <span class=p>(</span><span class=s>&#34;~/.emacs.d/vendor/lsp-mode&#34;</span> <span class=s>&#34;~/.emacs.d/vendor/lsp-mode/clients&#34;</span><span class=p>)</span>
+  <span class=ss>:init</span> <span class=p>(</span><span class=k>setq</span> <span class=nv>lsp-keymap-prefix</span> <span class=s>&#34;C-c l&#34;</span><span class=p>)</span>
+  <span class=c1>;; 配置 mode 的 hook</span>
+  <span class=ss>:hook</span> <span class=p>((</span><span class=nv>go-mode</span> <span class=o>.</span> <span class=nv>lsp-deferred</span><span class=p>))</span>
+  <span class=c1>;; 生成 autoloads</span>
+  <span class=ss>:commands</span> <span class=p>(</span><span class=nv>lsp</span> <span class=nv>lsp-deferred</span><span class=p>)</span>
+  <span class=c1>;; 配置 custom 变量</span>
+  <span class=ss>:custom</span> <span class=p>((</span><span class=nv>lsp-log-io</span> <span class=no>nil</span><span class=p>))</span>
+  <span class=ss>:config</span>
+  <span class=p>(</span><span class=nf>require</span> <span class=ss>&#39;lsp-modeline</span><span class=p>)</span>
+  <span class=p>(</span><span class=nb>push</span> <span class=s>&#34;[/\\\\]vendor$&#34;</span> <span class=nv>lsp-file-watch-ignored-directories</span><span class=p>)</span>
+  <span class=c1>;; 配置 mode-map 快捷键</span>
+  <span class=ss>:bind</span> <span class=p>(</span><span class=ss>:map</span> <span class=nv>lsp-mode-map</span>
+              <span class=p>(</span><span class=s>&#34;M-.&#34;</span> <span class=o>.</span> <span class=nv>lsp-find-definition</span><span class=p>)</span>
+              <span class=p>(</span><span class=s>&#34;M-n&#34;</span> <span class=o>.</span> <span class=nv>lsp-find-references</span><span class=p>)))</span></code></pre></td></tr></table></div></div></div><p>可以看到，use-package 宏的使用非常简明扼要，而且把包的各种配置都统一起来了，强烈推荐。使用 <a href=https://www.gnu.org/software/emacs/manual/html_node/elisp/Expansion.html>macroexpand-1</a> 展开 use-package，会发现和我们手动配置的代码相差无几：</p><div class="src src-lisp"><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span><span class=lnt>28
+</span><span class=lnt>29
+</span><span class=lnt>30
+</span><span class=lnt>31
+</span><span class=lnt>32
+</span><span class=lnt>33
+</span><span class=lnt>34
+</span><span class=lnt>35
+</span><span class=lnt>36
+</span><span class=lnt>37
+</span><span class=lnt>38
+</span><span class=lnt>39
+</span><span class=lnt>40
+</span><span class=lnt>41
+</span><span class=lnt>42
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-lisp data-lang=lisp><span class=p>(</span><span class=k>progn</span>
+  <span class=p>(</span><span class=nv>eval-and-compile</span>
+    <span class=p>(</span><span class=nv>add-to-list</span> <span class=ss>&#39;load-path</span> <span class=s>&#34;~/.emacs.d/vendor/lsp-mode&#34;</span><span class=p>))</span>
+  <span class=p>(</span><span class=nv>eval-and-compile</span>
+    <span class=p>(</span><span class=nv>add-to-list</span> <span class=ss>&#39;load-path</span> <span class=s>&#34;~/.emacs.d/vendor/lsp-mode/clients&#34;</span><span class=p>))</span>
 
-<nav class="site-navbar">
-  <ul id="menu" class="menu">
-    <li class="menu-item">
-        <a class="menu-item-link" href="/">主页</a>
-      </li><li class="menu-item">
-        <a class="menu-item-link" href="/post/">归档</a>
-      </li><li class="menu-item">
-        <a class="menu-item-link" href="/tags/">标签</a>
-      </li><li class="menu-item">
-        <a class="menu-item-link" href="/categories/">分类</a>
-      </li><li class="menu-item">
-        <a class="menu-item-link" href="/podcast/">Podcast</a>
-      </li><li class="menu-item">
-        <a class="menu-item-link" href="/blogrolls/">友链</a>
-      </li><li class="menu-item">
-        <a class="menu-item-link" href="/about/">关于</a>
-      </li>
-  </ul>
-</nav>
-    </header>
+  <span class=p>(</span><span class=k>let</span>
+      <span class=p>((</span><span class=nv>custom--inhibit-theme-enable</span> <span class=no>nil</span><span class=p>))</span>
+    <span class=p>(</span><span class=nb>unless</span>
+        <span class=p>(</span><span class=nv>memq</span> <span class=ss>&#39;use-package</span> <span class=nv>custom-known-themes</span><span class=p>)</span>
+      <span class=p>(</span><span class=nv>deftheme</span> <span class=nf>use-package</span><span class=p>)</span>
+      <span class=p>(</span><span class=nv>enable-theme</span> <span class=ss>&#39;use-package</span><span class=p>)</span>
+      <span class=p>(</span><span class=k>setq</span> <span class=nv>custom-enabled-themes</span>
+            <span class=p>(</span><span class=nv>remq</span> <span class=ss>&#39;use-package</span> <span class=nv>custom-enabled-themes</span><span class=p>)))</span>
+    <span class=p>(</span><span class=nv>custom-theme-set-variables</span> <span class=ss>&#39;use-package</span>
+                                <span class=o>&#39;</span><span class=p>(</span><span class=nv>lsp-log-io</span> <span class=no>nil</span> <span class=no>nil</span> <span class=no>nil</span> <span class=s>&#34;Customized with use-package lsp-mode&#34;</span><span class=p>)))</span>
+  <span class=p>(</span><span class=nb>unless</span>
+      <span class=p>(</span><span class=nf>fboundp</span> <span class=ss>&#39;lsp-deferred</span><span class=p>)</span>
+    <span class=p>(</span><span class=nv>autoload</span> <span class=nf>#&#39;</span><span class=nv>lsp-deferred</span> <span class=s>&#34;lsp-mode&#34;</span> <span class=no>nil</span> <span class=no>t</span><span class=p>))</span>
+  <span class=p>(</span><span class=nb>unless</span>
+      <span class=p>(</span><span class=nf>fboundp</span> <span class=ss>&#39;lsp-find-definition</span><span class=p>)</span>
+    <span class=p>(</span><span class=nv>autoload</span> <span class=nf>#&#39;</span><span class=nv>lsp-find-definition</span> <span class=s>&#34;lsp-mode&#34;</span> <span class=no>nil</span> <span class=no>t</span><span class=p>))</span>
+  <span class=p>(</span><span class=nb>unless</span>
+      <span class=p>(</span><span class=nf>fboundp</span> <span class=ss>&#39;lsp-find-references</span><span class=p>)</span>
+    <span class=p>(</span><span class=nv>autoload</span> <span class=nf>#&#39;</span><span class=nv>lsp-find-references</span> <span class=s>&#34;lsp-mode&#34;</span> <span class=no>nil</span> <span class=no>t</span><span class=p>))</span>
+  <span class=p>(</span><span class=nb>unless</span>
+      <span class=p>(</span><span class=nf>fboundp</span> <span class=ss>&#39;lsp</span><span class=p>)</span>
+    <span class=p>(</span><span class=nv>autoload</span> <span class=nf>#&#39;</span><span class=nv>lsp</span> <span class=s>&#34;lsp-mode&#34;</span> <span class=no>nil</span> <span class=no>t</span><span class=p>))</span>
+  <span class=p>(</span><span class=nv>condition-case-unless-debug</span> <span class=nv>err</span>
+      <span class=p>(</span><span class=k>setq</span> <span class=nv>lsp-keymap-prefix</span> <span class=s>&#34;C-c l&#34;</span><span class=p>)</span>
+    <span class=p>(</span><span class=kt>error</span>
+     <span class=p>(</span><span class=nf>funcall</span> <span class=nv>use-package--warning139</span> <span class=ss>:init</span> <span class=nv>err</span><span class=p>)))</span>
+  <span class=p>(</span><span class=nv>eval-after-load</span> <span class=ss>&#39;lsp-mode</span>
+    <span class=o>&#39;</span><span class=p>(</span><span class=k>progn</span>
+       <span class=p>(</span><span class=nf>require</span> <span class=ss>&#39;lsp-modeline</span><span class=p>)</span>
+       <span class=p>(</span><span class=nb>push</span> <span class=s>&#34;[/\\\\]vendor$&#34;</span> <span class=nv>lsp-file-watch-ignored-directories</span><span class=p>)</span>
+       <span class=no>t</span><span class=p>)</span>
+    <span class=p>(</span><span class=nv>add-hook</span> <span class=ss>&#39;go-mode-hook</span> <span class=nf>#&#39;</span><span class=nv>lsp-deferred</span><span class=p>)</span>
+    <span class=p>(</span><span class=nv>bind-keys</span> <span class=ss>:package</span> <span class=nv>lsp-mode</span> <span class=ss>:map</span> <span class=nv>lsp-mode-map</span>
+      <span class=p>(</span><span class=s>&#34;M-.&#34;</span> <span class=o>.</span> <span class=nv>lsp-find-definition</span><span class=p>)</span>
+      <span class=p>(</span><span class=s>&#34;M-n&#34;</span> <span class=o>.</span> <span class=nv>lsp-find-references</span><span class=p>))</span>
+    <span class=p>))</span></code></pre></td></tr></table></div></div></div><p>use-package 解决了繁琐的配置问题，但并不能解决包依赖的问题，只能一个个下载（具体依赖见包的 <code class=verbatim>Package-Requires</code> 声明）：</p><div class="src src-lisp"><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span><span class=lnt>5
+</span><span class=lnt>6
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-lisp data-lang=lisp><span class=c1>;; lsp-mode deps</span>
+<span class=p>(</span><span class=nf>use-package</span> <span class=nv>spinner</span>
+  <span class=ss>:defer</span> <span class=no>t</span><span class=p>)</span>
+<span class=p>(</span><span class=nf>use-package</span> <span class=nv>lv</span>
+  <span class=ss>:defer</span> <span class=no>t</span><span class=p>)</span>
+<span class=c1>;; ...</span></code></pre></td></tr></table></div></div></div><p>use-package 在 load-path 中找不到这些依赖时，会自动利用 package.el 去下载。我这里的做法是折中的，对于一些轻量的包，没必要用 submodule 管理。读者可能会觉得这种手动管理依赖的方式会比较繁琐，但是实际上不同包的依赖很有可能是相同的，比如：<a href=https://github.com/magnars/dash.el>dash.el</a>、<a href=https://github.com/magnars/s.el>s.el</a>、<a href=https://github.com/rejeep/f.el>f.el</a> 等这些基础包，所以实际需要手动管理的依赖不是很多。</p><div id=outline-container-headline-7 class=outline-3><h3 id=headline-7>use-package bootstrap</h3><div id=outline-text-headline-7 class=outline-text-3><div class="src src-lisp"><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-lisp data-lang=lisp><span class=p>(</span><span class=nv>package-initialize</span><span class=p>)</span>
+<span class=p>(</span><span class=nb>when</span> <span class=p>(</span><span class=nf>not</span> <span class=nv>package-archive-contents</span><span class=p>)</span>
+  <span class=p>(</span><span class=nv>package-refresh-contents</span><span class=p>))</span>
 
-    <main id="main" class="main">
-      <div class="content-wrapper">
-        <div id="content" class="content">
-          <article class="post">
-    
-    <header class="post-header">
-      <h1 class="post-title">Emacs 包管理指南</h1>
+<span class=p>(</span><span class=nb>dolist</span> <span class=p>(</span><span class=nv>p</span> <span class=o>&#39;</span><span class=p>(</span><span class=nf>use-package</span><span class=p>))</span>
+  <span class=p>(</span><span class=nb>when</span> <span class=p>(</span><span class=nf>not</span> <span class=p>(</span><span class=nv>package-installed-p</span> <span class=nv>p</span><span class=p>))</span>
+    <span class=p>(</span><span class=nv>package-install</span> <span class=nv>p</span><span class=p>)))</span>
 
-      <div class="post-meta">
-        <span class="post-time"> 2021-05-05 </span>
-        
-          <span class="more-meta"> 约 1981 字 </span>
-          <span class="more-meta"> 预计阅读 4 分钟 </span>
-        
-      </div>
-    </header>
+<span class=p>(</span><span class=k>setq</span> <span class=nv>use-package-always-ensure</span> <span class=no>t</span>
+      <span class=nv>use-package-verbose</span> <span class=no>t</span><span class=p>)</span>
 
-    <div class="post-toc" id="post-toc">
-  <h2 class="post-toc-title">文章目录</h2>
-  <div class="post-toc-content always-active">
-    <nav id="TableOfContents">
-<ul>
-<li><a href="#headline-1">Package.el 问题</a>
-</li>
-<li><a href="#headline-2">包加载原理</a>
-<ul>
-<li><a href="#headline-3">Autoload</a>
-</li>
-<li><a href="#headline-4">Feature</a>
-</li>
-<li><a href="#headline-5">Load</a>
-</li>
-</ul>
-</li>
-<li><a href="#headline-6">Submodule 管理包</a>
-<ul>
-<li><a href="#headline-7">use-package bootstrap</a>
-</li>
-<li><a href="#headline-8">常用 Git 命令</a>
-</li>
-</ul>
-</li>
-<li><a href="#headline-9">参考</a>
-</li>
-</ul>
-</nav>
-  </div>
-</div>
-    <div class="post-content">
-      
-<p>
-对于 Emacs 用户来说，优化自己的配置是件乐趣无穷的事情，而且也是成为 Emacs 高手的必经之路。一般来说，新手的配置都是东拼西凑出来的，这是最快最有效的学习途径。随着对 Emacs 使用的加深，配置逐渐复杂，如果不对之前杂乱无章的配置进行重构，很难想象可以继续愉快地使用 Emacs。</p>
-<p>
-这篇文章就来介绍一下我个人优化<a href="https://github.com/jiacai2050/dotfiles/tree/master/.emacs.d">配置</a>的心得，主要内容：包的加载原理与管理实践，希望对读者优化自己的配置有些帮助。</p>
-<div id="outline-container-headline-1" class="outline-2">
-<h2 id="headline-1">
-Package.el 问题
-</h2>
-<div id="outline-text-headline-1" class="outline-text-2">
-<p>毫不夸张地说，高度的扩展性是 Emacs 延续几十年生生不息的主要原因， <code class="verbatim">(length package-alist)</code> 可以统计通过 <a href="https://wikemacs.org/wiki/Package.el">package.el</a> 安装的包数量，我是 137 个。</p>
-<p>
-尽管 package.el 提供了一种便捷的方式来安装包，但它并不提供版本管理的功能，这是任何一个包管理器最基础的功能，我曾经多次因为包升级导致功能失效，这是十分让人沮丧的事情，参考<a href="https://emacs-china.org/t/package-el-autoloads/8049/12?u=jiacai2050">这里</a>。</p>
-<p>
-社区有一些解决方案，比如 <a href="https://github.com/raxod502/straight.el">straight</a>、<a href="https://github.com/emacscollective/borg">borg</a> ，但为了避免引入新问题，减轻学习负担，我目前没有采用这些方案，而是用 git 自带的 submodule 来管理一些<a href="https://github.com/jiacai2050/dotfiles/tree/master/.emacs.d/vendor">重度使用的包</a>（比如 lsp-mode/magit），闲暇时再专门去做升级工作，升级出问题直接回退到之前的 commit 即可，再也不用担心被工具打断的烦恼。</p>
-</div>
-</div>
-<div id="outline-container-headline-2" class="outline-2">
-<h2 id="headline-2">
-包加载原理
-</h2>
-<div id="outline-text-headline-2" class="outline-text-2">
-<p>对于 package.el 管理的包，用户是无须了解 Emacs 加载包的方式就可以使用，但是如何要自己完全管理，就需要了解这些细节了。首先明确下包的定义：</p>
-<blockquote>
-<p>包是<a href="https://www.gnu.org/software/emacs/manual/html_node/elisp/Simple-Packages.html">一个</a>或<a href="https://www.gnu.org/software/emacs/manual/html_node/elisp/Multi_002dfile-Packages.html">多个</a> ELisp 文件的集合，Emacs 在 <a href="https://www.gnu.org/software/emacs/manual/html_node/elisp/Library-Search.html">load-path</a> 指定的文件夹中进行搜索。</p>
-</blockquote>
-<p>Emacs 提供了两类高阶接口来进行包的自动加载：Autoload 与 Feature。</p>
-<div id="outline-container-headline-3" class="outline-3">
-<h3 id="headline-3">
-<a href="Https://www.gnu.org/software/emacs/manual/html_node/elisp/Autoload.html">Autoload</a>
-</h3>
-<div id="outline-text-headline-3" class="outline-text-3">
-<p>Autoload 函数可以声明函数或宏，在真正使用时再去加载其对应的文件。</p>
-<div class="src src-lisp">
-<div class="highlight"><div class="chroma">
-<table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
-</span></code></pre></td>
-<td class="lntd">
-<pre class="chroma"><code class="language-lisp" data-lang="lisp"><span class="p">(</span><span class="nv">autoload</span> <span class="nv">filename</span> <span class="nv">docstring</span> <span class="nv">interactive</span> <span class="k">type</span><span class="p">)</span></code></pre></td></tr></table>
-</div>
-</div>
-</div>
-<p>一般不直接使用 autoload 函数，而是 autoload 魔法注释，然后用一些函数来解析魔法注释自动生成 autoload 函数，比如在 my-mode 文件夹内有一文件 <code class="verbatim">hello-world.el</code> ，内容为：</p>
-<div class="src src-lisp">
-<div class="highlight"><div class="chroma">
-<table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
-</span><span class="lnt">2
-</span><span class="lnt">3
-</span><span class="lnt">4
-</span></code></pre></td>
-<td class="lntd">
-<pre class="chroma"><code class="language-lisp" data-lang="lisp"><span class="c1">;;;###autoload</span>
-<span class="p">(</span><span class="nb">defun</span> <span class="nv">my-hello</span> <span class="p">()</span>
-<span class="p">(</span><span class="nv">interactive</span><span class="p">)</span>
-<span class="p">(</span><span class="nv">message</span> <span class="s">&#34;hello world&#34;</span><span class="p">))</span></code></pre></td></tr></table>
-</div>
-</div>
-</div>
-<p>使用下面的命令生成 autoloads 文件</p>
-<div class="src src-lisp">
-<div class="highlight"><div class="chroma">
-<table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
-</span></code></pre></td>
-<td class="lntd">
-<pre class="chroma"><code class="language-lisp" data-lang="lisp"><span class="p">(</span><span class="nv">package-generate-autoloads</span> <span class="s">&#34;hello-world&#34;</span> <span class="s">&#34;~/my-mode&#34;</span><span class="p">)</span></code></pre></td></tr></table>
-</div>
-</div>
-</div>
-<p>在同一目录生成 <code class="verbatim">hello-world-autoloads.el</code> 文件，内容为：</p>
-<div class="src src-lisp">
-<div class="highlight"><div class="chroma">
-<table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt"> 1
-</span><span class="lnt"> 2
-</span><span class="lnt"> 3
-</span><span class="lnt"> 4
-</span><span class="lnt"> 5
-</span><span class="lnt"> 6
-</span><span class="lnt"> 7
-</span><span class="lnt"> 8
-</span><span class="lnt"> 9
-</span><span class="lnt">10
-</span><span class="lnt">11
-</span><span class="lnt">12
-</span><span class="lnt">13
-</span><span class="lnt">14
-</span><span class="lnt">15
-</span><span class="lnt">16
-</span><span class="lnt">17
-</span><span class="lnt">18
-</span><span class="lnt">19
-</span><span class="lnt">20
-</span><span class="lnt">21
-</span><span class="lnt">22
-</span></code></pre></td>
-<td class="lntd">
-<pre class="chroma"><code class="language-lisp" data-lang="lisp"><span class="c1">;;; hello-world-autoloads.el --- automatically extracted autoloads</span>
-<span class="c1">;;</span>
-<span class="c1">;;; Code:</span>
-
-<span class="p">(</span><span class="nv">add-to-list</span> <span class="ss">&#39;load-path</span> <span class="p">(</span><span class="nv">directory-file-name</span>
-                      <span class="p">(</span><span class="nb">or</span> <span class="p">(</span><span class="nv">file-name-directory</span> <span class="err">#</span><span class="nv">$</span><span class="p">)</span> <span class="p">(</span><span class="nf">car</span> <span class="nv">load-path</span><span class="p">))))</span>
-
-
-<span class="c1">;;;### (autoloads nil &#34;hello-world&#34; &#34;hello-world.el&#34; (0 0 0 0))</span>
-<span class="c1">;;; Generated autoloads from hello-world.el</span>
-
-<span class="p">(</span><span class="nv">autoload</span> <span class="ss">&#39;my-hello</span> <span class="s">&#34;hello-world&#34;</span> <span class="no">nil</span> <span class="no">t</span> <span class="no">nil</span><span class="p">)</span>
-
-<span class="c1">;;;***</span>
-
-<span class="c1">;; Local Variables:</span>
-<span class="c1">;; version-control: never</span>
-<span class="c1">;; no-byte-compile: t</span>
-<span class="c1">;; no-update-autoloads: t</span>
-<span class="c1">;; coding: utf-8</span>
-<span class="c1">;; End:</span>
-<span class="c1">;;; hello-world-autoloads.el ends here</span></code></pre></td></tr></table>
-</div>
-</div>
-</div>
-<p>这意味着只在第一次 <code class="verbatim">M-x my-hello</code> 时，才回去加载 <code class="verbatim">hello-world.el</code> 文件。</p>
-<p>
-这里需要注意，为了让 Emacs 识别到 my-hello 函数的声明，需要去加载 hello-world-autoloads.el 文件，对于通过 package.el 管理的包，package.el 在下载该包时，会进行下面的操作：</p>
-<ol>
-<li>
-<p>解析依赖，递归下载</p>
-</li>
-<li>
-<p>把包目录追加到 load-path 中</p>
-</li>
-<li>
-<p>自动生成 autoloads 文件，并且加载它</p>
-</li>
-</ol>
-<p>这样用户就能够直接使用该包提供的函数了。如果使用 submodule 管理，上述操作则需要自己实现，后文会介绍。</p>
-</div>
-</div>
-<div id="outline-container-headline-4" class="outline-3">
-<h3 id="headline-4">
-<a href="Https://www.gnu.org/software/emacs/manual/html_node/elisp/Named-Features.html">Feature</a>
-</h3>
-<div id="outline-text-headline-4" class="outline-text-3">
-<p>Feature 是 Emacs 提供的另一种自动加载 ELisp 文件的机制，使用示例：</p>
-<div class="src src-lisp">
-<div class="highlight"><div class="chroma">
-<table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
-</span><span class="lnt">2
-</span><span class="lnt">3
-</span><span class="lnt">4
-</span><span class="lnt">5
-</span><span class="lnt">6
-</span></code></pre></td>
-<td class="lntd">
-<pre class="chroma"><code class="language-lisp" data-lang="lisp"><span class="p">(</span><span class="nb">defun</span> <span class="nv">my-hello</span> <span class="p">()</span>
-  <span class="p">(</span><span class="nv">interactive</span><span class="p">)</span>
-  <span class="p">(</span><span class="nv">message</span> <span class="s">&#34;hello world&#34;</span><span class="p">))</span>
-
-<span class="c1">;; feature 名与文件名相同</span>
-<span class="p">(</span><span class="nf">provide</span> <span class="ss">&#39;hello-world</span><span class="p">)</span></code></pre></td></tr></table>
-</div>
-</div>
-</div>
-<p>上述代码即生成了一个 feature，名为 hello-world，由于与文件同名，只需在使用 my-hello 前 <code class="verbatim">(require &#39;hello-world)</code> 即可，这样就会去自动加载 hello-world.el。</p>
-</div>
-</div>
-<div id="outline-container-headline-5" class="outline-3">
-<h3 id="headline-5">
-<a href="https://www.gnu.org/software/emacs/manual/html_node/elisp/How-Programs-Do-Loading.html">Load</a>
-</h3>
-<div id="outline-text-headline-5" class="outline-text-3">
-<div class="src src-lisp">
-<div class="highlight"><div class="chroma">
-<table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
-</span></code></pre></td>
-<td class="lntd">
-<pre class="chroma"><code class="language-lisp" data-lang="lisp"><span class="p">(</span><span class="nf">load</span> <span class="nv">filename</span> <span class="k">&amp;optional</span> <span class="nv">missing-ok</span> <span class="nv">nomessage</span> <span class="nv">nosuffix</span> <span class="nv">must-suffix</span><span class="p">)</span></code></pre></td></tr></table>
-</div>
-</div>
-</div>
-<p>上面的 autoload 与 feature 都会调用 load 函数去加载文件，load 为相对低级的 API，不推荐上层直接调用。</p>
-</div>
-</div>
-</div>
-</div>
-<div id="outline-container-headline-6" class="outline-2">
-<h2 id="headline-6">
-Submodule 管理包
-</h2>
-<div id="outline-text-headline-6" class="outline-text-2">
-<p>在上面介绍 autoload 时，介绍了 package.el 下载一个包时的大致步骤，这里重新温故下：</p>
-<ol>
-<li>
-<p>解析依赖，递归下载</p>
-</li>
-<li>
-<p>把包目录追加到 load-path 中</p>
-</li>
-<li>
-<p>自动生成 autoloads 文件，并且加载它</p>
-</li>
-</ol>
-<p>使用 submodule 的话，只能下载包本身，上述三步都需要自己做，我目前使用 <a href="https://github.com/jwiegley/use-package">use-package</a> 来下载、配置包，下面通过一个示例来介绍其用法：</p>
-<div class="src src-lisp">
-<div class="highlight"><div class="chroma">
-<table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt"> 1
-</span><span class="lnt"> 2
-</span><span class="lnt"> 3
-</span><span class="lnt"> 4
-</span><span class="lnt"> 5
-</span><span class="lnt"> 6
-</span><span class="lnt"> 7
-</span><span class="lnt"> 8
-</span><span class="lnt"> 9
-</span><span class="lnt">10
-</span><span class="lnt">11
-</span><span class="lnt">12
-</span><span class="lnt">13
-</span><span class="lnt">14
-</span><span class="lnt">15
-</span><span class="lnt">16
-</span><span class="lnt">17
-</span></code></pre></td>
-<td class="lntd">
-<pre class="chroma"><code class="language-lisp" data-lang="lisp"><span class="p">(</span><span class="nf">use-package</span> <span class="nv">lsp-mode</span>
-  <span class="c1">;; 配置 load-path，lsp-mode 通过 submodule 下载到 ~/.emacs.d/vendor/lsp-mode 目录内</span>
-  <span class="ss">:load-path</span> <span class="p">(</span><span class="s">&#34;~/.emacs.d/vendor/lsp-mode&#34;</span> <span class="s">&#34;~/.emacs.d/vendor/lsp-mode/clients&#34;</span><span class="p">)</span>
-  <span class="ss">:init</span> <span class="p">(</span><span class="k">setq</span> <span class="nv">lsp-keymap-prefix</span> <span class="s">&#34;C-c l&#34;</span><span class="p">)</span>
-  <span class="c1">;; 配置 mode 的 hook</span>
-  <span class="ss">:hook</span> <span class="p">((</span><span class="nv">go-mode</span> <span class="o">.</span> <span class="nv">lsp-deferred</span><span class="p">))</span>
-  <span class="c1">;; 生成 autoloads</span>
-  <span class="ss">:commands</span> <span class="p">(</span><span class="nv">lsp</span> <span class="nv">lsp-deferred</span><span class="p">)</span>
-  <span class="c1">;; 配置 custom 变量</span>
-  <span class="ss">:custom</span> <span class="p">((</span><span class="nv">lsp-log-io</span> <span class="no">nil</span><span class="p">))</span>
-  <span class="ss">:config</span>
-  <span class="p">(</span><span class="nf">require</span> <span class="ss">&#39;lsp-modeline</span><span class="p">)</span>
-  <span class="p">(</span><span class="nb">push</span> <span class="s">&#34;[/\\\\]vendor$&#34;</span> <span class="nv">lsp-file-watch-ignored-directories</span><span class="p">)</span>
-  <span class="c1">;; 配置 mode-map 快捷键</span>
-  <span class="ss">:bind</span> <span class="p">(</span><span class="ss">:map</span> <span class="nv">lsp-mode-map</span>
-              <span class="p">(</span><span class="s">&#34;M-.&#34;</span> <span class="o">.</span> <span class="nv">lsp-find-definition</span><span class="p">)</span>
-              <span class="p">(</span><span class="s">&#34;M-n&#34;</span> <span class="o">.</span> <span class="nv">lsp-find-references</span><span class="p">)))</span></code></pre></td></tr></table>
-</div>
-</div>
-</div>
-<p>可以看到，use-package 宏的使用非常简明扼要，而且把包的各种配置都统一起来了，强烈推荐。使用 <a href="https://www.gnu.org/software/emacs/manual/html_node/elisp/Expansion.html">macroexpand-1</a> 展开 use-package，会发现和我们手动配置的代码相差无几：</p>
-<div class="src src-lisp">
-<div class="highlight"><div class="chroma">
-<table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt"> 1
-</span><span class="lnt"> 2
-</span><span class="lnt"> 3
-</span><span class="lnt"> 4
-</span><span class="lnt"> 5
-</span><span class="lnt"> 6
-</span><span class="lnt"> 7
-</span><span class="lnt"> 8
-</span><span class="lnt"> 9
-</span><span class="lnt">10
-</span><span class="lnt">11
-</span><span class="lnt">12
-</span><span class="lnt">13
-</span><span class="lnt">14
-</span><span class="lnt">15
-</span><span class="lnt">16
-</span><span class="lnt">17
-</span><span class="lnt">18
-</span><span class="lnt">19
-</span><span class="lnt">20
-</span><span class="lnt">21
-</span><span class="lnt">22
-</span><span class="lnt">23
-</span><span class="lnt">24
-</span><span class="lnt">25
-</span><span class="lnt">26
-</span><span class="lnt">27
-</span><span class="lnt">28
-</span><span class="lnt">29
-</span><span class="lnt">30
-</span><span class="lnt">31
-</span><span class="lnt">32
-</span><span class="lnt">33
-</span><span class="lnt">34
-</span><span class="lnt">35
-</span><span class="lnt">36
-</span><span class="lnt">37
-</span><span class="lnt">38
-</span><span class="lnt">39
-</span><span class="lnt">40
-</span><span class="lnt">41
-</span><span class="lnt">42
-</span></code></pre></td>
-<td class="lntd">
-<pre class="chroma"><code class="language-lisp" data-lang="lisp"><span class="p">(</span><span class="k">progn</span>
-  <span class="p">(</span><span class="nv">eval-and-compile</span>
-    <span class="p">(</span><span class="nv">add-to-list</span> <span class="ss">&#39;load-path</span> <span class="s">&#34;~/.emacs.d/vendor/lsp-mode&#34;</span><span class="p">))</span>
-  <span class="p">(</span><span class="nv">eval-and-compile</span>
-    <span class="p">(</span><span class="nv">add-to-list</span> <span class="ss">&#39;load-path</span> <span class="s">&#34;~/.emacs.d/vendor/lsp-mode/clients&#34;</span><span class="p">))</span>
-
-  <span class="p">(</span><span class="k">let</span>
-      <span class="p">((</span><span class="nv">custom--inhibit-theme-enable</span> <span class="no">nil</span><span class="p">))</span>
-    <span class="p">(</span><span class="nb">unless</span>
-        <span class="p">(</span><span class="nv">memq</span> <span class="ss">&#39;use-package</span> <span class="nv">custom-known-themes</span><span class="p">)</span>
-      <span class="p">(</span><span class="nv">deftheme</span> <span class="nf">use-package</span><span class="p">)</span>
-      <span class="p">(</span><span class="nv">enable-theme</span> <span class="ss">&#39;use-package</span><span class="p">)</span>
-      <span class="p">(</span><span class="k">setq</span> <span class="nv">custom-enabled-themes</span>
-            <span class="p">(</span><span class="nv">remq</span> <span class="ss">&#39;use-package</span> <span class="nv">custom-enabled-themes</span><span class="p">)))</span>
-    <span class="p">(</span><span class="nv">custom-theme-set-variables</span> <span class="ss">&#39;use-package</span>
-                                <span class="o">&#39;</span><span class="p">(</span><span class="nv">lsp-log-io</span> <span class="no">nil</span> <span class="no">nil</span> <span class="no">nil</span> <span class="s">&#34;Customized with use-package lsp-mode&#34;</span><span class="p">)))</span>
-  <span class="p">(</span><span class="nb">unless</span>
-      <span class="p">(</span><span class="nf">fboundp</span> <span class="ss">&#39;lsp-deferred</span><span class="p">)</span>
-    <span class="p">(</span><span class="nv">autoload</span> <span class="nf">#&#39;</span><span class="nv">lsp-deferred</span> <span class="s">&#34;lsp-mode&#34;</span> <span class="no">nil</span> <span class="no">t</span><span class="p">))</span>
-  <span class="p">(</span><span class="nb">unless</span>
-      <span class="p">(</span><span class="nf">fboundp</span> <span class="ss">&#39;lsp-find-definition</span><span class="p">)</span>
-    <span class="p">(</span><span class="nv">autoload</span> <span class="nf">#&#39;</span><span class="nv">lsp-find-definition</span> <span class="s">&#34;lsp-mode&#34;</span> <span class="no">nil</span> <span class="no">t</span><span class="p">))</span>
-  <span class="p">(</span><span class="nb">unless</span>
-      <span class="p">(</span><span class="nf">fboundp</span> <span class="ss">&#39;lsp-find-references</span><span class="p">)</span>
-    <span class="p">(</span><span class="nv">autoload</span> <span class="nf">#&#39;</span><span class="nv">lsp-find-references</span> <span class="s">&#34;lsp-mode&#34;</span> <span class="no">nil</span> <span class="no">t</span><span class="p">))</span>
-  <span class="p">(</span><span class="nb">unless</span>
-      <span class="p">(</span><span class="nf">fboundp</span> <span class="ss">&#39;lsp</span><span class="p">)</span>
-    <span class="p">(</span><span class="nv">autoload</span> <span class="nf">#&#39;</span><span class="nv">lsp</span> <span class="s">&#34;lsp-mode&#34;</span> <span class="no">nil</span> <span class="no">t</span><span class="p">))</span>
-  <span class="p">(</span><span class="nv">condition-case-unless-debug</span> <span class="nv">err</span>
-      <span class="p">(</span><span class="k">setq</span> <span class="nv">lsp-keymap-prefix</span> <span class="s">&#34;C-c l&#34;</span><span class="p">)</span>
-    <span class="p">(</span><span class="kt">error</span>
-     <span class="p">(</span><span class="nf">funcall</span> <span class="nv">use-package--warning139</span> <span class="ss">:init</span> <span class="nv">err</span><span class="p">)))</span>
-  <span class="p">(</span><span class="nv">eval-after-load</span> <span class="ss">&#39;lsp-mode</span>
-    <span class="o">&#39;</span><span class="p">(</span><span class="k">progn</span>
-       <span class="p">(</span><span class="nf">require</span> <span class="ss">&#39;lsp-modeline</span><span class="p">)</span>
-       <span class="p">(</span><span class="nb">push</span> <span class="s">&#34;[/\\\\]vendor$&#34;</span> <span class="nv">lsp-file-watch-ignored-directories</span><span class="p">)</span>
-       <span class="no">t</span><span class="p">)</span>
-    <span class="p">(</span><span class="nv">add-hook</span> <span class="ss">&#39;go-mode-hook</span> <span class="nf">#&#39;</span><span class="nv">lsp-deferred</span><span class="p">)</span>
-    <span class="p">(</span><span class="nv">bind-keys</span> <span class="ss">:package</span> <span class="nv">lsp-mode</span> <span class="ss">:map</span> <span class="nv">lsp-mode-map</span>
-      <span class="p">(</span><span class="s">&#34;M-.&#34;</span> <span class="o">.</span> <span class="nv">lsp-find-definition</span><span class="p">)</span>
-      <span class="p">(</span><span class="s">&#34;M-n&#34;</span> <span class="o">.</span> <span class="nv">lsp-find-references</span><span class="p">))</span>
-    <span class="p">))</span></code></pre></td></tr></table>
-</div>
-</div>
-</div>
-<p>use-package 解决了繁琐的配置问题，但并不能解决包依赖的问题，只能一个个下载（具体依赖见包的 <code class="verbatim">Package-Requires</code> 声明）：</p>
-<div class="src src-lisp">
-<div class="highlight"><div class="chroma">
-<table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
-</span><span class="lnt">2
-</span><span class="lnt">3
-</span><span class="lnt">4
-</span><span class="lnt">5
-</span><span class="lnt">6
-</span></code></pre></td>
-<td class="lntd">
-<pre class="chroma"><code class="language-lisp" data-lang="lisp"><span class="c1">;; lsp-mode deps</span>
-<span class="p">(</span><span class="nf">use-package</span> <span class="nv">spinner</span>
-  <span class="ss">:defer</span> <span class="no">t</span><span class="p">)</span>
-<span class="p">(</span><span class="nf">use-package</span> <span class="nv">lv</span>
-  <span class="ss">:defer</span> <span class="no">t</span><span class="p">)</span>
-<span class="c1">;; ...</span></code></pre></td></tr></table>
-</div>
-</div>
-</div>
-<p>use-package 在 load-path 中找不到这些依赖时，会自动利用 package.el 去下载。我这里的做法是折中的，对于一些轻量的包，没必要用 submodule 管理。读者可能会觉得这种手动管理依赖的方式会比较繁琐，但是实际上不同包的依赖很有可能是相同的，比如：<a href="https://github.com/magnars/dash.el">dash.el</a>、<a href="https://github.com/magnars/s.el">s.el</a>、<a href="https://github.com/rejeep/f.el">f.el</a> 等这些基础包，所以实际需要手动管理的依赖不是很多。</p>
-<div id="outline-container-headline-7" class="outline-3">
-<h3 id="headline-7">
-use-package bootstrap
-</h3>
-<div id="outline-text-headline-7" class="outline-text-3">
-<div class="src src-lisp">
-<div class="highlight"><div class="chroma">
-<table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt"> 1
-</span><span class="lnt"> 2
-</span><span class="lnt"> 3
-</span><span class="lnt"> 4
-</span><span class="lnt"> 5
-</span><span class="lnt"> 6
-</span><span class="lnt"> 7
-</span><span class="lnt"> 8
-</span><span class="lnt"> 9
-</span><span class="lnt">10
-</span><span class="lnt">11
-</span><span class="lnt">12
-</span></code></pre></td>
-<td class="lntd">
-<pre class="chroma"><code class="language-lisp" data-lang="lisp"><span class="p">(</span><span class="nv">package-initialize</span><span class="p">)</span>
-<span class="p">(</span><span class="nb">when</span> <span class="p">(</span><span class="nf">not</span> <span class="nv">package-archive-contents</span><span class="p">)</span>
-  <span class="p">(</span><span class="nv">package-refresh-contents</span><span class="p">))</span>
-
-<span class="p">(</span><span class="nb">dolist</span> <span class="p">(</span><span class="nv">p</span> <span class="o">&#39;</span><span class="p">(</span><span class="nf">use-package</span><span class="p">))</span>
-  <span class="p">(</span><span class="nb">when</span> <span class="p">(</span><span class="nf">not</span> <span class="p">(</span><span class="nv">package-installed-p</span> <span class="nv">p</span><span class="p">))</span>
-    <span class="p">(</span><span class="nv">package-install</span> <span class="nv">p</span><span class="p">)))</span>
-
-<span class="p">(</span><span class="k">setq</span> <span class="nv">use-package-always-ensure</span> <span class="no">t</span>
-      <span class="nv">use-package-verbose</span> <span class="no">t</span><span class="p">)</span>
-
-<span class="c1">;; 后面就可以直接使用 use-package 来安装、配置包了</span></code></pre></td></tr></table>
-</div>
-</div>
-</div>
-</div>
-</div>
-<div id="outline-container-headline-8" class="outline-3">
-<h3 id="headline-8">
-常用 Git 命令
-</h3>
-<div id="outline-text-headline-8" class="outline-text-3">
-<div class="src src-bash">
-<div class="highlight"><div class="chroma">
-<table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
-</span><span class="lnt">2
-</span><span class="lnt">3
-</span><span class="lnt">4
-</span><span class="lnt">5
-</span><span class="lnt">6
-</span><span class="lnt">7
-</span><span class="lnt">8
-</span><span class="lnt">9
-</span></code></pre></td>
-<td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="c1"># 修改 .gitmodules 后</span>
+<span class=c1>;; 后面就可以直接使用 use-package 来安装、配置包了</span></code></pre></td></tr></table></div></div></div></div></div><div id=outline-container-headline-8 class=outline-3><h3 id=headline-8>常用 Git 命令</h3><div id=outline-text-headline-8 class=outline-text-3><div class="src src-bash"><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span><span class=lnt>5
+</span><span class=lnt>6
+</span><span class=lnt>7
+</span><span class=lnt>8
+</span><span class=lnt>9
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-bash data-lang=bash><span class=c1># 修改 .gitmodules 后</span>
 git submodule sync
 
-<span class="c1"># 更新到最新 commit</span>
+<span class=c1># 更新到最新 commit</span>
 git submodule update --init --recursive --remote
 
-<span class="c1"># https://stackoverflow.com/a/18854453/2163429</span>
-<span class="c1"># 更新到 .gitmodules 中指定的 commit</span>
-git submodule update --init</code></pre></td></tr></table>
-</div>
-</div>
-</div>
-<p>对于 submodule 的增加与删除，直接在 magit 中操作就好了， <code class="verbatim">magit-status-mode</code> 下按 <code class="verbatim">o</code> 即可。</p>
-</div>
-</div>
-</div>
-</div>
-<div id="outline-container-headline-9" class="outline-2">
-<h2 id="headline-9">
-参考
-</h2>
-<div id="outline-text-headline-9" class="outline-text-2">
-<ul>
-<li>
-<p><a href="https://www.gnu.org/software/emacs/manual/html_node/elisp/How-Programs-Do-Loading.html">16.1 How Programs Do Loading</a></p>
-</li>
-<li>
-<p><a href="https://www.gnu.org/software/emacs/manual/html_node/emacs/Lisp-Libraries.html">27.8 Libraries of Lisp Code for Emacs</a></p>
-</li>
-<li>
-<p><a href="https://www.gnu.org/software/emacs/manual/html_node/elisp/Startup-Summary.html">40.1.1 Summary: Sequence of Actions at Startup</a></p>
-</li>
-<li>
-<p><a href="https://www.gnu.org/software/emacs/manual/html_node/elisp/Packaging-Basics.html">41.1 Packaging Basics</a></p>
-</li>
-<li>
-<p><a href="https://www.gnu.org/software/emacs/manual/html_node/emacs/Package-Installation.html">48.3 Package Installation</a></p>
-</li>
-<li>
-<p><a href="https://emacs.stackexchange.com/questions/33783/file-name-directory-how-does-emacs-know-what-is">(file-name-directory #$): How does Emacs know what #$ is?</a></p>
-</li>
-</ul>
-</div>
-</div>
-
-    </div>
-
-    <div class="post-copyright">
-  <p class="copyright-item">
-    <span class="item-title">文章作者</span>
-    <span class="item-content">刘家财</span>
-  </p>
-  <p class="copyright-item">
-    <span class="item-title">上次更新</span>
-    <span class="item-content">
-        2021-05-06
-        <a href="https://github.com/jiacai2050/jiacai2050.github.io/commit/60a63ef147b03f729413afc70c876b94de62d36c" title="update emacs package">(60a63ef)</a>
-    </span>
-  </p>
-  
-  <p class="copyright-item">
-    <span class="item-title">许可协议</span>
-    <span class="item-content"><a rel="license noopener" href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank">CC BY-NC-ND 4.0</a></span>
-  </p>
-</div>
-<footer class="post-footer">
-      <div class="post-tags">
-          <a href="/tags/emacs/">emacs</a>
-          </div>
-      <nav class="post-nav">
-        
-        <a class="next" href="/blog/2021/04/27/trait-usage/">
-            <span class="next-text nav-default">Trait 使用及原理分析</span>
-            <span class="next-text nav-mobile">下一篇</span>
-            <i class="iconfont icon-right"></i>
-          </a>
-      </nav>
-    </footer>
-  </article>
-        </div>
-        <div id="disqus_thread"></div>
-    <script type="text/javascript">
-    (function() {
-      
-      
-      if (window.location.hostname === 'localhost') return;
-
-      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
-      var disqus_shortname = 'jiacai2050';
-      dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
-      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
-    })();
-    </script>
-    <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
-
-  
-
-  
-
-      </div>
-    </main>
-
-    <footer id="footer" class="footer">
-      <div class="social-links">
-      <a href="mailto:jiacai2050&#43;blog@gmail.com" class="iconfont icon-email" title="email"></a>
-      <a href="https://stackoverflow.com/users/2163429/jiacai-liu" class="iconfont icon-stack-overflow" title="stack-overflow"></a>
-      <a href="https://www.twitter.com/liujiacai" class="iconfont icon-twitter" title="twitter"></a>
-      <a href="https://www.facebook.com/liujiacai" class="iconfont icon-facebook" title="facebook"></a>
-      <a href="https://www.linkedin.com/in/liujiacai/" class="iconfont icon-linkedin" title="linkedin"></a>
-      <a href="https://github.com/jiacai2050" class="iconfont icon-github" title="github"></a>
-      <a href="http://weibo.com/liujiacai" class="iconfont icon-weibo" title="weibo"></a>
-      <a href="https://www.zhihu.com/people/jiacai2050" class="iconfont icon-zhihu" title="zhihu"></a>
-      <a href="https://www.douban.com/people/liujiacai/" class="iconfont icon-douban" title="douban"></a>
-  <a href="https://liujiacai.net/atom.xml" type="application/rss+xml" class="iconfont icon-rss" title="rss"></a>
-</div>
-
-<div class="copyright">
-  <span class="power-by">
-    由 <a class="hexo-link" href="https://gohugo.io">Hugo</a> 强力驱动
-  </span>
-  <span class="division">|</span>
-  <span class="theme-info">
-    主题 - 
-    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
-  </span>
-
-  
-
-  <span class="copyright-year">
-    &copy; 
-    2014 - 
-    2021<span class="heart"><i class="iconfont icon-heart"></i></span><span>刘家财</span>
-  </span>
-</div>
-
-    </footer>
-
-    <div class="back-to-top" id="back-to-top">
-      <i class="iconfont icon-up"></i>
-    </div>
-  </div>
-  
-  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
-  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
-
-
-
-<script type="text/javascript" src="/js/main.min.c12618f9a600c40bd024996677e951e64d3487006775aeb22e200c990006c5c7.js"></script>
-
-
-<script type="application/javascript">
-var doNotTrack = false;
-if (!doNotTrack) {
-	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
-	ga('create', 'UA-50745138-1', 'auto');
-	ga('set', 'anonymizeIp', true);
-	ga('send', 'pageview');
-}
-</script>
-<script async src='https://www.google-analytics.com/analytics.js'></script>
-<script id="baidu_analytics">
-  var _hmt = _hmt || [];
-  (function() {
-    if (window.location.hostname === 'localhost') return;
-    var hm = document.createElement("script"); hm.async = true;
-    hm.src = "https://hm.baidu.com/hm.js?3ffc15f400ce3f8b1db5afc4f29b6ce9";
-    var s = document.getElementsByTagName("script")[0];
-    s.parentNode.insertBefore(hm, s);
-  })();
-</script>
-
-
-
-
-
-
-</body>
-</html>
+<span class=c1># https://stackoverflow.com/a/18854453/2163429</span>
+<span class=c1># 更新到 .gitmodules 中指定的 commit</span>
+git submodule update --init</code></pre></td></tr></table></div></div></div><p>对于 submodule 的增加与删除，直接在 magit 中操作就好了， <code class=verbatim>magit-status-mode</code> 下按 <code class=verbatim>o</code> 即可。</p></div></div></div></div><div id=outline-container-headline-9 class=outline-2><h2 id=headline-9>参考</h2><div id=outline-text-headline-9 class=outline-text-2><ul><li><p><a href=https://www.gnu.org/software/emacs/manual/html_node/elisp/How-Programs-Do-Loading.html>16.1 How Programs Do Loading</a></p></li><li><p><a href=https://www.gnu.org/software/emacs/manual/html_node/emacs/Lisp-Libraries.html>27.8 Libraries of Lisp Code for Emacs</a></p></li><li><p><a href=https://www.gnu.org/software/emacs/manual/html_node/elisp/Startup-Summary.html>40.1.1 Summary: Sequence of Actions at Startup</a></p></li><li><p><a href=https://www.gnu.org/software/emacs/manual/html_node/elisp/Packaging-Basics.html>41.1 Packaging Basics</a></p></li><li><p><a href=https://www.gnu.org/software/emacs/manual/html_node/emacs/Package-Installation.html>48.3 Package Installation</a></p></li><li><p><a href=https://emacs.stackexchange.com/questions/33783/file-name-directory-how-does-emacs-know-what-is>(file-name-directory #$): How does Emacs know what #$ is?</a></p></li></ul></div></div></div><div class=post-copyright><p class=copyright-item><span class=item-title>文章作者</span>
+<span class=item-content>刘家财</span></p><p class=copyright-item><span class=item-title>上次更新</span>
+<span class=item-content>2021-05-06
+<a href=https://github.com/jiacai2050/jiacai2050.github.io/commit/60a63ef147b03f729413afc70c876b94de62d36c title="update emacs package">(60a63ef)</a></span></p><p class=copyright-item><span class=item-title>许可协议</span>
+<span class=item-content><a rel="license noopener" href=https://creativecommons.org/licenses/by-nc-nd/4.0/ target=_blank>CC BY-NC-ND 4.0</a></span></p></div><footer class=post-footer><div class=post-tags><a href=/tags/emacs/>emacs</a></div><nav class=post-nav><a class=next href=/blog/2021/04/27/trait-usage/><span class="next-text nav-default">Trait 使用及原理分析</span>
+<span class="next-text nav-mobile">下一篇</span>
+<i class="iconfont icon-right"></i></a></nav></footer></article></div><div id=disqus_thread></div><script type=text/javascript>(function(){var a,b;if(window.location.hostname==='localhost')return;a=document.createElement('script'),a.type='text/javascript',a.async=!0,b='jiacai2050',a.src='//'+b+'.disqus.com/embed.js',(document.getElementsByTagName('head')[0]||document.getElementsByTagName('body')[0]).appendChild(a)})()</script><noscript>Please enable JavaScript to view the <a href=http://disqus.com/?ref_noscript>comments powered by Disqus.</a></noscript></div></main><footer id=footer class=footer><div class=social-links><a href=mailto:jiacai2050+blog@gmail.com class="iconfont icon-email" title=email></a><a href=https://stackoverflow.com/users/2163429/jiacai-liu class="iconfont icon-stack-overflow" title=stack-overflow></a><a href=https://www.twitter.com/liujiacai class="iconfont icon-twitter" title=twitter></a><a href=https://www.facebook.com/liujiacai class="iconfont icon-facebook" title=facebook></a><a href=https://www.linkedin.com/in/liujiacai/ class="iconfont icon-linkedin" title=linkedin></a><a href=https://github.com/jiacai2050 class="iconfont icon-github" title=github></a><a href=http://weibo.com/liujiacai class="iconfont icon-weibo" title=weibo></a><a href=https://www.zhihu.com/people/jiacai2050 class="iconfont icon-zhihu" title=zhihu></a><a href=https://www.douban.com/people/liujiacai/ class="iconfont icon-douban" title=douban></a><a href=https://liujiacai.net/atom.xml type=application/rss+xml class="iconfont icon-rss" title=rss></a></div><div class=copyright><span class=power-by>由 <a class=hexo-link href=https://gohugo.io>Hugo</a> 强力驱动</span>
+<span class=division>|</span>
+<span class=theme-info>主题 -
+<a class=theme-link href=https://github.com/olOwOlo/hugo-theme-even>Even</a></span>
+<span class=copyright-year>&copy;
+2014 -
+2021<span class=heart><i class="iconfont icon-heart"></i></span><span>刘家财</span></span></div></footer><div class=back-to-top id=back-to-top><i class="iconfont icon-up"></i></div></div><script src=https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin=anonymous></script><script src=https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin=anonymous></script><script src=https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin=anonymous></script><script type=text/javascript src=/js/main.min.c99b103c33d1539acf3025e1913697534542c4a5aa5af0ccc20475ed2863603b.js></script><script type=application/javascript>var doNotTrack=!1;doNotTrack||(window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)},ga.l=+new Date,ga('create','UA-50745138-1','auto'),ga('set','anonymizeIp',!0),ga('send','pageview'))</script><script async src=https://www.google-analytics.com/analytics.js></script><script id=baidu_analytics>var _hmt=_hmt||[];(function(){var a,b;if(window.location.hostname==='localhost')return;a=document.createElement("script"),a.async=!0,a.src="https://hm.baidu.com/hm.js?3ffc15f400ce3f8b1db5afc4f29b6ce9",b=document.getElementsByTagName("script")[0],b.parentNode.insertBefore(a,b)})()</script></body></html>

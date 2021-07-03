@@ -1,214 +1,199 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?>
-<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
-  <channel>
-    <title>string on Keep Coding</title>
-    <link>https://liujiacai.net/tags/string/</link>
-    <description>Recent content in string on Keep Coding</description>
-    <generator>Hugo -- gohugo.io</generator>
-    <language>zh-cn</language>
-    <lastBuildDate>Fri, 20 Nov 2015 00:00:00 +0000</lastBuildDate><atom:link href="https://liujiacai.net/tags/string/atom.xml" rel="self" type="application/rss+xml" />
-    <item>
-      <title>字符串，那些你不知道的事</title>
-      <link>https://liujiacai.net/blog/2015/11/20/strings/</link>
-      <pubDate>Fri, 20 Nov 2015 00:00:00 +0000</pubDate>
-      
-      <guid>https://liujiacai.net/blog/2015/11/20/strings/</guid>
-      <description>&lt;p&gt;最近在看&lt;a href=&#34;http://www.diveintopython3.net/strings.html&#34;&gt;《Dive Into Python 3》&lt;/a&gt;，第四章讲了字符串相关知识，看后才发现，字符串远比我们想象的要复杂多。就像该书所说的&lt;/p&gt;
-&lt;blockquote&gt;
-&lt;p&gt;Everything you thought you knew about strings is wrong.&lt;/p&gt;
-&lt;/blockquote&gt;
-&lt;p&gt;是的，我之前对字符串的理解都是错的。&lt;/p&gt;
-&lt;p&gt;也许你会诧异，字符串有什么难的，即便遇到乱码的情况随便 Google 下就能找到解决方法，但是这样你不觉得有种被动的感觉嘛，我觉得和学习任何东西一样，学习编程首要是学习其思想，知道某事物为什么（why）要这么做，至于如何做（how）那只是前辈们提出的解决方案，我们可以参考，随便掌握下来。&lt;/p&gt;
-&lt;p&gt;本文下面首先讲解字符、字符串、编码、ASCII、Unicode、UTF-8 等一些基本概念，然后会介绍在使用计算机时是如何如编码打交道的，也就是实战部分。
-希望大家在阅读完本文后，都能对 string 有一全新的认识。&lt;/p&gt;
-&lt;h2 id=&#34;为什么需要字符编码&#34;&gt;为什么需要字符编码&lt;/h2&gt;
-&lt;p&gt;当我们谈到字符串（string或text）时，你可能会想到“计算机屏幕上的那些字符（characters）与符号（symbols）”，你正在阅读的文章，无非也是由一串字符组成的。但是你也许会发现，你无法给“字符串”一明确定义，但是我们就是知道，就像给你一个苹果，你能说出其名字，但是不能给出准确定义一样。这个问题先放一放，后面我再解释。&lt;/p&gt;
-&lt;p&gt;我们知道，计算机并不能直接处理操作字符与符号，它只认识 0、1 这两个数字，所以如果想让计算机显示各种各样的字符与符号，就必须定义它们与数字的一一映射关系，也就是我们所熟知的字符编码（character encoding）。你可简单的认为，字符编码为计算机屏幕上显示的字符与这些字符保存在内存或磁盘中的形式提供了一种映射关系。字符编码纷繁复杂，有些专门为特定语言优化，像针对简体中文的编码就有 &lt;a href=&#34;https://en.wikipedia.org/wiki/Extended_Unix_Code#EUC-CN&#34;&gt;EUC-CN&lt;/a&gt;，&lt;a href=&#34;https://en.wikipedia.org/wiki/HZ_%28character_encoding%29&#34;&gt;HZ&lt;/a&gt;；针对日文的&lt;a href=&#34;https://en.wikipedia.org/wiki/Extended_Unix_Code#EUC-JP&#34;&gt;EUC-JP&lt;/a&gt;，针对英文的 &lt;a href=&#34;https://en.wikipedia.org/wiki/ASCII&#34;&gt;ASCII&lt;/a&gt;；另一些专门用于多语言环境，像后面要讲到的 &lt;a href=&#34;https://en.wikipedia.org/wiki/UTF-8&#34;&gt;UTF-8&lt;/a&gt;。&lt;/p&gt;
-&lt;p&gt;我们可以把&lt;strong&gt;字符编码&lt;/strong&gt;看作一种解密密钥（decryption key），当我们收到一段字节流时，无论来自文件还是网络，如果我们知道它是“文本（text）”，那么我们就需要知道采用何种字符编码来&lt;strong&gt;解码&lt;/strong&gt;这些字节流，否则，我们得到的只是一堆无意义的符号，像 ������。&lt;/p&gt;
-&lt;h3 id=&#34;单字节编码&#34;&gt;单字节编码&lt;/h3&gt;
-&lt;p&gt;计算机最早起源于以英文为母语的美国，英文中的符号比较少，用七个二进制位就足以表示，现在最常见也是最流行的莫过于 ASCII 编码，该编码使用 0 到 127 之间的数字来存储字符（65表示“A”，97表示“a”）。&lt;/p&gt;
-&lt;center&gt;
-&lt;img src=&#34;https://img.alicdn.com/imgextra/i2/581166664/TB2uLAFhpXXXXXZXXXXXXXXXXXX_!!581166664.png_620x10000.jpg&#34; alt=&#34; ASCII_Code_Chart-Quick_ref_card&#34;/&gt;
-&lt;/center&gt;
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>string on Keep Coding</title><link>https://liujiacai.net/tags/string/</link><description>Recent content in string on Keep Coding</description><generator>Hugo -- gohugo.io</generator><language>zh-cn</language><lastBuildDate>Fri, 20 Nov 2015 00:00:00 +0000</lastBuildDate><atom:link href="https://liujiacai.net/tags/string/atom.xml" rel="self" type="application/rss+xml"/><item><title>字符串，那些你不知道的事</title><link>https://liujiacai.net/blog/2015/11/20/strings/</link><pubDate>Fri, 20 Nov 2015 00:00:00 +0000</pubDate><guid>https://liujiacai.net/blog/2015/11/20/strings/</guid><description>&lt;p>最近在看&lt;a href="http://www.diveintopython3.net/strings.html">《Dive Into Python 3》&lt;/a>，第四章讲了字符串相关知识，看后才发现，字符串远比我们想象的要复杂多。就像该书所说的&lt;/p>
+&lt;blockquote>
+&lt;p>Everything you thought you knew about strings is wrong.&lt;/p>
+&lt;/blockquote>
+&lt;p>是的，我之前对字符串的理解都是错的。&lt;/p>
+&lt;p>也许你会诧异，字符串有什么难的，即便遇到乱码的情况随便 Google 下就能找到解决方法，但是这样你不觉得有种被动的感觉嘛，我觉得和学习任何东西一样，学习编程首要是学习其思想，知道某事物为什么（why）要这么做，至于如何做（how）那只是前辈们提出的解决方案，我们可以参考，随便掌握下来。&lt;/p>
+&lt;p>本文下面首先讲解字符、字符串、编码、ASCII、Unicode、UTF-8 等一些基本概念，然后会介绍在使用计算机时是如何如编码打交道的，也就是实战部分。
+希望大家在阅读完本文后，都能对 string 有一全新的认识。&lt;/p>
+&lt;h2 id="为什么需要字符编码">为什么需要字符编码&lt;/h2>
+&lt;p>当我们谈到字符串（string或text）时，你可能会想到“计算机屏幕上的那些字符（characters）与符号（symbols）”，你正在阅读的文章，无非也是由一串字符组成的。但是你也许会发现，你无法给“字符串”一明确定义，但是我们就是知道，就像给你一个苹果，你能说出其名字，但是不能给出准确定义一样。这个问题先放一放，后面我再解释。&lt;/p>
+&lt;p>我们知道，计算机并不能直接处理操作字符与符号，它只认识 0、1 这两个数字，所以如果想让计算机显示各种各样的字符与符号，就必须定义它们与数字的一一映射关系，也就是我们所熟知的字符编码（character encoding）。你可简单的认为，字符编码为计算机屏幕上显示的字符与这些字符保存在内存或磁盘中的形式提供了一种映射关系。字符编码纷繁复杂，有些专门为特定语言优化，像针对简体中文的编码就有 &lt;a href="https://en.wikipedia.org/wiki/Extended_Unix_Code#EUC-CN">EUC-CN&lt;/a>，&lt;a href="https://en.wikipedia.org/wiki/HZ_%28character_encoding%29">HZ&lt;/a>；针对日文的&lt;a href="https://en.wikipedia.org/wiki/Extended_Unix_Code#EUC-JP">EUC-JP&lt;/a>，针对英文的 &lt;a href="https://en.wikipedia.org/wiki/ASCII">ASCII&lt;/a>；另一些专门用于多语言环境，像后面要讲到的 &lt;a href="https://en.wikipedia.org/wiki/UTF-8">UTF-8&lt;/a>。&lt;/p>
+&lt;p>我们可以把&lt;strong>字符编码&lt;/strong>看作一种解密密钥（decryption key），当我们收到一段字节流时，无论来自文件还是网络，如果我们知道它是“文本（text）”，那么我们就需要知道采用何种字符编码来&lt;strong>解码&lt;/strong>这些字节流，否则，我们得到的只是一堆无意义的符号，像 ������。&lt;/p>
+&lt;h3 id="单字节编码">单字节编码&lt;/h3>
+&lt;p>计算机最早起源于以英文为母语的美国，英文中的符号比较少，用七个二进制位就足以表示，现在最常见也是最流行的莫过于 ASCII 编码，该编码使用 0 到 127 之间的数字来存储字符（65表示“A”，97表示“a”）。&lt;/p>
+&lt;center>
+&lt;img src="https://img.alicdn.com/imgextra/i2/581166664/TB2uLAFhpXXXXXZXXXXXXXXXXXX_!!581166664.png_620x10000.jpg" alt=" ASCII_Code_Chart-Quick_ref_card"/>
+&lt;/center>
 我们知道一个字节是 8 位，ASCII 编码其实只使用了其中的低 7 位，还剩下 1 位。很多人就想着可以利用这最高的一位来表示更多的可见字符，由于 IBM 是那时最有名的 OEM，其制定的编码规则影响范围也最广。
-&lt;center&gt;
-&lt;img src=&#34;https://img.alicdn.com/imgextra/i4/581166664/TB2acofhpXXXXbQXpXXXXXXXXXX_!!581166664.gif&#34; alt=&#34;ascii-dos&#34;/&gt;
-&lt;/center&gt;
-&lt;p&gt;随着时间的推进，计算机的使用范围扩展到西方欧洲国家，像法国🇫🇷、西班牙🇪🇸，德国🇩🇪等，它们这些国家的字母比英文要多。所以为了表示这些国家的语言，也需要借助最高位扩展 ASCII 编码。但由于没有统一的标准，有些地方用 130 表示 &lt;code&gt;é&lt;/code&gt;，有些地方表示为 Hebrew letter Gimel &lt;code&gt;ג&lt;/code&gt;。在这些语言中，使用最广的是 &lt;a href=&#34;https://en.wikipedia.org/wiki/Windows-1252&#34;&gt;CP-1252 编码&lt;/a&gt;，也称为 Windows-1252 编码，因为在 &lt;a href=&#34;https://en.wikipedia.org/wiki/Windows-1252#History&#34;&gt;Windows 在 1.0 时就使用了该编码&lt;/a&gt;，随着 Windows 的普及，大家就沿用了 Windows-1252 的说法。&lt;/p&gt;
-&lt;center&gt;
-    &lt;img src=&#34;https://img.alicdn.com/imgextra/i1/581166664/TB25E0xhVXXXXbtXXXXXXXXXXXX_!!581166664.png_310x310.jpg&#34; alt=&#34; Windows-1252&#34;/&gt;
-&lt;/center&gt;
-&lt;h4 id=&#34;iso-8859-1&#34;&gt;ISO-8859-1&lt;/h4&gt;
-&lt;p&gt;既然说到了 Windows-1252，那么就不能不提它与 ISO-8859-1 的关系，我相信大家对 ISO-8859-1 这个编码肯定很熟悉，我还记得第一次用 Dreamweaver 写 HTML 时，其 HTML 模板中默认编码就是 ISO-8859-1，还有一个比较常见的场景是在 mysql 中，mysql 的默认编码为 latin-1，这其实是 ISO-8859-1 的一个别名而已。&lt;/p&gt;
-&lt;p&gt;&lt;a href=&#34;https://en.wikipedia.org/wiki/ISO/IEC_8859-1&#34;&gt;ISO-8859-1&lt;/a&gt; 是早期 8 位编码方案的一种，是 &lt;a href=&#34;https://en.wikipedia.org/wiki/ISO/IEC_8859&#34;&gt;ISO/IEC 8859&lt;/a&gt; 编码系列的一种， 第一版发布于 1987 年。它主要是针对西欧国家设计，现在大多数流行的 8 位编码方案都以它为基础，这其中就包括 Windows-1252。&lt;/p&gt;
-&lt;p&gt;Windows-1252 与 ISO-8859-1 的主要不同在于 0x80 到 0x9F 之间的字符，在 ISO-8859-1 中为控制字符（control characters），在 Windows-1252 中为可打印字符（printable characters）。&lt;/p&gt;
-&lt;p&gt;在 HTTP 协议中，以&lt;code&gt;text/&lt;/code&gt;开头的 MIME 类型的文件默认编码为 ISO-8859-1，但是由于控制字符在文件中用处不大，所以大多数客户端程序用 Windows-1252 来解码，这也就是它们之间经常混淆的主要原因。&lt;/p&gt;
-&lt;h3 id=&#34;字符集-vs-字符编码&#34;&gt;字符集 vs 字符编码&lt;/h3&gt;
-&lt;p&gt;在介绍完 ASCII 之后，需要强调一个很重要但被大多数人都忽略的一个概念问题。&lt;/p&gt;
-&lt;p&gt;我们平时说的 ASCII 其实有两个含义，一个是 ASCII 字符集，另一个是 ASCII 编码。&lt;/p&gt;
-&lt;blockquote&gt;
-&lt;p&gt;ASCII 字符集只是定义了字符与字符码（character code，也称 code point 代码点）的对应关系。也就是说这一层面只是规定了字符&lt;code&gt;A&lt;/code&gt;用 65 表示，至于这个 65 在内存或硬盘中怎么表示，它不管，那是 ASCII 编码做的事。&lt;/p&gt;
-&lt;/blockquote&gt;
-&lt;blockquote&gt;
-&lt;p&gt;ASCII 编码规定了用 7 个二进制位来保存 ASCII 字符码，即定义了字符集的&lt;code&gt;存储形式&lt;/code&gt;。&lt;/p&gt;
-&lt;/blockquote&gt;
-&lt;p&gt;说到这里你也许会问，那既然用 7 个二进制位就能够表示所有 ASCII 字符码了，为什么现在一个字节是 8 位，而不是 7 位呢，这不是浪费吗？&lt;/p&gt;
-&lt;p&gt;其实这是早期设计者有意而为之：&lt;/p&gt;
-&lt;blockquote&gt;
-&lt;p&gt;7 位表示 ASCII 字符码，剩下 1 位为 &lt;a href=&#34;https://en.wikipedia.org/wiki/Parity_bit&#34;&gt;Parity bit&lt;/a&gt;，也称为校验位，用以检查数据的正确性。&lt;/p&gt;
-&lt;/blockquote&gt;
-&lt;p&gt;关于数据校验，我这里不打算展开讲，感兴趣的可以参考 &lt;a href=&#34;https://en.wikipedia.org/wiki/Error_detection_and_correction&#34;&gt;Error detection and correction&lt;/a&gt;。&lt;/p&gt;
-&lt;p&gt;为了让大家更清楚的明白这两者以及相关概念的关系，我画了图，便于大家理解。&lt;/p&gt;
-&lt;center&gt;
+&lt;center>
+&lt;img src="https://img.alicdn.com/imgextra/i4/581166664/TB2acofhpXXXXbQXpXXXXXXXXXX_!!581166664.gif" alt="ascii-dos"/>
+&lt;/center>
+&lt;p>随着时间的推进，计算机的使用范围扩展到西方欧洲国家，像法国🇫🇷、西班牙🇪🇸，德国🇩🇪等，它们这些国家的字母比英文要多。所以为了表示这些国家的语言，也需要借助最高位扩展 ASCII 编码。但由于没有统一的标准，有些地方用 130 表示 &lt;code>é&lt;/code>，有些地方表示为 Hebrew letter Gimel &lt;code>ג&lt;/code>。在这些语言中，使用最广的是 &lt;a href="https://en.wikipedia.org/wiki/Windows-1252">CP-1252 编码&lt;/a>，也称为 Windows-1252 编码，因为在 &lt;a href="https://en.wikipedia.org/wiki/Windows-1252#History">Windows 在 1.0 时就使用了该编码&lt;/a>，随着 Windows 的普及，大家就沿用了 Windows-1252 的说法。&lt;/p>
+&lt;center>
+&lt;img src="https://img.alicdn.com/imgextra/i1/581166664/TB25E0xhVXXXXbtXXXXXXXXXXXX_!!581166664.png_310x310.jpg" alt=" Windows-1252"/>
+&lt;/center>
+&lt;h4 id="iso-8859-1">ISO-8859-1&lt;/h4>
+&lt;p>既然说到了 Windows-1252，那么就不能不提它与 ISO-8859-1 的关系，我相信大家对 ISO-8859-1 这个编码肯定很熟悉，我还记得第一次用 Dreamweaver 写 HTML 时，其 HTML 模板中默认编码就是 ISO-8859-1，还有一个比较常见的场景是在 mysql 中，mysql 的默认编码为 latin-1，这其实是 ISO-8859-1 的一个别名而已。&lt;/p>
+&lt;p>&lt;a href="https://en.wikipedia.org/wiki/ISO/IEC_8859-1">ISO-8859-1&lt;/a> 是早期 8 位编码方案的一种，是 &lt;a href="https://en.wikipedia.org/wiki/ISO/IEC_8859">ISO/IEC 8859&lt;/a> 编码系列的一种， 第一版发布于 1987 年。它主要是针对西欧国家设计，现在大多数流行的 8 位编码方案都以它为基础，这其中就包括 Windows-1252。&lt;/p>
+&lt;p>Windows-1252 与 ISO-8859-1 的主要不同在于 0x80 到 0x9F 之间的字符，在 ISO-8859-1 中为控制字符（control characters），在 Windows-1252 中为可打印字符（printable characters）。&lt;/p>
+&lt;p>在 HTTP 协议中，以&lt;code>text/&lt;/code>开头的 MIME 类型的文件默认编码为 ISO-8859-1，但是由于控制字符在文件中用处不大，所以大多数客户端程序用 Windows-1252 来解码，这也就是它们之间经常混淆的主要原因。&lt;/p>
+&lt;h3 id="字符集-vs-字符编码">字符集 vs 字符编码&lt;/h3>
+&lt;p>在介绍完 ASCII 之后，需要强调一个很重要但被大多数人都忽略的一个概念问题。&lt;/p>
+&lt;p>我们平时说的 ASCII 其实有两个含义，一个是 ASCII 字符集，另一个是 ASCII 编码。&lt;/p>
+&lt;blockquote>
+&lt;p>ASCII 字符集只是定义了字符与字符码（character code，也称 code point 代码点）的对应关系。也就是说这一层面只是规定了字符&lt;code>A&lt;/code>用 65 表示，至于这个 65 在内存或硬盘中怎么表示，它不管，那是 ASCII 编码做的事。&lt;/p>
+&lt;/blockquote>
+&lt;blockquote>
+&lt;p>ASCII 编码规定了用 7 个二进制位来保存 ASCII 字符码，即定义了字符集的&lt;code>存储形式&lt;/code>。&lt;/p>
+&lt;/blockquote>
+&lt;p>说到这里你也许会问，那既然用 7 个二进制位就能够表示所有 ASCII 字符码了，为什么现在一个字节是 8 位，而不是 7 位呢，这不是浪费吗？&lt;/p>
+&lt;p>其实这是早期设计者有意而为之：&lt;/p>
+&lt;blockquote>
+&lt;p>7 位表示 ASCII 字符码，剩下 1 位为 &lt;a href="https://en.wikipedia.org/wiki/Parity_bit">Parity bit&lt;/a>，也称为校验位，用以检查数据的正确性。&lt;/p>
+&lt;/blockquote>
+&lt;p>关于数据校验，我这里不打算展开讲，感兴趣的可以参考 &lt;a href="https://en.wikipedia.org/wiki/Error_detection_and_correction">Error detection and correction&lt;/a>。&lt;/p>
+&lt;p>为了让大家更清楚的明白这两者以及相关概念的关系，我画了图，便于大家理解。&lt;/p>
+&lt;center>
 ![字符、代码点、二进制字节关系图](https://img.alicdn.com/imgextra/i1/581166664/TB2bda5iXXXXXbHXpXXXXXXXXXX_!!581166664.png)
-&lt;/center&gt;
-&lt;ul&gt;
-&lt;li&gt;&lt;code&gt;Character 字符&lt;/code&gt;。即我们看到的单个符号，像“A”、“啊”等&lt;/li&gt;
-&lt;li&gt;&lt;code&gt;Code point 代码点&lt;/code&gt;。一个无符号数字，通常用16进制表示。代码点与字符的一一对应关系称为字符集（Character Set），这种对应关系肯定不止一种，也就导致了不同字符集的出现，像 ASCII、ISO-8859-1、GB2312、GBK、Unicode 等。&lt;/li&gt;
-&lt;li&gt;&lt;code&gt;Bytes 二进制字节&lt;/code&gt;。其含义为代码点在内存或磁盘中的表示形式。代码点与二进制字节的一一对应关系称为编码（Encoding），当然这种对应关系也不是唯一的，所以编码也有很多种，像 ASCII、ISO-8859-1、ENC-CN、GBK、UTF-8等。&lt;/li&gt;
-&lt;/ul&gt;
-&lt;blockquote&gt;
-&lt;p&gt;上面这个图基本把我们平时经常混淆的概念清晰地区分开了，大家一定要充分理解并牢记于心。&lt;/p&gt;
-&lt;/blockquote&gt;
-&lt;h3 id=&#34;多字节编码&#34;&gt;多字节编码&lt;/h3&gt;
-&lt;p&gt;多字节编码主要用于我们亚洲国家，像中文（Chinese），日文（Japanese），韩文（Korean）（业界一般称为 CJK）等象形（表意）文字（ideograph-based language），字符数量比较多，1 个字节是放不下的，所以需要更多的字节来进行字符的编码。&lt;/p&gt;
-&lt;p&gt;&lt;a href=&#34;https://en.wikipedia.org/wiki/ISO/IEC_2022&#34;&gt;ISO/IEC 2022&lt;/a&gt; 标准为多字节编码制定了一套标准，主要有下面两个方面：&lt;/p&gt;
-&lt;ol&gt;
-&lt;li&gt;一个编码系统里面可以表示多种字符集&lt;/li&gt;
-&lt;li&gt;一个编码系统既可以在 7 位编码系统中表示所有字符集，也可以在 8 位编码系统表示所有字符集&lt;/li&gt;
-&lt;/ol&gt;
-&lt;p&gt;为了能够表示多种字符集 ISO/IEC 2022 引入了&lt;a href=&#34;https://en.wikipedia.org/wiki/Escape_sequence&#34;&gt;escape sequences&lt;/a&gt;，也就是我们中文里面说的“转义字符”的意思；为了能够兼容之前的 7 位编码系统，像 ASCII，实现 ISO/IEC 2022 标准的编码系统一般都是&lt;strong&gt;变长编码&lt;/strong&gt;。&lt;/p&gt;
-&lt;h4 id=&#34;gb2312&#34;&gt;GB2312&lt;/h4&gt;
-&lt;p&gt;&lt;a href=&#34;https://en.wikipedia.org/wiki/GB_2312&#34;&gt;GB2312&lt;/a&gt; 是我国国家标准总局在1980年发布一套遵循 ISO/IEC 2022 标准的&lt;code&gt;字符集&lt;/code&gt;，在 GB2312 中，字符码一般称为区位码，由于该字符集需要兼容 ASCII 字符集，所以它只能一个字节中的 7 位，剩下 1 位用于区分，比如可以通过最高位为 1 表示 GB2312 字符集，为 0 表示 ASCII 字符集。&lt;/p&gt;
-&lt;p&gt;GB2312 使用两个字节来表示字符码，最多可以表示 94 * 94 个字符，但是 GB2312 并没有全部使用，留了一部分方便后面扩展用。&lt;/p&gt;
-&lt;p&gt;实现 GB2312 字符集的编码主要是 &lt;a href=&#34;https://en.wikipedia.org/wiki/Extended_Unix_Code#EUC-CN&#34;&gt;EUC-CN&lt;/a&gt;，该编码与 ASCII 编码兼容。&lt;/p&gt;
-&lt;p&gt;我们平时说的 GB2312 编码其实就是指的 EUC-CN 编码，这一点需要明白。&lt;/p&gt;
-&lt;h4 id=&#34;gbk&#34;&gt;GBK&lt;/h4&gt;
-&lt;p&gt;&lt;a href=&#34;https://en.wikipedia.org/wiki/GBK&#34;&gt;GBK&lt;/a&gt; 字符集是对 GB2312 字符集的扩展，GBK 并没有一个官方标准，现在使用最广的标准是微软在 Windows 95 中实现的版本——&lt;a href=&#34;https://en.wikipedia.org/wiki/Code_page_936&#34;&gt;CP936&lt;/a&gt; 编码。&lt;/p&gt;
-&lt;p&gt;GBK 也使用两个字节来表示字符码，94 * 94 的区位码分布可以参考下面这个图，截自 &lt;a href=&#34;https://upload.wikimedia.org/wikipedia/commons/thumb/0/0c/GBK_encoding.svg/1290px-GBK_encoding.svg.png&#34;&gt;Wikipedia&lt;/a&gt;&lt;/p&gt;
-&lt;center&gt;
+&lt;/center>
+&lt;ul>
+&lt;li>&lt;code>Character 字符&lt;/code>。即我们看到的单个符号，像“A”、“啊”等&lt;/li>
+&lt;li>&lt;code>Code point 代码点&lt;/code>。一个无符号数字，通常用16进制表示。代码点与字符的一一对应关系称为字符集（Character Set），这种对应关系肯定不止一种，也就导致了不同字符集的出现，像 ASCII、ISO-8859-1、GB2312、GBK、Unicode 等。&lt;/li>
+&lt;li>&lt;code>Bytes 二进制字节&lt;/code>。其含义为代码点在内存或磁盘中的表示形式。代码点与二进制字节的一一对应关系称为编码（Encoding），当然这种对应关系也不是唯一的，所以编码也有很多种，像 ASCII、ISO-8859-1、ENC-CN、GBK、UTF-8等。&lt;/li>
+&lt;/ul>
+&lt;blockquote>
+&lt;p>上面这个图基本把我们平时经常混淆的概念清晰地区分开了，大家一定要充分理解并牢记于心。&lt;/p>
+&lt;/blockquote>
+&lt;h3 id="多字节编码">多字节编码&lt;/h3>
+&lt;p>多字节编码主要用于我们亚洲国家，像中文（Chinese），日文（Japanese），韩文（Korean）（业界一般称为 CJK）等象形（表意）文字（ideograph-based language），字符数量比较多，1 个字节是放不下的，所以需要更多的字节来进行字符的编码。&lt;/p>
+&lt;p>&lt;a href="https://en.wikipedia.org/wiki/ISO/IEC_2022">ISO/IEC 2022&lt;/a> 标准为多字节编码制定了一套标准，主要有下面两个方面：&lt;/p>
+&lt;ol>
+&lt;li>一个编码系统里面可以表示多种字符集&lt;/li>
+&lt;li>一个编码系统既可以在 7 位编码系统中表示所有字符集，也可以在 8 位编码系统表示所有字符集&lt;/li>
+&lt;/ol>
+&lt;p>为了能够表示多种字符集 ISO/IEC 2022 引入了&lt;a href="https://en.wikipedia.org/wiki/Escape_sequence">escape sequences&lt;/a>，也就是我们中文里面说的“转义字符”的意思；为了能够兼容之前的 7 位编码系统，像 ASCII，实现 ISO/IEC 2022 标准的编码系统一般都是&lt;strong>变长编码&lt;/strong>。&lt;/p>
+&lt;h4 id="gb2312">GB2312&lt;/h4>
+&lt;p>&lt;a href="https://en.wikipedia.org/wiki/GB_2312">GB2312&lt;/a> 是我国国家标准总局在1980年发布一套遵循 ISO/IEC 2022 标准的&lt;code>字符集&lt;/code>，在 GB2312 中，字符码一般称为区位码，由于该字符集需要兼容 ASCII 字符集，所以它只能一个字节中的 7 位，剩下 1 位用于区分，比如可以通过最高位为 1 表示 GB2312 字符集，为 0 表示 ASCII 字符集。&lt;/p>
+&lt;p>GB2312 使用两个字节来表示字符码，最多可以表示 94 * 94 个字符，但是 GB2312 并没有全部使用，留了一部分方便后面扩展用。&lt;/p>
+&lt;p>实现 GB2312 字符集的编码主要是 &lt;a href="https://en.wikipedia.org/wiki/Extended_Unix_Code#EUC-CN">EUC-CN&lt;/a>，该编码与 ASCII 编码兼容。&lt;/p>
+&lt;p>我们平时说的 GB2312 编码其实就是指的 EUC-CN 编码，这一点需要明白。&lt;/p>
+&lt;h4 id="gbk">GBK&lt;/h4>
+&lt;p>&lt;a href="https://en.wikipedia.org/wiki/GBK">GBK&lt;/a> 字符集是对 GB2312 字符集的扩展，GBK 并没有一个官方标准，现在使用最广的标准是微软在 Windows 95 中实现的版本——&lt;a href="https://en.wikipedia.org/wiki/Code_page_936">CP936&lt;/a> 编码。&lt;/p>
+&lt;p>GBK 也使用两个字节来表示字符码，94 * 94 的区位码分布可以参考下面这个图，截自 &lt;a href="https://upload.wikimedia.org/wikipedia/commons/thumb/0/0c/GBK_encoding.svg/1290px-GBK_encoding.svg.png">Wikipedia&lt;/a>&lt;/p>
+&lt;center>
 ![GBK_encoding](https://img.alicdn.com/imgextra/i4/581166664/TB2wxevhVXXXXaUXpXXXXXXXXXX_!!581166664.png_310x310.jpg)
-&lt;/center&gt;
-&lt;p&gt;同 GB2312 一样，我们平时说的 GBK 编码其实就是指的 CP936 编码。&lt;/p&gt;
-&lt;p&gt;除了我们中国的 GB* 系统字符集以外，日本、韩国各有各的字符集标准，虽然都是基于 ISO/IEC 2022，但是具体的表示方式千差万别，比如 1601 在 GB2312 中表示“啊”，但在日韩就不知道表示什么含义了。&lt;/p&gt;
-&lt;p&gt;所以，我们需要一种囊括世界上所有字符的一套字符集，在该字符集中，字符码与字符一一对应，比如字符码 0x41 表示英文字母&lt;code&gt;A&lt;/code&gt;，在任何国家都表示&lt;code&gt;A&lt;/code&gt;，即使该国家没有这个字符。解决这个问题的是现在最流行的一套字符集——Unicode。&lt;/p&gt;
-&lt;h2 id=&#34;unicode&#34;&gt;Unicode&lt;/h2&gt;
-&lt;p&gt;Unicode 的全称是 universal character encoding，中文一般翻译为“统一码、万国码、单一码”。&lt;/p&gt;
-&lt;center&gt;
-&lt;img src=&#34;https://img.alicdn.com/imgextra/i2/581166664/TB2GcoghpXXXXc6XpXXXXXXXXXX_!!581166664.png_160x160.jpg&#34; alt=&#34;Unicode_logo&#34;/&gt;
-&lt;/center&gt;
-&lt;p&gt;在 Unicode 中字符码称为 code point，用 4 个字节来表示，这么做主要是为了涵盖世界上所有的字符。写法一般为&lt;code&gt;U+XXXX&lt;/code&gt;，XXXX 为用 16 进制表示的数字。比如，&lt;code&gt;U+0041&lt;/code&gt;表示&lt;code&gt;A&lt;/code&gt;。&lt;/p&gt;
-&lt;h3 id=&#34;unicode-的存储形式&#34;&gt;Unicode 的存储形式&lt;/h3&gt;
-&lt;p&gt;Unicode 的&lt;strong&gt;存储形式&lt;/strong&gt;一般称为&lt;code&gt;UTF-*&lt;/code&gt;编码，其中 UTF 全称为 &lt;code&gt;Unicode Transformation Format&lt;/code&gt;，常见的有：&lt;/p&gt;
-&lt;h4 id=&#34;utf-32&#34;&gt;UTF-32&lt;/h4&gt;
-&lt;p&gt;&lt;a href=&#34;https://en.wikipedia.org/wiki/UTF-32&#34;&gt;UTF-32&lt;/a&gt; 编码是 Unicode 最直接的存储方式，用 4 个字节来分别表示 code point 中的 4 个字节，也是 &lt;code&gt;UTF-*&lt;/code&gt;编码家族中唯一的一种&lt;strong&gt;定长编码（fixed-length encoding）&lt;/strong&gt;。UTF-32 的好处是能够在&lt;code&gt;O(1)&lt;/code&gt;时间内找到第 N 个字符，因为第 N 个字符的编码的起点是 N*4 个字节，当然，劣势更明显，四个字节表示一个字符，别说以英文为母语的人不干，我们中国人也不干了。&lt;/p&gt;
-&lt;h4 id=&#34;utf-16&#34;&gt;UTF-16&lt;/h4&gt;
-&lt;p&gt;&lt;a href=&#34;https://en.wikipedia.org/wiki/UTF-16&#34;&gt;UTF-16&lt;/a&gt; 最少可以采用 2 个字节表示 code point，需要注意的是，UTF-16 是一种&lt;strong&gt;变长编码（variable-length encoding）&lt;/strong&gt;，只不过对于 65535 之内的 code point，采用 2 个字节表示而已。如果想要表示 65535 之上的字符，需要一些 hack 的手段，具体可以参考&lt;a href=&#34;https://en.wikipedia.org/wiki/UTF-16#U.2B10000_to_U.2B10FFFF&#34;&gt;wiki UTF-16#U.2B10000_to_U.2B10FFFF&lt;/a&gt;。很明显，UTF-16 比 UTF-32 节约一半的存储空间，如果用不到 65535 之上的字符的话，也能够在&lt;code&gt;O(1)&lt;/code&gt;时间内找到第 N 个字符。&lt;/p&gt;
-&lt;blockquote&gt;
-&lt;p&gt;UTF-16 与 UTF-32 还有一个不明显的缺点。我们知道不同的计算机存储字节的顺序是不一样的，这也就意味着&lt;code&gt;U+4E2D&lt;/code&gt; 在 UTF-16 可以保存为&lt;code&gt;4E 2D&lt;/code&gt;，也可以保存成&lt;code&gt;2D 4E&lt;/code&gt;，这取决于计算机是采用大端模式还是小端模式，UTF-32 的情况也类似。为了解决这个问题，引入了 &lt;strong&gt;BOM (Byte Order Mark)&lt;/strong&gt;，它是一特殊的不可见字符，位于文件的起始位置，标示该文件的字节序。对于 UTF-16 来说，BOM 为&lt;code&gt;U+FEFF&lt;/code&gt;（FF 比 FE 大 1），如果 UTF-16 编码的文件以&lt;code&gt;FF FE&lt;/code&gt;开始，那么就意味着其字节序为&lt;strong&gt;小端模式&lt;/strong&gt;，如果以&lt;code&gt;FE FF&lt;/code&gt;开始，那么就是&lt;strong&gt;大端模式&lt;/strong&gt;。
-其他 UTF-* 编码的 BOM 可以参考 &lt;a href=&#34;https://en.wikipedia.org/wiki/Byte_order_mark#Representations_of_byte_order_marks_by_encoding&#34;&gt;Representations of byte order marks by encoding&lt;/a&gt;。&lt;/p&gt;
-&lt;/blockquote&gt;
-&lt;h4 id=&#34;utf-8&#34;&gt;UTF-8&lt;/h4&gt;
-&lt;p&gt;UTF-16 对于以英文为母语的人来说，还是有些浪费了，这时聪明的人们（准确说是&lt;a href=&#34;https://en.wikipedia.org/wiki/Ken_Thompson_%28computer_programmer%29&#34;&gt;Ken Thompson&lt;/a&gt;与&lt;a href=&#34;https://en.wikipedia.org/wiki/Rob_Pike&#34;&gt;Rob Pike&lt;/a&gt;）又&lt;a href=&#34;http://www.cl.cam.ac.uk/~mgk25/ucs/utf-8-history.txt&#34;&gt;发明&lt;/a&gt;了另一个编码——&lt;a href=&#34;https://en.wikipedia.org/wiki/UTF-8&#34;&gt;UTF-8&lt;/a&gt;。在 UTF-8 中，ASCII 字符采用单字节。其实，UTF-8 前 128 个字符与 ASCII 字符编码方式一致；扩展的拉丁字符像&lt;code&gt;ñ&lt;/code&gt;、&lt;code&gt;ö&lt;/code&gt;等采用2个字节存储；中文字符采用 3 个字符存储，使用频率极少字符采用 4 个字节存储。由此可见，UTF-8 也是一种&lt;strong&gt;变长编码（variable-length encoding）&lt;/strong&gt;。&lt;/p&gt;
-&lt;p&gt;UTF-8 的编码规则很简单，只有二条：&lt;/p&gt;
-&lt;ol&gt;
-&lt;li&gt;对于单字节的符号，字节的第一位设为0，后面7位为这个符号的 code point。因此对于英语字母，UTF-8编码和ASCII码是相同的。&lt;/li&gt;
-&lt;li&gt;对于n字节的符号，第一个字节的前n位都设为1，第n+1位设为0，后面字节的前两位一律设为10。剩下的没有提及的二进制位，全部为这个符号的 code point。&lt;/li&gt;
-&lt;/ol&gt;
-&lt;img src=&#34;https://img.alicdn.com/imgextra/i4/581166664/TB244crhpXXXXbKXpXXXXXXXXXX_!!581166664.png&#34; alt=&#34; UTF-8 编码规则&#34;/&gt;
-&lt;p&gt;通过上面这两个规则，UTF-8 就不存在字节顺序在大小端不同的情况，所以用 UTF-8 编码的文件在任何计算机中保存的字节流都是一致的，这是其很重要一优势；UTF-8 的另一大优势在于对 ASCII 字符超节省空间，存储扩展拉丁字符与 UTF-16 的情况一样，存储汉字字符比 UTF-32 更优。&lt;/p&gt;
-&lt;p&gt;UTF-8 的一劣势是查找第 N 个字符时需要&lt;code&gt;O(N)&lt;/code&gt; 的时间，也就是说，字符串越长，就需要更长的时间来查找其中的每个字符。其次是在对字节流解码、字符编码时，需要遵循上面两条规则，比 UTF-16、UTF-32 略麻烦。&lt;/p&gt;
-&lt;p&gt;随着互联网的兴起，UTF-8 是逐渐成为使用范围最广的编码方案。下图为 Google 在 2010 年初做的&lt;a href=&#34;http://googleblog.blogspot.com/2010/01/unicode-nearing-50-of-web.html&#34;&gt;统计&lt;/a&gt;（链接需翻墙）&lt;/p&gt;
-&lt;center&gt;
-&lt;img src=&#34;https://img.alicdn.com/imgextra/i2/581166664/TB2PjtzhVXXXXbnXXXXXXXXXXXX_!!581166664.png_620x10000.jpg&#34; alt=&#34; Growth_of_Unicode_on_the_Web&#34;/&gt;
-&lt;/center&gt;
+&lt;/center>
+&lt;p>同 GB2312 一样，我们平时说的 GBK 编码其实就是指的 CP936 编码。&lt;/p>
+&lt;p>除了我们中国的 GB* 系统字符集以外，日本、韩国各有各的字符集标准，虽然都是基于 ISO/IEC 2022，但是具体的表示方式千差万别，比如 1601 在 GB2312 中表示“啊”，但在日韩就不知道表示什么含义了。&lt;/p>
+&lt;p>所以，我们需要一种囊括世界上所有字符的一套字符集，在该字符集中，字符码与字符一一对应，比如字符码 0x41 表示英文字母&lt;code>A&lt;/code>，在任何国家都表示&lt;code>A&lt;/code>，即使该国家没有这个字符。解决这个问题的是现在最流行的一套字符集——Unicode。&lt;/p>
+&lt;h2 id="unicode">Unicode&lt;/h2>
+&lt;p>Unicode 的全称是 universal character encoding，中文一般翻译为“统一码、万国码、单一码”。&lt;/p>
+&lt;center>
+&lt;img src="https://img.alicdn.com/imgextra/i2/581166664/TB2GcoghpXXXXc6XpXXXXXXXXXX_!!581166664.png_160x160.jpg" alt="Unicode_logo"/>
+&lt;/center>
+&lt;p>在 Unicode 中字符码称为 code point，用 4 个字节来表示，这么做主要是为了涵盖世界上所有的字符。写法一般为&lt;code>U+XXXX&lt;/code>，XXXX 为用 16 进制表示的数字。比如，&lt;code>U+0041&lt;/code>表示&lt;code>A&lt;/code>。&lt;/p>
+&lt;h3 id="unicode-的存储形式">Unicode 的存储形式&lt;/h3>
+&lt;p>Unicode 的&lt;strong>存储形式&lt;/strong>一般称为&lt;code>UTF-*&lt;/code>编码，其中 UTF 全称为 &lt;code>Unicode Transformation Format&lt;/code>，常见的有：&lt;/p>
+&lt;h4 id="utf-32">UTF-32&lt;/h4>
+&lt;p>&lt;a href="https://en.wikipedia.org/wiki/UTF-32">UTF-32&lt;/a> 编码是 Unicode 最直接的存储方式，用 4 个字节来分别表示 code point 中的 4 个字节，也是 &lt;code>UTF-*&lt;/code>编码家族中唯一的一种&lt;strong>定长编码（fixed-length encoding）&lt;/strong>。UTF-32 的好处是能够在&lt;code>O(1)&lt;/code>时间内找到第 N 个字符，因为第 N 个字符的编码的起点是 N*4 个字节，当然，劣势更明显，四个字节表示一个字符，别说以英文为母语的人不干，我们中国人也不干了。&lt;/p>
+&lt;h4 id="utf-16">UTF-16&lt;/h4>
+&lt;p>&lt;a href="https://en.wikipedia.org/wiki/UTF-16">UTF-16&lt;/a> 最少可以采用 2 个字节表示 code point，需要注意的是，UTF-16 是一种&lt;strong>变长编码（variable-length encoding）&lt;/strong>，只不过对于 65535 之内的 code point，采用 2 个字节表示而已。如果想要表示 65535 之上的字符，需要一些 hack 的手段，具体可以参考&lt;a href="https://en.wikipedia.org/wiki/UTF-16#U.2B10000_to_U.2B10FFFF">wiki UTF-16#U.2B10000_to_U.2B10FFFF&lt;/a>。很明显，UTF-16 比 UTF-32 节约一半的存储空间，如果用不到 65535 之上的字符的话，也能够在&lt;code>O(1)&lt;/code>时间内找到第 N 个字符。&lt;/p>
+&lt;blockquote>
+&lt;p>UTF-16 与 UTF-32 还有一个不明显的缺点。我们知道不同的计算机存储字节的顺序是不一样的，这也就意味着&lt;code>U+4E2D&lt;/code> 在 UTF-16 可以保存为&lt;code>4E 2D&lt;/code>，也可以保存成&lt;code>2D 4E&lt;/code>，这取决于计算机是采用大端模式还是小端模式，UTF-32 的情况也类似。为了解决这个问题，引入了 &lt;strong>BOM (Byte Order Mark)&lt;/strong>，它是一特殊的不可见字符，位于文件的起始位置，标示该文件的字节序。对于 UTF-16 来说，BOM 为&lt;code>U+FEFF&lt;/code>（FF 比 FE 大 1），如果 UTF-16 编码的文件以&lt;code>FF FE&lt;/code>开始，那么就意味着其字节序为&lt;strong>小端模式&lt;/strong>，如果以&lt;code>FE FF&lt;/code>开始，那么就是&lt;strong>大端模式&lt;/strong>。
+其他 UTF-* 编码的 BOM 可以参考 &lt;a href="https://en.wikipedia.org/wiki/Byte_order_mark#Representations_of_byte_order_marks_by_encoding">Representations of byte order marks by encoding&lt;/a>。&lt;/p>
+&lt;/blockquote>
+&lt;h4 id="utf-8">UTF-8&lt;/h4>
+&lt;p>UTF-16 对于以英文为母语的人来说，还是有些浪费了，这时聪明的人们（准确说是&lt;a href="https://en.wikipedia.org/wiki/Ken_Thompson_%28computer_programmer%29">Ken Thompson&lt;/a>与&lt;a href="https://en.wikipedia.org/wiki/Rob_Pike">Rob Pike&lt;/a>）又&lt;a href="http://www.cl.cam.ac.uk/~mgk25/ucs/utf-8-history.txt">发明&lt;/a>了另一个编码——&lt;a href="https://en.wikipedia.org/wiki/UTF-8">UTF-8&lt;/a>。在 UTF-8 中，ASCII 字符采用单字节。其实，UTF-8 前 128 个字符与 ASCII 字符编码方式一致；扩展的拉丁字符像&lt;code>ñ&lt;/code>、&lt;code>ö&lt;/code>等采用2个字节存储；中文字符采用 3 个字符存储，使用频率极少字符采用 4 个字节存储。由此可见，UTF-8 也是一种&lt;strong>变长编码（variable-length encoding）&lt;/strong>。&lt;/p>
+&lt;p>UTF-8 的编码规则很简单，只有二条：&lt;/p>
+&lt;ol>
+&lt;li>对于单字节的符号，字节的第一位设为0，后面7位为这个符号的 code point。因此对于英语字母，UTF-8编码和ASCII码是相同的。&lt;/li>
+&lt;li>对于n字节的符号，第一个字节的前n位都设为1，第n+1位设为0，后面字节的前两位一律设为10。剩下的没有提及的二进制位，全部为这个符号的 code point。&lt;/li>
+&lt;/ol>
+&lt;img src="https://img.alicdn.com/imgextra/i4/581166664/TB244crhpXXXXbKXpXXXXXXXXXX_!!581166664.png" alt=" UTF-8 编码规则"/>
+&lt;p>通过上面这两个规则，UTF-8 就不存在字节顺序在大小端不同的情况，所以用 UTF-8 编码的文件在任何计算机中保存的字节流都是一致的，这是其很重要一优势；UTF-8 的另一大优势在于对 ASCII 字符超节省空间，存储扩展拉丁字符与 UTF-16 的情况一样，存储汉字字符比 UTF-32 更优。&lt;/p>
+&lt;p>UTF-8 的一劣势是查找第 N 个字符时需要&lt;code>O(N)&lt;/code> 的时间，也就是说，字符串越长，就需要更长的时间来查找其中的每个字符。其次是在对字节流解码、字符编码时，需要遵循上面两条规则，比 UTF-16、UTF-32 略麻烦。&lt;/p>
+&lt;p>随着互联网的兴起，UTF-8 是逐渐成为使用范围最广的编码方案。下图为 Google 在 2010 年初做的&lt;a href="http://googleblog.blogspot.com/2010/01/unicode-nearing-50-of-web.html">统计&lt;/a>（链接需翻墙）&lt;/p>
+&lt;center>
+&lt;img src="https://img.alicdn.com/imgextra/i2/581166664/TB2PjtzhVXXXXbnXXXXXXXXXXXX_!!581166664.png_620x10000.jpg" alt=" Growth_of_Unicode_on_the_Web"/>
+&lt;/center>
 由于 Google 的爬虫遍布全世界，这个数据可信度比较高。
-&lt;h3 id=&#34;ucs&#34;&gt;UCS&lt;/h3&gt;
-&lt;p&gt;我们在互联网上查找编码相关资料时，经常会看到&lt;code&gt;UCS-2&lt;/code&gt;、&lt;code&gt;UCS-4&lt;/code&gt;编码，它们和&lt;code&gt;UTF-*&lt;/code&gt;编码家族是什么关系呢？要想理清它们之间的关系，需要先弄清楚，什么是 &lt;strong&gt;UCS&lt;/strong&gt;。&lt;/p&gt;
-&lt;p&gt;&lt;a href=&#34;https://en.wikipedia.org/wiki/Universal_Coded_Character_Set&#34;&gt;UCS&lt;/a&gt; 全称是 &lt;strong&gt;Universal Coded Character Set&lt;/strong&gt;，是由 &lt;a href=&#34;https://en.wikipedia.org/wiki/ISO/IEC_10646&#34;&gt;ISO/IEC 10646&lt;/a&gt;定义的一套标准字符集，是很多字符编码的基础，UCS 中大概包含 100,000 个抽象字符，每一个字符都有一唯一的数字编码，称为 code point。&lt;/p&gt;
-&lt;p&gt;在19世纪八十年代晚期，有两个组织同时在 UCS 的基础上开发一种与具体语言无关的统一的编码方案，这两个组织分别是 &lt;a href=&#34;https://en.wikipedia.org/wiki/IEEE&#34;&gt;IEEE&lt;/a&gt; 与 &lt;a href=&#34;https://en.wikipedia.org/wiki/Unicode_Consortium&#34;&gt;Unicode Consortium&lt;/a&gt;，为了保持这两个组织间编码方案的兼容性，两个组织尝试着合作。早期的两字节编码方案叫做“Unicode”，后来改名为“UCS-2”，在研发过程发，发现 16 位根本不能够囊括所有字符，于是 IEEE 引入了新的编码方案——UCS-4 编码，这种编码每个字符需要 4 个字节，这一行为立刻被 Unicode Consortium 制止了，因为这种编码太浪费空间了，又因为一些设备厂商已经对 2 字节编码技术投入大量成本，所以在 1996 年 7 月发布的 Unicode 2.0 中提出了 UTF-16 来打破 UCS-2 与 UCS-4 之间的僵局，UTF-16 在 2000 年被 &lt;a href=&#34;https://en.wikipedia.org/wiki/IETF&#34;&gt;IEFE&lt;/a&gt; 组织制定为&lt;a href=&#34;https://tools.ietf.org/html/rfc2781&#34;&gt;RFC 2781&lt;/a&gt;标准。更多可参考：&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;&lt;a href=&#34;http://unicode.org/faq/utf_bom.html#utf16-11&#34;&gt;Q: What is the difference between UCS-2 and UTF-16?&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
-&lt;p&gt;由此可见，&lt;code&gt;UCS-*&lt;/code&gt; 编码是一历史产物，目前来说，统一编码方案最终的赢家是 &lt;code&gt;UTF-*&lt;/code&gt; 编码。&lt;/p&gt;
-&lt;h2 id=&#34;实战&#34;&gt;实战&lt;/h2&gt;
-&lt;h3 id=&#34;操作系统&#34;&gt;操作系统&lt;/h3&gt;
-&lt;p&gt;根据&lt;a href=&#34;http://unicode.org/notes/tn12/#Software_16&#34;&gt;UTF-16 FOR PROCESSING&lt;/a&gt;，现在流行的三大操作系统 Windows、Mac、Linux 均采用 UTF-16 编码方案，上面链接也指出，现代编程语言像 Java、ECMAScript、.Net 平台上所有语言等在内部也都使用 UTF-16 来表示字符。
-&lt;img src=&#34;https://img.alicdn.com/imgextra/i1/581166664/TB2hdILhpXXXXbAXpXXXXXXXXXX_!!581166664.png&#34; alt=&#34;Mac Finder 界面&#34;/&gt;
-上图为 Mac 系统中文件浏览器 Finder 的界面，其中所有的字符，在内存中都是以 UTF-16 的编码方式存储的。&lt;/p&gt;
-&lt;p&gt;你也许会问，为什么操作系统都这么偏爱 UTF-16，Stack Exchange 上面有一个精彩的回答，感兴趣的可以去了解&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;&lt;a href=&#34;http://programmers.stackexchange.com/questions/102205/should-utf-16-be-considered-harmful&#34;&gt;Should UTF-16 be considered harmful?&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;http://utf8everywhere.org/&#34;&gt;UTF-8 Everywhere&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
-&lt;h4 id=&#34;locale&#34;&gt;Locale&lt;/h4&gt;
-&lt;p&gt;为了适应多语言环境，Linux/Mac 系统通过 &lt;a href=&#34;http://man7.org/linux/man-pages/man7/locale.7.html&#34;&gt;locale&lt;/a&gt; 来设置系统的语言环境，下面是我在 Mac 终端输入&lt;code&gt;locale&lt;/code&gt;得到的输出&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;LANG=&amp;quot;en_US.UTF-8&amp;quot;         &amp;lt;==主语言的环境
-LC_COLLATE=&amp;quot;en_US.UTF-8&amp;quot;   &amp;lt;==字串的比较排序等
-LC_CTYPE=&amp;quot;en_US.UTF-8&amp;quot;     &amp;lt;==语言符号及其分类
-LC_MESSAGES=&amp;quot;en_US.UTF-8&amp;quot;  &amp;lt;==信息显示的内容，如功能表、错误信息等
-LC_MONETARY=&amp;quot;en_US.UTF-8&amp;quot;  &amp;lt;==币值格式的显示等
-LC_NUMERIC=&amp;quot;en_US.UTF-8&amp;quot;   &amp;lt;==数字系统的显示信息
-LC_TIME=&amp;quot;en_US.UTF-8&amp;quot;      &amp;lt;==时间系统的显示资料
-LC_ALL=&amp;quot;en_US.UTF-8&amp;quot;       &amp;lt;==语言环境的整体设定
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;locale 按照所涉及到的文化传统的各个方面分成12个大类，上面的输出只显示了其中的 6 类。为了设置方便，我们可以通过设置&lt;code&gt;LC_ALL&lt;/code&gt;、&lt;code&gt;LANG&lt;/code&gt;来改变这 12 个分类熟悉。其优先级关系为&lt;/p&gt;
-&lt;blockquote&gt;
-&lt;p&gt;&lt;code&gt;LC_ALL&lt;/code&gt; &amp;gt; &lt;code&gt;LC_*&lt;/code&gt; &amp;gt; &lt;code&gt;LANG&lt;/code&gt;&lt;/p&gt;
-&lt;/blockquote&gt;
-&lt;p&gt;设置好 locale，操作系统在进行文本字节流解析时，如果没有明确制定其编码，就用 locale 设定的编码方案，当然现在的操作系统都比较聪明，在用默认编码方案解码不成功时，会尝试其他编码，现在比较成熟的编码测探技术有&lt;a href=&#34;http://www-archive.mozilla.org/projects/intl/UniversalCharsetDetection.html&#34;&gt;Mozila 的 UniversalCharsetDetection&lt;/a&gt; 与 &lt;a href=&#34;http://userguide.icu-project.org/conversion/detection&#34;&gt;ICU 的 Character Set Detection&lt;/a&gt; 。&lt;/p&gt;
-&lt;h3 id=&#34;编程语言&#34;&gt;编程语言&lt;/h3&gt;
-&lt;h4 id=&#34;java&#34;&gt;Java&lt;/h4&gt;
-&lt;p&gt;一般来说，高级编程语言都提供都对字符的支持，像 Java 中的 &lt;a href=&#34;http://docs.oracle.com/javase/7/docs/api/java/lang/Character.html&#34;&gt;Character&lt;/a&gt; 类就采用 UTF-16 编码方案。&lt;/p&gt;
-&lt;p&gt;这里有个文字游戏，一般我们说“某某字符串是XX编码”，其实这是不合理的，因为字符串压根就没有编码这一说法，只有&lt;strong&gt;字符&lt;/strong&gt;才有，字符串只是字符的一串序列而已。
+&lt;h3 id="ucs">UCS&lt;/h3>
+&lt;p>我们在互联网上查找编码相关资料时，经常会看到&lt;code>UCS-2&lt;/code>、&lt;code>UCS-4&lt;/code>编码，它们和&lt;code>UTF-*&lt;/code>编码家族是什么关系呢？要想理清它们之间的关系，需要先弄清楚，什么是 &lt;strong>UCS&lt;/strong>。&lt;/p>
+&lt;p>&lt;a href="https://en.wikipedia.org/wiki/Universal_Coded_Character_Set">UCS&lt;/a> 全称是 &lt;strong>Universal Coded Character Set&lt;/strong>，是由 &lt;a href="https://en.wikipedia.org/wiki/ISO/IEC_10646">ISO/IEC 10646&lt;/a>定义的一套标准字符集，是很多字符编码的基础，UCS 中大概包含 100,000 个抽象字符，每一个字符都有一唯一的数字编码，称为 code point。&lt;/p>
+&lt;p>在19世纪八十年代晚期，有两个组织同时在 UCS 的基础上开发一种与具体语言无关的统一的编码方案，这两个组织分别是 &lt;a href="https://en.wikipedia.org/wiki/IEEE">IEEE&lt;/a> 与 &lt;a href="https://en.wikipedia.org/wiki/Unicode_Consortium">Unicode Consortium&lt;/a>，为了保持这两个组织间编码方案的兼容性，两个组织尝试着合作。早期的两字节编码方案叫做“Unicode”，后来改名为“UCS-2”，在研发过程发，发现 16 位根本不能够囊括所有字符，于是 IEEE 引入了新的编码方案——UCS-4 编码，这种编码每个字符需要 4 个字节，这一行为立刻被 Unicode Consortium 制止了，因为这种编码太浪费空间了，又因为一些设备厂商已经对 2 字节编码技术投入大量成本，所以在 1996 年 7 月发布的 Unicode 2.0 中提出了 UTF-16 来打破 UCS-2 与 UCS-4 之间的僵局，UTF-16 在 2000 年被 &lt;a href="https://en.wikipedia.org/wiki/IETF">IEFE&lt;/a> 组织制定为&lt;a href="https://tools.ietf.org/html/rfc2781">RFC 2781&lt;/a>标准。更多可参考：&lt;/p>
+&lt;ul>
+&lt;li>&lt;a href="http://unicode.org/faq/utf_bom.html#utf16-11">Q: What is the difference between UCS-2 and UTF-16?&lt;/a>&lt;/li>
+&lt;/ul>
+&lt;p>由此可见，&lt;code>UCS-*&lt;/code> 编码是一历史产物，目前来说，统一编码方案最终的赢家是 &lt;code>UTF-*&lt;/code> 编码。&lt;/p>
+&lt;h2 id="实战">实战&lt;/h2>
+&lt;h3 id="操作系统">操作系统&lt;/h3>
+&lt;p>根据&lt;a href="http://unicode.org/notes/tn12/#Software_16">UTF-16 FOR PROCESSING&lt;/a>，现在流行的三大操作系统 Windows、Mac、Linux 均采用 UTF-16 编码方案，上面链接也指出，现代编程语言像 Java、ECMAScript、.Net 平台上所有语言等在内部也都使用 UTF-16 来表示字符。
+&lt;img src="https://img.alicdn.com/imgextra/i1/581166664/TB2hdILhpXXXXbAXpXXXXXXXXXX_!!581166664.png" alt="Mac Finder 界面"/>
+上图为 Mac 系统中文件浏览器 Finder 的界面，其中所有的字符，在内存中都是以 UTF-16 的编码方式存储的。&lt;/p>
+&lt;p>你也许会问，为什么操作系统都这么偏爱 UTF-16，Stack Exchange 上面有一个精彩的回答，感兴趣的可以去了解&lt;/p>
+&lt;ul>
+&lt;li>&lt;a href="http://programmers.stackexchange.com/questions/102205/should-utf-16-be-considered-harmful">Should UTF-16 be considered harmful?&lt;/a>&lt;/li>
+&lt;li>&lt;a href="http://utf8everywhere.org/">UTF-8 Everywhere&lt;/a>&lt;/li>
+&lt;/ul>
+&lt;h4 id="locale">Locale&lt;/h4>
+&lt;p>为了适应多语言环境，Linux/Mac 系统通过 &lt;a href="http://man7.org/linux/man-pages/man7/locale.7.html">locale&lt;/a> 来设置系统的语言环境，下面是我在 Mac 终端输入&lt;code>locale&lt;/code>得到的输出&lt;/p>
+&lt;pre>&lt;code>LANG=&amp;quot;en_US.UTF-8&amp;quot; &amp;lt;==主语言的环境
+LC_COLLATE=&amp;quot;en_US.UTF-8&amp;quot; &amp;lt;==字串的比较排序等
+LC_CTYPE=&amp;quot;en_US.UTF-8&amp;quot; &amp;lt;==语言符号及其分类
+LC_MESSAGES=&amp;quot;en_US.UTF-8&amp;quot; &amp;lt;==信息显示的内容，如功能表、错误信息等
+LC_MONETARY=&amp;quot;en_US.UTF-8&amp;quot; &amp;lt;==币值格式的显示等
+LC_NUMERIC=&amp;quot;en_US.UTF-8&amp;quot; &amp;lt;==数字系统的显示信息
+LC_TIME=&amp;quot;en_US.UTF-8&amp;quot; &amp;lt;==时间系统的显示资料
+LC_ALL=&amp;quot;en_US.UTF-8&amp;quot; &amp;lt;==语言环境的整体设定
+&lt;/code>&lt;/pre>
+&lt;p>locale 按照所涉及到的文化传统的各个方面分成12个大类，上面的输出只显示了其中的 6 类。为了设置方便，我们可以通过设置&lt;code>LC_ALL&lt;/code>、&lt;code>LANG&lt;/code>来改变这 12 个分类熟悉。其优先级关系为&lt;/p>
+&lt;blockquote>
+&lt;p>&lt;code>LC_ALL&lt;/code> &amp;gt; &lt;code>LC_*&lt;/code> &amp;gt; &lt;code>LANG&lt;/code>&lt;/p>
+&lt;/blockquote>
+&lt;p>设置好 locale，操作系统在进行文本字节流解析时，如果没有明确制定其编码，就用 locale 设定的编码方案，当然现在的操作系统都比较聪明，在用默认编码方案解码不成功时，会尝试其他编码，现在比较成熟的编码测探技术有&lt;a href="http://www-archive.mozilla.org/projects/intl/UniversalCharsetDetection.html">Mozila 的 UniversalCharsetDetection&lt;/a> 与 &lt;a href="http://userguide.icu-project.org/conversion/detection">ICU 的 Character Set Detection&lt;/a> 。&lt;/p>
+&lt;h3 id="编程语言">编程语言&lt;/h3>
+&lt;h4 id="java">Java&lt;/h4>
+&lt;p>一般来说，高级编程语言都提供都对字符的支持，像 Java 中的 &lt;a href="http://docs.oracle.com/javase/7/docs/api/java/lang/Character.html">Character&lt;/a> 类就采用 UTF-16 编码方案。&lt;/p>
+&lt;p>这里有个文字游戏，一般我们说“某某字符串是XX编码”，其实这是不合理的，因为字符串压根就没有编码这一说法，只有&lt;strong>字符&lt;/strong>才有，字符串只是字符的一串序列而已。
 不过我们平时并没有这么严谨，不过你要明白，当我们说“某某字符串是XX编码”时，知道这其实指的是该字符串中字符的编码就可以了。
-这也就回答了本文一开始提到问题，什么是字符串，这里用《Diving into Python 3》书上的一句话来总结这个问题：&lt;/p&gt;
-&lt;blockquote&gt;
-&lt;p&gt;Bytes are not character, bytes are bytes. Characters are an abstraction. A string is a sequence of those abstraction.&lt;/p&gt;
-&lt;/blockquote&gt;
-&lt;p&gt;我们可以做个简单的实验来验证 Java 中确实使用 UTF-16 编码来存储字符：&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
-&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt; 1
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 2
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 3
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 4
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 5
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 6
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 7
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 8
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 9
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;10
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;11
-&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
-&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;public class EncodingTest {
-    public static void main(String[] args) {
-        String s  = &amp;#34;中国人a&amp;#34;;
-        try {
-            //线程睡眠，不要让线程退出
-            Thread.sleep(10000000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-    }
+这也就回答了本文一开始提到问题，什么是字符串，这里用《Diving into Python 3》书上的一句话来总结这个问题：&lt;/p>
+&lt;blockquote>
+&lt;p>Bytes are not character, bytes are bytes. Characters are an abstraction. A string is a sequence of those abstraction.&lt;/p>
+&lt;/blockquote>
+&lt;p>我们可以做个简单的实验来验证 Java 中确实使用 UTF-16 编码来存储字符：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code class="language-fallback" data-lang="fallback">public class EncodingTest {
+public static void main(String[] args) {
+String s = &amp;#34;中国人a&amp;#34;;
+try {
+//线程睡眠，不要让线程退出
+Thread.sleep(10000000);
+} catch (InterruptedException e) {
+e.printStackTrace();
 }
-&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
-&lt;/div&gt;
-&lt;/div&gt;&lt;p&gt;在使用 javac 编译这个类时，javac 会按照操作系统默认的编码去解析字节流，如果你保存的源文件编码与操作系统默认不一致，是可能出错的，可以在启动 javac 命令时，附加&lt;code&gt;-encoding &amp;lt;encoding&amp;gt;&lt;/code&gt;选项来指明源代码文件所使用的编码。&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
-&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;4
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;5
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;6
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;7
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;8
-&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
-&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;# 编译生成 .class 文件
+}
+}
+&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>在使用 javac 编译这个类时，javac 会按照操作系统默认的编码去解析字节流，如果你保存的源文件编码与操作系统默认不一致，是可能出错的，可以在启动 javac 命令时，附加&lt;code>-encoding &amp;lt;encoding&amp;gt;&lt;/code>选项来指明源代码文件所使用的编码。&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;span class="lnt">6
+&lt;/span>&lt;span class="lnt">7
+&lt;/span>&lt;span class="lnt">8
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code class="language-fallback" data-lang="fallback"># 编译生成 .class 文件
 javac -encoding utf-8 EncodingTest.java
 # 执行该类
 java EncodingTest
@@ -216,134 +201,131 @@ java EncodingTest
 jmap -dump:live,format=b,file=encoding_test.bin &amp;lt;pid&amp;gt;
 # 在 Linux/Mac 系统上，使用 xxd 命令以十六进制查看该文件，我这里用管道传给了 vim
 xxd encoding_test.bin | vim -
-&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
-&lt;/div&gt;
-&lt;/div&gt;&lt;p&gt;在 vim 中可以看到下图所示片段
-&lt;img src=&#34;https://img.alicdn.com/imgextra/i1/581166664/TB2RigHhpXXXXb5XpXXXXXXXXXX_!!581166664.png&#34; alt=&#34;以16进制显示的memory dump&#34;/&gt;
-其中我用红框标注部分就是上面 EncodingTest 类中字符串&lt;code&gt;s&lt;/code&gt;的内容，&lt;code&gt;4e2d&lt;/code&gt;是“中”的 code point，&lt;code&gt;56fd&lt;/code&gt;是“国”的 code point， &lt;code&gt;4eba&lt;/code&gt;是“人”的 code point，&lt;code&gt;0061&lt;/code&gt;是“a”的 code point。而在 UTF-16 编码中，0-66535之间的字符直接用两个字节存储，这也就证明了 Java 中的 &lt;code&gt;Character&lt;/code&gt; 是使用 UTF-16 编码的。&lt;/p&gt;
-&lt;p&gt;关于 Java 支持的所有编码，可以在 Oracle 官方文档 &lt;a href=&#34;https://docs.oracle.com/javase/8/docs/technotes/guides/intl/encoding.doc.html&#34;&gt;Supported Encodings&lt;/a&gt;中找到。&lt;/p&gt;
-&lt;h4 id=&#34;python&#34;&gt;Python&lt;/h4&gt;
-&lt;h5 id=&#34;python-解释器&#34;&gt;Python 解释器&lt;/h5&gt;
-&lt;p&gt;首先说下 Python 解释器如何读取、解析 Python 源程序。&lt;/p&gt;
-&lt;p&gt;在 Python 2 中，Python 解析器默认用 ASCII 编码（而非系统默认编码）来读取源程序，当程序中包含非 ASCII 字符时，解释器会报错，下面实验在我 Mac 上用 python 2.7.6 进行：&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
-&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;4
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;5
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;6
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;7
-&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
-&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;$ cat str.py
+&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>在 vim 中可以看到下图所示片段
+&lt;img src="https://img.alicdn.com/imgextra/i1/581166664/TB2RigHhpXXXXb5XpXXXXXXXXXX_!!581166664.png" alt="以16进制显示的memory dump"/>
+其中我用红框标注部分就是上面 EncodingTest 类中字符串&lt;code>s&lt;/code>的内容，&lt;code>4e2d&lt;/code>是“中”的 code point，&lt;code>56fd&lt;/code>是“国”的 code point， &lt;code>4eba&lt;/code>是“人”的 code point，&lt;code>0061&lt;/code>是“a”的 code point。而在 UTF-16 编码中，0-66535之间的字符直接用两个字节存储，这也就证明了 Java 中的 &lt;code>Character&lt;/code> 是使用 UTF-16 编码的。&lt;/p>
+&lt;p>关于 Java 支持的所有编码，可以在 Oracle 官方文档 &lt;a href="https://docs.oracle.com/javase/8/docs/technotes/guides/intl/encoding.doc.html">Supported Encodings&lt;/a>中找到。&lt;/p>
+&lt;h4 id="python">Python&lt;/h4>
+&lt;h5 id="python-解释器">Python 解释器&lt;/h5>
+&lt;p>首先说下 Python 解释器如何读取、解析 Python 源程序。&lt;/p>
+&lt;p>在 Python 2 中，Python 解析器默认用 ASCII 编码（而非系统默认编码）来读取源程序，当程序中包含非 ASCII 字符时，解释器会报错，下面实验在我 Mac 上用 python 2.7.6 进行：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;span class="lnt">6
+&lt;/span>&lt;span class="lnt">7
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code class="language-fallback" data-lang="fallback">$ cat str.py
 #!/usr/bin/env python
 a = &amp;#34;中国人&amp;#34;
-
 $ python str.py
-  File &amp;#34;str.py&amp;#34;, line 2
+File &amp;#34;str.py&amp;#34;, line 2
 SyntaxError: Non-ASCII character &amp;#39;\xe4&amp;#39; in file str.py on line 2, but no encoding declared; see http://www.python.org/peps/pep-0263.html for details
-&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
-&lt;/div&gt;
-&lt;/div&gt;&lt;p&gt;我们可以通过在源程序起始处用&lt;code&gt;coding: name&lt;/code&gt;或&lt;code&gt;coding=name&lt;/code&gt;来声明源程序所用的编码。&lt;/p&gt;
-&lt;p&gt;Python 3 中改变了这一行为，解析器默认采用 UTF-8 解析源程序。&lt;/p&gt;
-&lt;h5 id=&#34;字符类型&#34;&gt;字符类型&lt;/h5&gt;
-&lt;p&gt;下面介绍 Python 2/3 中对字符的处理。&lt;/p&gt;
-&lt;p&gt;Python 2 中对字符的处理坑比较多，我这里单独写了篇文章介绍，感兴趣的可以参考：&lt;a href=&#34;https://liujiacai.net/blog/2016/06/30/python2-encoding/&#34;&gt;《Python2 中的编码问题》&lt;/a&gt;。&lt;/p&gt;
-&lt;p&gt;Python 3 中改变了这一行为，字符字面量直接表示为 Unicode 字符，引入以“字节”类型表示 Python 2 中的 str 类型，根据&lt;a href=&#34;https://www.python.org/dev/peps/pep-0393/#specification&#34;&gt;PEP-0393&lt;/a&gt;，Python 3 内部采用多种编码方案，而不仅仅是单单一种（细节可以参考&lt;a href=&#34;https://github.com/python/cpython/blob/1fe0fd9feb6a4472a9a1b186502eb9c0b2366326/Doc/c-api/unicode.rst&#34;&gt;c-api/unicode&lt;/a&gt;），这么做是权衡字符存储空间与字符操作速度后的结果，下面给出 CPython 中相关的定义：&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
-&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt; 1
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 2
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 3
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 4
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 5
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 6
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 7
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 8
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 9
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;10
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;11
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;12
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;13
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;14
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;15
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;16
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;17
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;18
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;19
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;20
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;21
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;22
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;23
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;24
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;25
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;26
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;27
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;28
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;29
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;30
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;31
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;32
-&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
-&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;typedef struct {
-  PyObject_HEAD
-  Py_ssize_t length;
-  Py_hash_t hash;
-  struct {
-      unsigned int interned:2;
-      unsigned int kind:2;
-      unsigned int compact:1;
-      unsigned int ascii:1;
-      unsigned int ready:1;
-  } state;
-  wchar_t *wstr;
+&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>我们可以通过在源程序起始处用&lt;code>coding: name&lt;/code>或&lt;code>coding=name&lt;/code>来声明源程序所用的编码。&lt;/p>
+&lt;p>Python 3 中改变了这一行为，解析器默认采用 UTF-8 解析源程序。&lt;/p>
+&lt;h5 id="字符类型">字符类型&lt;/h5>
+&lt;p>下面介绍 Python 2/3 中对字符的处理。&lt;/p>
+&lt;p>Python 2 中对字符的处理坑比较多，我这里单独写了篇文章介绍，感兴趣的可以参考：&lt;a href="https://liujiacai.net/blog/2016/06/30/python2-encoding/">《Python2 中的编码问题》&lt;/a>。&lt;/p>
+&lt;p>Python 3 中改变了这一行为，字符字面量直接表示为 Unicode 字符，引入以“字节”类型表示 Python 2 中的 str 类型，根据&lt;a href="https://www.python.org/dev/peps/pep-0393/#specification">PEP-0393&lt;/a>，Python 3 内部采用多种编码方案，而不仅仅是单单一种（细节可以参考&lt;a href="https://github.com/python/cpython/blob/1fe0fd9feb6a4472a9a1b186502eb9c0b2366326/Doc/c-api/unicode.rst">c-api/unicode&lt;/a>），这么做是权衡字符存储空间与字符操作速度后的结果，下面给出 CPython 中相关的定义：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;span class="lnt">16
+&lt;/span>&lt;span class="lnt">17
+&lt;/span>&lt;span class="lnt">18
+&lt;/span>&lt;span class="lnt">19
+&lt;/span>&lt;span class="lnt">20
+&lt;/span>&lt;span class="lnt">21
+&lt;/span>&lt;span class="lnt">22
+&lt;/span>&lt;span class="lnt">23
+&lt;/span>&lt;span class="lnt">24
+&lt;/span>&lt;span class="lnt">25
+&lt;/span>&lt;span class="lnt">26
+&lt;/span>&lt;span class="lnt">27
+&lt;/span>&lt;span class="lnt">28
+&lt;/span>&lt;span class="lnt">29
+&lt;/span>&lt;span class="lnt">30
+&lt;/span>&lt;span class="lnt">31
+&lt;/span>&lt;span class="lnt">32
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code class="language-fallback" data-lang="fallback">typedef struct {
+PyObject_HEAD
+Py_ssize_t length;
+Py_hash_t hash;
+struct {
+unsigned int interned:2;
+unsigned int kind:2;
+unsigned int compact:1;
+unsigned int ascii:1;
+unsigned int ready:1;
+} state;
+wchar_t *wstr;
 } PyASCIIObject;
-
 typedef struct {
-  PyASCIIObject _base;
-  Py_ssize_t utf8_length;
-  char *utf8;
-  Py_ssize_t wstr_length;
+PyASCIIObject _base;
+Py_ssize_t utf8_length;
+char *utf8;
+Py_ssize_t wstr_length;
 } PyCompactUnicodeObject;
-
 typedef struct {
-  PyCompactUnicodeObject _base;
-  // 可以看到，这里用了 union 类型，实际中 data 的类型为四种中的一个
-  // 同时，这里的 ucs2 相当于 utf-16；ucs4 相当于 utf-32
-  union {
-      void *any;
-      Py_UCS1 *latin1;
-      Py_UCS2 *ucs2;
-      Py_UCS4 *ucs4;
-  } data;
+PyCompactUnicodeObject _base;
+// 可以看到，这里用了 union 类型，实际中 data 的类型为四种中的一个
+// 同时，这里的 ucs2 相当于 utf-16；ucs4 相当于 utf-32
+union {
+void *any;
+Py_UCS1 *latin1;
+Py_UCS2 *ucs2;
+Py_UCS4 *ucs4;
+} data;
 } PyUnicodeObject;
-&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
-&lt;/div&gt;
-&lt;/div&gt;&lt;p&gt;我们也可以做个实验验证 Python 中 Unicode 的存储方案：&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
-&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt; 1
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 2
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 3
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 4
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 5
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 6
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 7
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 8
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 9
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;10
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;11
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;12
-&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
-&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;$ python3
+&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>我们也可以做个实验验证 Python 中 Unicode 的存储方案：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code class="language-fallback" data-lang="fallback">$ python3
 Python 3.5.0 (v3.5.0:374f501f4567, Sep 12 2015, 11:00:19)
 [GCC 4.2.1 (Apple Inc. build 5666) (dot 3)] on darwin
 Type &amp;#34;help&amp;#34;, &amp;#34;copyright&amp;#34;, &amp;#34;credits&amp;#34; or &amp;#34;license&amp;#34; for more information.
-&amp;gt;&amp;gt;&amp;gt; a  = &amp;#34;中国人&amp;#34;
+&amp;gt;&amp;gt;&amp;gt; a = &amp;#34;中国人&amp;#34;
 &amp;gt;&amp;gt;&amp;gt; import ctypes
 &amp;gt;&amp;gt;&amp;gt; import binascii
 &amp;gt;&amp;gt;&amp;gt; binascii.hexlify(ctypes.string_at(id(a), a.__sizeof__()))
@@ -351,35 +333,35 @@ b&amp;#39;010000000000000020c52200010000000300000000000000cfb73264f62ba107a81c22
 000000000000000000000002d4efd56ba4e0000&amp;#39;
 &amp;gt;&amp;gt;&amp;gt; binascii.hexlify(a.encode(&amp;#39;utf-16&amp;#39;))
 b&amp;#39;fffe2d4efd56ba4e&amp;#39;
-&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
-&lt;/div&gt;
-&lt;/div&gt;&lt;p&gt;&lt;code&gt;fffe&lt;/code&gt;是 UTF-16 的 BOM，表明我的Mac是小端模式。随后的&lt;code&gt;2d4e&lt;/code&gt;表示&lt;code&gt;中&lt;/code&gt;；&lt;code&gt;fd56&lt;/code&gt;表示&lt;code&gt;国&lt;/code&gt;；&lt;code&gt;ba4e&lt;/code&gt;表示&lt;code&gt;人&lt;/code&gt;，最后的&lt;code&gt;0000&lt;/code&gt;表明 Python 中的字符串和 C 语言中的一样，用&lt;code&gt;\0&lt;/code&gt;标明字符的结尾。
-如果你比较细心，可能会发现 CPython 中字符相关的结构体中包含了&lt;code&gt;length&lt;/code&gt;这一字段了，为什么这里又多此一举，加个尾标呢？其实这主要是为了Python 与 C 的交互，有了&lt;code&gt;\0&lt;/code&gt;，Python 就可以直接读取 C 中的字符，也可以直接将 Python 中的字符直接传给 C 了。&lt;/p&gt;
-&lt;p&gt;参考：&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;&lt;a href=&#34;http://lucumr.pocoo.org/2014/1/5/unicode-in-2-and-3/&#34;&gt;More About Unicode in Python 2 and 3&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;http://v2ex.com/t/247821&#34;&gt; Python3 的 str 底层是用什么编码储存的？&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
-&lt;h4 id=&#34;javascript&#34;&gt;JavaScript&lt;/h4&gt;
-&lt;p&gt;JavaScript 遵循 ECMAScript 规范，在 &lt;a href=&#34;http://es5.github.io/x2.html#x2&#34;&gt;ECMAScript 5.1&lt;/a&gt; 中有下面的定义：&lt;/p&gt;
-&lt;blockquote&gt;
-&lt;p&gt;A conforming implementation of this International standard shall interpret characters in conformance with the Unicode Standard, Version 3.0 or later and ISO/IEC 10646-1 with either UCS-2 or UTF-16 as the adopted encoding form, implementation level 3. If the adopted ISO/IEC 10646-1 subset is not otherwise specified, it is presumed to be the BMP subset, collection 300. If the adopted encoding form is not otherwise specified, it is presumed to be the UTF-16 encoding form.&lt;/p&gt;
-&lt;/blockquote&gt;
-&lt;p&gt;也就是说 JavaScript 解释器的实现，即可以用 UCS-2 也可以用 UTF-16，但是考虑到 UTF-16 是 UCS-2 的超集，所以现在浏览器中的 JavaScript 引擎都用 UTF-16 存储字符串。
-我这里做了个实验验证 Nodejs 中字符的存储方案：&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
-&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;4
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;5
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;6
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;7
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;8
-&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
-&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;# 1. 安装这个模块
+&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>&lt;code>fffe&lt;/code>是 UTF-16 的 BOM，表明我的Mac是小端模式。随后的&lt;code>2d4e&lt;/code>表示&lt;code>中&lt;/code>；&lt;code>fd56&lt;/code>表示&lt;code>国&lt;/code>；&lt;code>ba4e&lt;/code>表示&lt;code>人&lt;/code>，最后的&lt;code>0000&lt;/code>表明 Python 中的字符串和 C 语言中的一样，用&lt;code>\0&lt;/code>标明字符的结尾。
+如果你比较细心，可能会发现 CPython 中字符相关的结构体中包含了&lt;code>length&lt;/code>这一字段了，为什么这里又多此一举，加个尾标呢？其实这主要是为了Python 与 C 的交互，有了&lt;code>\0&lt;/code>，Python 就可以直接读取 C 中的字符，也可以直接将 Python 中的字符直接传给 C 了。&lt;/p>
+&lt;p>参考：&lt;/p>
+&lt;ul>
+&lt;li>&lt;a href="http://lucumr.pocoo.org/2014/1/5/unicode-in-2-and-3/">More About Unicode in Python 2 and 3&lt;/a>&lt;/li>
+&lt;li>&lt;a href="http://v2ex.com/t/247821"> Python3 的 str 底层是用什么编码储存的？&lt;/a>&lt;/li>
+&lt;/ul>
+&lt;h4 id="javascript">JavaScript&lt;/h4>
+&lt;p>JavaScript 遵循 ECMAScript 规范，在 &lt;a href="http://es5.github.io/x2.html#x2">ECMAScript 5.1&lt;/a> 中有下面的定义：&lt;/p>
+&lt;blockquote>
+&lt;p>A conforming implementation of this International standard shall interpret characters in conformance with the Unicode Standard, Version 3.0 or later and ISO/IEC 10646-1 with either UCS-2 or UTF-16 as the adopted encoding form, implementation level 3. If the adopted ISO/IEC 10646-1 subset is not otherwise specified, it is presumed to be the BMP subset, collection 300. If the adopted encoding form is not otherwise specified, it is presumed to be the UTF-16 encoding form.&lt;/p>
+&lt;/blockquote>
+&lt;p>也就是说 JavaScript 解释器的实现，即可以用 UCS-2 也可以用 UTF-16，但是考虑到 UTF-16 是 UCS-2 的超集，所以现在浏览器中的 JavaScript 引擎都用 UTF-16 存储字符串。
+我这里做了个实验验证 Nodejs 中字符的存储方案：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;span class="lnt">6
+&lt;/span>&lt;span class="lnt">7
+&lt;/span>&lt;span class="lnt">8
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code class="language-fallback" data-lang="fallback"># 1. 安装这个模块
 npm install heapdump
 # 2. 写个简单的程序
 var heapdump = require(&amp;#39;heapdump&amp;#39;);
@@ -387,70 +369,64 @@ var a = &amp;#34;中国人&amp;#34;;
 heapdump.writeSnapshot(&amp;#39;str_test.heapsnapshot&amp;#39;);
 # 3. 执行上面的程序后，找个二进制编辑器，打开生成的内存快照文件。我这里用了 xxd
 xxd str_test.heapsnapshot | vim -
-&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
-&lt;/div&gt;
-&lt;/div&gt;&lt;p&gt;
-  &lt;figure&gt;
-    &lt;img src=&#34;https://img.alicdn.com/imgextra/i1/581166664/TB2yyi9jXXXXXauXXXXXXXXXXXX_!!581166664.png&#34; alt=&#34;Nodejs 字符内存快照&#34;&gt;
-    &lt;figcaption&gt;&lt;center&gt;Nodejs 字符内存快照&lt;/center&gt;&lt;/figcaption&gt;
-  &lt;/figure&gt;
-
-&lt;/p&gt;
-&lt;p&gt;上图中的&lt;code&gt;\u4E2D&lt;/code&gt;即为“中”，在内存中的字节序为&lt;code&gt;5c75 3445 3244&lt;/code&gt;，这一串数字是&lt;code&gt;\u4E2D&lt;/code&gt;的 ASCII 码。&lt;/p&gt;
-&lt;p&gt;参考：&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;&lt;a href=&#34;https://mathiasbynens.be/notes/javascript-encoding&#34;&gt;JavaScript’s internal character encoding: UCS-2 or UTF-16?&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
-&lt;h3 id=&#34;htmlxml&#34;&gt;HTML/XML&lt;/h3&gt;
-&lt;p&gt;在我们的 Web 浏览器接收到来自世界各地的 HTML/XML 时，也需要正确的编码方案才能够正常显示网页，在现代的 HTML5 页面，一般通过下面的代码指定&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
-&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
-&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
-&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;&amp;lt;meta charset=&amp;#34;UTF-8&amp;#34;&amp;gt;
-&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
-&lt;/div&gt;
-&lt;/div&gt;&lt;p&gt;4.0.1 之前的 HTML 页面使用下面的代码&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
-&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
-&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
-&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;&amp;lt;meta http-equiv=&amp;#34;Content-Type&amp;#34; content=&amp;#34;text/html;charset=UTF-8&amp;#34;&amp;gt;
-&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
-&lt;/div&gt;
-&lt;/div&gt;&lt;p&gt;XML 使用属性标注其编码&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
-&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
-&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
-&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;&amp;lt;?xml version=&amp;#34;1.0&amp;#34; encoding=&amp;#34;UTF-8&amp;#34; ?&amp;gt;
-&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
-&lt;/div&gt;
-&lt;/div&gt;&lt;p&gt;仔细想想，这里有个矛盾的地方，因为我们需要事先知道某字节流的编码才能正确解析该字节流，而这个字节流的编码是保存在这段字节流中的，和“鸡生蛋，蛋生鸡”的问题有点像，其实这并不是一个问题，因为大部分的编码都是兼容 ASCII 编码的，而这些 HTML/XML 开始处基本都是 ASCII 字符，所以采用浏览器默认的编码方案即可解析出该字节流所声明的编码，在解析出该字节流所用编码后，使用该编码重新解析该字节流。&lt;/p&gt;
-&lt;h3 id=&#34;vim&#34;&gt;VIM&lt;/h3&gt;
-&lt;ul&gt;
-&lt;li&gt;&lt;a href=&#34;http://edyfox.codecarver.org/html/vim_fileencodings_detection.html&#34;&gt;vim_fileencodings_detection&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
-&lt;h2 id=&#34;总结&#34;&gt;总结&lt;/h2&gt;
-&lt;p&gt;这篇文章第一次写用了周末 2 天时间才完成，在后面陆陆续续又增删了不少，我只能说真是长见识了。在 wiki 上搜索的资料时，需要消耗较大精力去整理，因为各个编码都不是孤立存在的，要想完整了解某编码，需要从起发展历史开始，在不同编码条目间来回切换，才能对其有深入理解。这是我意料之外的。&lt;/p&gt;
-&lt;p&gt;字符串，这个既熟悉又陌生的东西，相信大家在看本文后，大家都能够对其有一全新的认识。&lt;/p&gt;
-&lt;h2 id=&#34;参考&#34;&gt;参考&lt;/h2&gt;
-&lt;ol&gt;
-&lt;li&gt;&lt;a href=&#34;http://www.joelonsoftware.com/articles/Unicode.html&#34;&gt;The Absolute Minimum Every Software Developer Absolutely, Positively Must Know About Unicode and Character Sets (No Excuses!)&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;http://programmers.stackexchange.com/questions/291950/are-data-type-declarators-like-int-and-char-stored-in-ram-when-a-c-program-e&#34;&gt;Are data type declarators like “int” and “char” stored in RAM when a C program executes?&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;http://www.utf8everywhere.org&#34;&gt;UTF-8 Everywhere&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;http://www.ruanyifeng.com/blog/2007/10/ascii_unicode_and_utf-8.html&#34;&gt;字符编码笔记：ASCII，Unicode和UTF-8&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;http://illegalargumentexception.blogspot.hk/2009/05/java-rough-guide-to-character-encoding.html&#34;&gt;Java: a rough guide to character encoding&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;https://docs.python.org/2/howto/unicode.html&#34;&gt;Python Unicode HOWTO&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;http://www.tldp.org/HOWTO/Unix-and-Internet-Fundamentals-HOWTO/core-formats.html&#34;&gt;How does my computer store things in memory?&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;http://www.fmddlmyy.cn/text6.html&#34;&gt;谈谈Unicode编码，简要解释UCS、UTF、BMP、BOM等名词&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;https://docs.python.org/2.7/reference/datamodel.html#the-standard-type-hierarchy&#34;&gt;The Python Language Reference: Data model&lt;/a&gt;&lt;/li&gt;
-&lt;/ol&gt;
-</description>
-    </item>
-    
-  </channel>
-</rss>
+&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>
+&lt;figure>
+&lt;img src="https://img.alicdn.com/imgextra/i1/581166664/TB2yyi9jXXXXXauXXXXXXXXXXXX_!!581166664.png" alt="Nodejs 字符内存快照">
+&lt;figcaption>&lt;center>Nodejs 字符内存快照&lt;/center>&lt;/figcaption>
+&lt;/figure>
+&lt;/p>
+&lt;p>上图中的&lt;code>\u4E2D&lt;/code>即为“中”，在内存中的字节序为&lt;code>5c75 3445 3244&lt;/code>，这一串数字是&lt;code>\u4E2D&lt;/code>的 ASCII 码。&lt;/p>
+&lt;p>参考：&lt;/p>
+&lt;ul>
+&lt;li>&lt;a href="https://mathiasbynens.be/notes/javascript-encoding">JavaScript’s internal character encoding: UCS-2 or UTF-16?&lt;/a>&lt;/li>
+&lt;/ul>
+&lt;h3 id="htmlxml">HTML/XML&lt;/h3>
+&lt;p>在我们的 Web 浏览器接收到来自世界各地的 HTML/XML 时，也需要正确的编码方案才能够正常显示网页，在现代的 HTML5 页面，一般通过下面的代码指定&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code class="language-fallback" data-lang="fallback">&amp;lt;meta charset=&amp;#34;UTF-8&amp;#34;&amp;gt;
+&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>4.0.1 之前的 HTML 页面使用下面的代码&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code class="language-fallback" data-lang="fallback">&amp;lt;meta http-equiv=&amp;#34;Content-Type&amp;#34; content=&amp;#34;text/html;charset=UTF-8&amp;#34;&amp;gt;
+&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>XML 使用属性标注其编码&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code class="language-fallback" data-lang="fallback">&amp;lt;?xml version=&amp;#34;1.0&amp;#34; encoding=&amp;#34;UTF-8&amp;#34; ?&amp;gt;
+&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>仔细想想，这里有个矛盾的地方，因为我们需要事先知道某字节流的编码才能正确解析该字节流，而这个字节流的编码是保存在这段字节流中的，和“鸡生蛋，蛋生鸡”的问题有点像，其实这并不是一个问题，因为大部分的编码都是兼容 ASCII 编码的，而这些 HTML/XML 开始处基本都是 ASCII 字符，所以采用浏览器默认的编码方案即可解析出该字节流所声明的编码，在解析出该字节流所用编码后，使用该编码重新解析该字节流。&lt;/p>
+&lt;h3 id="vim">VIM&lt;/h3>
+&lt;ul>
+&lt;li>&lt;a href="http://edyfox.codecarver.org/html/vim_fileencodings_detection.html">vim_fileencodings_detection&lt;/a>&lt;/li>
+&lt;/ul>
+&lt;h2 id="总结">总结&lt;/h2>
+&lt;p>这篇文章第一次写用了周末 2 天时间才完成，在后面陆陆续续又增删了不少，我只能说真是长见识了。在 wiki 上搜索的资料时，需要消耗较大精力去整理，因为各个编码都不是孤立存在的，要想完整了解某编码，需要从起发展历史开始，在不同编码条目间来回切换，才能对其有深入理解。这是我意料之外的。&lt;/p>
+&lt;p>字符串，这个既熟悉又陌生的东西，相信大家在看本文后，大家都能够对其有一全新的认识。&lt;/p>
+&lt;h2 id="参考">参考&lt;/h2>
+&lt;ol>
+&lt;li>&lt;a href="http://www.joelonsoftware.com/articles/Unicode.html">The Absolute Minimum Every Software Developer Absolutely, Positively Must Know About Unicode and Character Sets (No Excuses!)&lt;/a>&lt;/li>
+&lt;li>&lt;a href="http://programmers.stackexchange.com/questions/291950/are-data-type-declarators-like-int-and-char-stored-in-ram-when-a-c-program-e">Are data type declarators like “int” and “char” stored in RAM when a C program executes?&lt;/a>&lt;/li>
+&lt;li>&lt;a href="http://www.utf8everywhere.org">UTF-8 Everywhere&lt;/a>&lt;/li>
+&lt;li>&lt;a href="http://www.ruanyifeng.com/blog/2007/10/ascii_unicode_and_utf-8.html">字符编码笔记：ASCII，Unicode和UTF-8&lt;/a>&lt;/li>
+&lt;li>&lt;a href="http://illegalargumentexception.blogspot.hk/2009/05/java-rough-guide-to-character-encoding.html">Java: a rough guide to character encoding&lt;/a>&lt;/li>
+&lt;li>&lt;a href="https://docs.python.org/2/howto/unicode.html">Python Unicode HOWTO&lt;/a>&lt;/li>
+&lt;li>&lt;a href="http://www.tldp.org/HOWTO/Unix-and-Internet-Fundamentals-HOWTO/core-formats.html">How does my computer store things in memory?&lt;/a>&lt;/li>
+&lt;li>&lt;a href="http://www.fmddlmyy.cn/text6.html">谈谈Unicode编码，简要解释UCS、UTF、BMP、BOM等名词&lt;/a>&lt;/li>
+&lt;li>&lt;a href="https://docs.python.org/2.7/reference/datamodel.html#the-standard-type-hierarchy">The Python Language Reference: Data model&lt;/a>&lt;/li>
+&lt;/ol></description></item></channel></rss>

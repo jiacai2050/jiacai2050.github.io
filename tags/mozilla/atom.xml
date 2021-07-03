@@ -1,564 +1,522 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?>
-<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
-  <channel>
-    <title>mozilla on Keep Coding</title>
-    <link>https://liujiacai.net/tags/mozilla/</link>
-    <description>Recent content in mozilla on Keep Coding</description>
-    <generator>Hugo -- gohugo.io</generator>
-    <language>zh-cn</language>
-    <lastBuildDate>Sun, 01 Feb 2015 00:00:00 +0000</lastBuildDate><atom:link href="https://liujiacai.net/tags/mozilla/atom.xml" rel="self" type="application/rss+xml" />
-    <item>
-      <title>javascript中的面向对象编程</title>
-      <link>https://liujiacai.net/blog/2015/02/01/javascript-oop/</link>
-      <pubDate>Sun, 01 Feb 2015 00:00:00 +0000</pubDate>
-      
-      <guid>https://liujiacai.net/blog/2015/02/01/javascript-oop/</guid>
-      <description>&lt;p&gt;最近工作一直在用nodejs做开发，有了nodejs，前端、后端、脚本全都可以用javascript搞定，很是方便。但是javascript的很多语法，比如对象，就和我们常用的面向对象(object oriented programming)的编程语言不同；看某个javascript开源项目，也经常会看到使用this关键字，而这个this关键字在javascript中因上下文不同而意义不同；还有让人奇怪的原型链。这些零零碎碎的东西加起来就很容易让人不知所措，所以，有必要对javascript这门语言进行一下深入了解。&lt;/p&gt;
-&lt;p&gt;我这篇文章主要想说说如何在javascript中进行面向对象的编程，同时会讲一些javascript这门语言在设计之初的理念。下面让我们开始吧。
-首先强调一下，我们现在广泛使用的javascript都是遵循了&lt;a href=&#34;https://developer.mozilla.org/en-US/docs/Web/JavaScript/Language_Resources&#34;&gt;ECMAScript 5.1&lt;/a&gt;标准的，正在制定中的版本为6.0，这个版本变化很大，增加了很多新的语法与函数，大家可以去&lt;a href=&#34;https://developer.mozilla.org/en-US/docs/Web/JavaScript&#34;&gt;Mozilla Developer Network&lt;/a&gt;上查看。&lt;/p&gt;
-&lt;h2 id=&#34;设计理念&#34;&gt;设计理念&lt;/h2&gt;
-&lt;p&gt;javascript1.0 最初是由网景公司的&lt;a href=&#34;http://en.wikipedia.org/wiki/Brendan_Eich&#34;&gt;Brendan Eich&lt;/a&gt;在1995年5月花了&lt;a href=&#34;http://www.computer.org/csdl/mags/co/2012/02/mco2012020007.pdf&#34;&gt;十天搞出来的&lt;/a&gt;，Eich的目标是设计出一种即轻量又强大的语言，所以Eich充分借鉴了其他编程语言的特性，比如Java的语法(syntax)、Scheme的函数(function)、Self的原型继承(prototypal inheritance)、Perl的正则表达式等。
-其中值得一提的是，为什么继承借鉴了Self语言的原型机制而不是Java的类机制？首先我们要知道：&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;Self的原型机制是靠运行时的语义&lt;/li&gt;
-&lt;li&gt;Java的类机制是靠编译时的类语法&lt;/li&gt;
-&lt;/ul&gt;
-&lt;p&gt;Javascript1.0的功能相对简单，为了在今后不断丰富javascript本身功能的同时保持旧代码的兼容性，javascript通过改变运行时的支持来增加新功能，而不是通过修改javascript的语法，这就保证了旧代码的兼容性。这也就是javascript选择基于运行时的原型机制的原因。
-wikipedia这样描述到：JavaScript is classified as a &lt;a href=&#34;http://en.wikipedia.org/wiki/Prototype-based_programming&#34;&gt;prototype-based&lt;/a&gt; scripting language with &lt;a href=&#34;http://en.wikipedia.org/wiki/Dynamic_language&#34;&gt;dynamic typing&lt;/a&gt; and &lt;a href=&#34;http://en.wikipedia.org/wiki/First-class_functions&#34;&gt;first-class functions&lt;/a&gt;。这些特性使得javascript是一种&lt;a href=&#34;http://en.wikipedia.org/wiki/Multi-paradigm&#34;&gt;多范式&lt;/a&gt;的&lt;a href=&#34;http://en.wikipedia.org/wiki/Interpreter_%28computing%29&#34;&gt;解释性&lt;/a&gt;编程语言，支持&lt;a href=&#34;http://en.wikipedia.org/wiki/Object-oriented_programming&#34;&gt;面向对象&lt;/a&gt;,&lt;a href=&#34;http://en.wikipedia.org/wiki/Imperative_programming&#34;&gt;命令式(imperative)&lt;/a&gt;, &lt;a href=&#34;http://en.wikipedia.org/wiki/Functional_programming&#34;&gt;函数式(functional)&lt;/a&gt;编程风格。&lt;/p&gt;
-&lt;h2 id=&#34;对象&#34;&gt;对象&lt;/h2&gt;
-&lt;p&gt;在javascript中，除了&lt;code&gt;Undefined&lt;/code&gt;, &lt;code&gt;Null&lt;/code&gt;, &lt;code&gt;Boolean&lt;/code&gt;, &lt;code&gt;Number&lt;/code&gt;, &lt;code&gt;String&lt;/code&gt;这几个简单类型外，其他的都是对象。
-数字、字符串、布尔值这些简单类型都是不可变量，对象是可变的键值对的集合(mutable keyed conllections)，对象包括数组&lt;code&gt;Array&lt;/code&gt;、正则表达式&lt;code&gt;RegExp&lt;/code&gt;、函数&lt;code&gt;Function&lt;/code&gt;，当然对象&lt;code&gt;Object&lt;/code&gt;也是对象。
-对象在javascript中说白了就是&lt;code&gt;一系列的键值对&lt;/code&gt;。键可以是任意字符串，包括空串；值可以是任何值。在javascript中是没有类的概念(class-free)的，但是它有一个原型链(prototype linkage)。javascript对象通过这个链来实现继承关系。&lt;/p&gt;
-&lt;p&gt;javascript中有一些&lt;a href=&#34;https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects&#34;&gt;预定义对象&lt;/a&gt;，像是&lt;a href=&#34;https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object&#34;&gt;Object&lt;/a&gt;、&lt;a href=&#34;https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Function&#34;&gt;Function&lt;/a&gt;、&lt;a href=&#34;https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date&#34;&gt;Date&lt;/a&gt;、&lt;a href=&#34;https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number&#34;&gt;Number&lt;/a&gt;、&lt;a href=&#34;https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String&#34;&gt;String&lt;/a&gt;、&lt;a href=&#34;https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array&#34;&gt;Array&lt;/a&gt;等。&lt;/p&gt;
-&lt;h3 id=&#34;字面量literal&#34;&gt;字面量(literal)&lt;/h3&gt;
-&lt;p&gt;javascript中的每种类型的对象都可以采用&lt;code&gt;字面量(literal)&lt;/code&gt;的方式创建。
-对于Object对象，可以使用&lt;code&gt;对象字面量(Object literal)&lt;/code&gt;来创建，例如：&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
-&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;4
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;5
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;6
-&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
-&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;var empty_object = {};//创建了一个空对象
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>mozilla on Keep Coding</title><link>https://liujiacai.net/tags/mozilla/</link><description>Recent content in mozilla on Keep Coding</description><generator>Hugo -- gohugo.io</generator><language>zh-cn</language><lastBuildDate>Sun, 01 Feb 2015 00:00:00 +0000</lastBuildDate><atom:link href="https://liujiacai.net/tags/mozilla/atom.xml" rel="self" type="application/rss+xml"/><item><title>javascript中的面向对象编程</title><link>https://liujiacai.net/blog/2015/02/01/javascript-oop/</link><pubDate>Sun, 01 Feb 2015 00:00:00 +0000</pubDate><guid>https://liujiacai.net/blog/2015/02/01/javascript-oop/</guid><description>&lt;p>最近工作一直在用nodejs做开发，有了nodejs，前端、后端、脚本全都可以用javascript搞定，很是方便。但是javascript的很多语法，比如对象，就和我们常用的面向对象(object oriented programming)的编程语言不同；看某个javascript开源项目，也经常会看到使用this关键字，而这个this关键字在javascript中因上下文不同而意义不同；还有让人奇怪的原型链。这些零零碎碎的东西加起来就很容易让人不知所措，所以，有必要对javascript这门语言进行一下深入了解。&lt;/p>
+&lt;p>我这篇文章主要想说说如何在javascript中进行面向对象的编程，同时会讲一些javascript这门语言在设计之初的理念。下面让我们开始吧。
+首先强调一下，我们现在广泛使用的javascript都是遵循了&lt;a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Language_Resources">ECMAScript 5.1&lt;/a>标准的，正在制定中的版本为6.0，这个版本变化很大，增加了很多新的语法与函数，大家可以去&lt;a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript">Mozilla Developer Network&lt;/a>上查看。&lt;/p>
+&lt;h2 id="设计理念">设计理念&lt;/h2>
+&lt;p>javascript1.0 最初是由网景公司的&lt;a href="http://en.wikipedia.org/wiki/Brendan_Eich">Brendan Eich&lt;/a>在1995年5月花了&lt;a href="http://www.computer.org/csdl/mags/co/2012/02/mco2012020007.pdf">十天搞出来的&lt;/a>，Eich的目标是设计出一种即轻量又强大的语言，所以Eich充分借鉴了其他编程语言的特性，比如Java的语法(syntax)、Scheme的函数(function)、Self的原型继承(prototypal inheritance)、Perl的正则表达式等。
+其中值得一提的是，为什么继承借鉴了Self语言的原型机制而不是Java的类机制？首先我们要知道：&lt;/p>
+&lt;ul>
+&lt;li>Self的原型机制是靠运行时的语义&lt;/li>
+&lt;li>Java的类机制是靠编译时的类语法&lt;/li>
+&lt;/ul>
+&lt;p>Javascript1.0的功能相对简单，为了在今后不断丰富javascript本身功能的同时保持旧代码的兼容性，javascript通过改变运行时的支持来增加新功能，而不是通过修改javascript的语法，这就保证了旧代码的兼容性。这也就是javascript选择基于运行时的原型机制的原因。
+wikipedia这样描述到：JavaScript is classified as a &lt;a href="http://en.wikipedia.org/wiki/Prototype-based_programming">prototype-based&lt;/a> scripting language with &lt;a href="http://en.wikipedia.org/wiki/Dynamic_language">dynamic typing&lt;/a> and &lt;a href="http://en.wikipedia.org/wiki/First-class_functions">first-class functions&lt;/a>。这些特性使得javascript是一种&lt;a href="http://en.wikipedia.org/wiki/Multi-paradigm">多范式&lt;/a>的&lt;a href="http://en.wikipedia.org/wiki/Interpreter_%28computing%29">解释性&lt;/a>编程语言，支持&lt;a href="http://en.wikipedia.org/wiki/Object-oriented_programming">面向对象&lt;/a>,&lt;a href="http://en.wikipedia.org/wiki/Imperative_programming">命令式(imperative)&lt;/a>, &lt;a href="http://en.wikipedia.org/wiki/Functional_programming">函数式(functional)&lt;/a>编程风格。&lt;/p>
+&lt;h2 id="对象">对象&lt;/h2>
+&lt;p>在javascript中，除了&lt;code>Undefined&lt;/code>, &lt;code>Null&lt;/code>, &lt;code>Boolean&lt;/code>, &lt;code>Number&lt;/code>, &lt;code>String&lt;/code>这几个简单类型外，其他的都是对象。
+数字、字符串、布尔值这些简单类型都是不可变量，对象是可变的键值对的集合(mutable keyed conllections)，对象包括数组&lt;code>Array&lt;/code>、正则表达式&lt;code>RegExp&lt;/code>、函数&lt;code>Function&lt;/code>，当然对象&lt;code>Object&lt;/code>也是对象。
+对象在javascript中说白了就是&lt;code>一系列的键值对&lt;/code>。键可以是任意字符串，包括空串；值可以是任何值。在javascript中是没有类的概念(class-free)的，但是它有一个原型链(prototype linkage)。javascript对象通过这个链来实现继承关系。&lt;/p>
+&lt;p>javascript中有一些&lt;a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects">预定义对象&lt;/a>，像是&lt;a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object">Object&lt;/a>、&lt;a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Function">Function&lt;/a>、&lt;a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date">Date&lt;/a>、&lt;a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number">Number&lt;/a>、&lt;a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String">String&lt;/a>、&lt;a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array">Array&lt;/a>等。&lt;/p>
+&lt;h3 id="字面量literal">字面量(literal)&lt;/h3>
+&lt;p>javascript中的每种类型的对象都可以采用&lt;code>字面量(literal)&lt;/code>的方式创建。
+对于Object对象，可以使用&lt;code>对象字面量(Object literal)&lt;/code>来创建，例如：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;span class="lnt">6
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code class="language-fallback" data-lang="fallback">var empty_object = {};//创建了一个空对象
 //创建了一个有两个属性的对象
 var stooge = {
-    &amp;#34;first-name&amp;#34;: &amp;#34;Jerome&amp;#34;,
-    &amp;#34;last-name&amp;#34;: &amp;#34;Howard&amp;#34;
+&amp;#34;first-name&amp;#34;: &amp;#34;Jerome&amp;#34;,
+&amp;#34;last-name&amp;#34;: &amp;#34;Howard&amp;#34;
 };
-&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
-&lt;/div&gt;
-&lt;/div&gt;&lt;p&gt;当然，也可以用&lt;code&gt;new Object()&lt;/code&gt;或&lt;code&gt;Object.create()&lt;/code&gt;的方式来创建对象。
-对于&lt;code&gt;Function&lt;/code&gt;、&lt;code&gt;Array&lt;/code&gt;对象都有其相应的字面量形式，后面会讲到，这里不再赘述。&lt;/p&gt;
-&lt;h3 id=&#34;原型链prototype-linkage&#34;&gt;原型链(prototype linkage)&lt;/h3&gt;
-&lt;p&gt;javascript中的每个对象都隐式含有一个&lt;code&gt;[[prototype]]&lt;/code&gt;属性，这是ECMAScript中的记法，目前各大浏览器厂商在实现自己的javascript解释器时，采用的记法是&lt;code&gt;__proto__&lt;/code&gt;，也就是说每个对象都隐式包含一个&lt;code&gt;__proto__&lt;/code&gt;属性。举个例子：&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
-&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;4
-&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
-&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;var foo = {
-    x: 10,
-    y: 20
+&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>当然，也可以用&lt;code>new Object()&lt;/code>或&lt;code>Object.create()&lt;/code>的方式来创建对象。
+对于&lt;code>Function&lt;/code>、&lt;code>Array&lt;/code>对象都有其相应的字面量形式，后面会讲到，这里不再赘述。&lt;/p>
+&lt;h3 id="原型链prototype-linkage">原型链(prototype linkage)&lt;/h3>
+&lt;p>javascript中的每个对象都隐式含有一个&lt;code>[[prototype]]&lt;/code>属性，这是ECMAScript中的记法，目前各大浏览器厂商在实现自己的javascript解释器时，采用的记法是&lt;code>__proto__&lt;/code>，也就是说每个对象都隐式包含一个&lt;code>__proto__&lt;/code>属性。举个例子：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code class="language-fallback" data-lang="fallback">var foo = {
+x: 10,
+y: 20
 };
-&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
-&lt;/div&gt;
-&lt;/div&gt;&lt;p&gt;foo这个对象在内存中的存储结构大致是这样的：&lt;/p&gt;
-&lt;center&gt;
-&lt;img src=&#34;http://img04.taobaocdn.com/imgextra/i4/581166664/TB2vFhwbVXXXXc7XpXXXXXXXXXX_!!581166664.png&#34; alt=&#34;basic-object&#34;/&gt;
-&lt;/center&gt;
-&lt;p&gt;当有多个对象时，通过&lt;code&gt;__proto__&lt;/code&gt;属性就能够形成一条原型链。看下面的例子：&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
-&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt; 1
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 2
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 3
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 4
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 5
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 6
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 7
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 8
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 9
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;10
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;11
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;12
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;13
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;14
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;15
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;16
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;17
-&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
-&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;var a = {
-    x: 10,
-    calculate: function (z) {
-        return this.x + this.y + z;
-    }
+&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>foo这个对象在内存中的存储结构大致是这样的：&lt;/p>
+&lt;center>
+&lt;img src="http://img04.taobaocdn.com/imgextra/i4/581166664/TB2vFhwbVXXXXc7XpXXXXXXXXXX_!!581166664.png" alt="basic-object"/>
+&lt;/center>
+&lt;p>当有多个对象时，通过&lt;code>__proto__&lt;/code>属性就能够形成一条原型链。看下面的例子：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;span class="lnt">16
+&lt;/span>&lt;span class="lnt">17
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code class="language-fallback" data-lang="fallback">var a = {
+x: 10,
+calculate: function (z) {
+return this.x + this.y + z;
+}
 };
 var b = {
-    y: 20,
-    __proto__: a
+y: 20,
+__proto__: a
 };
 var c = {
-    y: 30,
-    __proto__: a
+y: 30,
+__proto__: a
 };
 // call the inherited method
 b.calculate(30); // 60
 c.calculate(40); // 80
-&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
-&lt;/div&gt;
-&lt;/div&gt;&lt;p&gt;上面的代码在声明对象b、c时，指明了它们的原型为对象a（a的原型默认指向Object.prototype，Object.prototype这个对象的原型指向null），这几个对象在内存中的结构大致是这样的：&lt;/p&gt;
-&lt;center&gt;
-&lt;img src=&#34;http://img03.taobaocdn.com/imgextra/i3/581166664/TB2RwVEbVXXXXaCXpXXXXXXXXXX_!!581166664.png&#34; alt=&#34;prototype-chain&#34;/&gt;
-&lt;/center&gt;
-&lt;p&gt;这里需要说明一点，&lt;code&gt;__proto__&lt;/code&gt;不是ECMAScript的规定，而是由于在javascript早期，ECMAScript没有明确的说明如何访问一个对象的原型，所以各大实现商采用了约定俗成的&lt;code&gt;__proto__&lt;/code&gt;记法。
-在ECMAScript 3.1及以后的版本中，为内置对象&lt;code&gt;Object&lt;/code&gt;添加了访问设置、对象原型的方法：&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;&lt;a href=&#34;https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/getPrototypeOf&#34;&gt;getPropertyOf()&lt;/a&gt;，用于获取对象的原型&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/create&#34;&gt;create()&lt;/a&gt;，在创建对象时设置对象的原型。&lt;/li&gt;
-&lt;/ul&gt;
-&lt;h4 id=&#34;__proto__-vs-prototype&#34;&gt;__proto__ vs prototype&lt;/h4&gt;
-&lt;p&gt;除了我们这里说的&lt;code&gt;__proto__&lt;/code&gt;属性，相信大家平常更常见的是&lt;code&gt;prototype&lt;/code&gt;属性。比如，Date对象中没有加几天的函数，那么我们可以这么做：&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
-&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
-&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
-&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;Date.prototype.addDays = function(n) {
-    this.setDate(this.getDate() + n);
+&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>上面的代码在声明对象b、c时，指明了它们的原型为对象a（a的原型默认指向Object.prototype，Object.prototype这个对象的原型指向null），这几个对象在内存中的结构大致是这样的：&lt;/p>
+&lt;center>
+&lt;img src="http://img03.taobaocdn.com/imgextra/i3/581166664/TB2RwVEbVXXXXaCXpXXXXXXXXXX_!!581166664.png" alt="prototype-chain"/>
+&lt;/center>
+&lt;p>这里需要说明一点，&lt;code>__proto__&lt;/code>不是ECMAScript的规定，而是由于在javascript早期，ECMAScript没有明确的说明如何访问一个对象的原型，所以各大实现商采用了约定俗成的&lt;code>__proto__&lt;/code>记法。
+在ECMAScript 3.1及以后的版本中，为内置对象&lt;code>Object&lt;/code>添加了访问设置、对象原型的方法：&lt;/p>
+&lt;ul>
+&lt;li>&lt;a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/getPrototypeOf">getPropertyOf()&lt;/a>，用于获取对象的原型&lt;/li>
+&lt;li>&lt;a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/create">create()&lt;/a>，在创建对象时设置对象的原型。&lt;/li>
+&lt;/ul>
+&lt;h4 id="__proto__-vs-prototype">__proto__ vs prototype&lt;/h4>
+&lt;p>除了我们这里说的&lt;code>__proto__&lt;/code>属性，相信大家平常更常见的是&lt;code>prototype&lt;/code>属性。比如，Date对象中没有加几天的函数，那么我们可以这么做：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code class="language-fallback" data-lang="fallback">Date.prototype.addDays = function(n) {
+this.setDate(this.getDate() + n);
 }
-&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
-&lt;/div&gt;
-&lt;/div&gt;&lt;p&gt;那么所有通过&lt;code&gt;new Date()&lt;/code&gt;得到的对象就拥有&lt;code&gt;addDays&lt;/code&gt;方法了（后面讲解继承是会解释原因）。那么&lt;code&gt;__proto__&lt;/code&gt;属性与&lt;code&gt;prototype&lt;/code&gt;属性有什么区别呢？&lt;/p&gt;
-&lt;blockquote&gt;
-&lt;p&gt;javascript的每个对象都有&lt;code&gt;__proto__&lt;/code&gt;属性，但是只有&lt;code&gt;函数对象&lt;/code&gt;有&lt;code&gt;prototype&lt;/code&gt;属性。&lt;/p&gt;
-&lt;/blockquote&gt;
-&lt;p&gt;那么在函数对象中， 这两个属性的有什么区别呢？&lt;/p&gt;
-&lt;ol&gt;
-&lt;li&gt;&lt;code&gt;__proto__&lt;/code&gt;表示该函数对象的原型&lt;/li&gt;
-&lt;li&gt;&lt;code&gt;prototype&lt;/code&gt;表示使用new来执行该函数时（这种函数一般成为构造函数，后面会讲解），新创建的对象的原型。例如：
+&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>那么所有通过&lt;code>new Date()&lt;/code>得到的对象就拥有&lt;code>addDays&lt;/code>方法了（后面讲解继承是会解释原因）。那么&lt;code>__proto__&lt;/code>属性与&lt;code>prototype&lt;/code>属性有什么区别呢？&lt;/p>
+&lt;blockquote>
+&lt;p>javascript的每个对象都有&lt;code>__proto__&lt;/code>属性，但是只有&lt;code>函数对象&lt;/code>有&lt;code>prototype&lt;/code>属性。&lt;/p>
+&lt;/blockquote>
+&lt;p>那么在函数对象中， 这两个属性的有什么区别呢？&lt;/p>
+&lt;ol>
+&lt;li>&lt;code>__proto__&lt;/code>表示该函数对象的原型&lt;/li>
+&lt;li>&lt;code>prototype&lt;/code>表示使用new来执行该函数时（这种函数一般成为构造函数，后面会讲解），新创建的对象的原型。例如：
 var d = new Date();
-d.&lt;strong&gt;proto&lt;/strong&gt; === Date.prototype; //这里为true
-Date.&lt;strong&gt;proto&lt;/strong&gt; === Object.&lt;strong&gt;proto&lt;/strong&gt;  //这里为true&lt;/li&gt;
-&lt;/ol&gt;
-&lt;p&gt;看到这里，希望大家能够理解这两个属性的区别了。&lt;/p&gt;
-&lt;h4 id=&#34;instanceof&#34;&gt;instanceof&lt;/h4&gt;
-&lt;p&gt;instanceof在javascript中是个&lt;a href=&#34;https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Lexical_grammar#Keywords&#34;&gt;关键字&lt;/a&gt;，用法如下：&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;obj instanceof constructorFunction
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;用于检测&lt;code&gt;constructorFunction.prototype&lt;/code&gt;对象是否在&lt;code&gt;obj&lt;/code&gt;的&lt;code&gt;原型链&lt;/code&gt;中。
-如果我们自己实现类似于&lt;code&gt;instanceof&lt;/code&gt;的函数，可以这么做：&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
-&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;4
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;5
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;6
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;7
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;8
-&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
-&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;function instanceOf(obj, constructorFunction) {
-    while (obj != null) {
-        if (obj === constructorFunction.prototype)
-            return true;
-        obj = Object.getPrototypeOf(obj);
-    }
-    return false;
+d.&lt;strong>proto&lt;/strong> === Date.prototype; //这里为true
+Date.&lt;strong>proto&lt;/strong> === Object.&lt;strong>proto&lt;/strong> //这里为true&lt;/li>
+&lt;/ol>
+&lt;p>看到这里，希望大家能够理解这两个属性的区别了。&lt;/p>
+&lt;h4 id="instanceof">instanceof&lt;/h4>
+&lt;p>instanceof在javascript中是个&lt;a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Lexical_grammar#Keywords">关键字&lt;/a>，用法如下：&lt;/p>
+&lt;pre>&lt;code>obj instanceof constructorFunction
+&lt;/code>&lt;/pre>
+&lt;p>用于检测&lt;code>constructorFunction.prototype&lt;/code>对象是否在&lt;code>obj&lt;/code>的&lt;code>原型链&lt;/code>中。
+如果我们自己实现类似于&lt;code>instanceof&lt;/code>的函数，可以这么做：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;span class="lnt">6
+&lt;/span>&lt;span class="lnt">7
+&lt;/span>&lt;span class="lnt">8
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code class="language-fallback" data-lang="fallback">function instanceOf(obj, constructorFunction) {
+while (obj != null) {
+if (obj === constructorFunction.prototype)
+return true;
+obj = Object.getPrototypeOf(obj);
 }
-&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
-&lt;/div&gt;
-&lt;/div&gt;&lt;p&gt;下面看一个使用&lt;code&gt;instanceof&lt;/code&gt;的例子：&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
-&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;4
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;5
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;6
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;7
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;8
-&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
-&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;function Car(make, model, year) {
-  this.make = make;
-  this.model = model;
-  this.year = year;
+return false;
+}
+&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>下面看一个使用&lt;code>instanceof&lt;/code>的例子：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;span class="lnt">6
+&lt;/span>&lt;span class="lnt">7
+&lt;/span>&lt;span class="lnt">8
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code class="language-fallback" data-lang="fallback">function Car(make, model, year) {
+this.make = make;
+this.model = model;
+this.year = year;
 }
 var mycar = new Car(&amp;#34;Honda&amp;#34;, &amp;#34;Accord&amp;#34;, 1998);
-mycar instanceof Car;    // true，因为mycar.__proto__ === Car.prototype
+mycar instanceof Car; // true，因为mycar.__proto__ === Car.prototype
 mycar instanceof Object; // true，因为mycar.__proto__.__proto__ === Object.prototype
-&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
-&lt;/div&gt;
-&lt;/div&gt;&lt;p&gt;在javascript，原型和函数是最重要的两个概念，上面说完了原型，下面说说函数对象。&lt;/p&gt;
-&lt;h3 id=&#34;函数对象function&#34;&gt;函数对象Function&lt;/h3&gt;
-&lt;p&gt;首先，函数在javascript中无非也是个对象，可以作为value赋值给某个变量，唯一不同的是函数能够被执行。&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;使用对象字面量方式创建的对象的&lt;code&gt;__proto__&lt;/code&gt;属性指向&lt;code&gt;Object.prototype&lt;/code&gt;(&lt;code&gt;Object.prototype&lt;/code&gt;的&lt;code&gt;__proto__&lt;/code&gt;属性指向&lt;code&gt;null&lt;/code&gt;)；&lt;/li&gt;
-&lt;li&gt;使用函数字面量创建的对象的&lt;code&gt;__proto__&lt;/code&gt;属性指向&lt;code&gt;Function.prototype&lt;/code&gt;(&lt;code&gt;Function.prototype&lt;/code&gt;对象的&lt;code&gt;__proto__&lt;/code&gt;属性指向&lt;code&gt;Object.prototype&lt;/code&gt;)。
-函数对象除了&lt;code&gt;__proto__&lt;/code&gt;这个隐式属性外，还有两个隐式的属性：&lt;/li&gt;
-&lt;/ul&gt;
-&lt;ol&gt;
-&lt;li&gt;函数的上下文(function’s context)&lt;/li&gt;
-&lt;li&gt;实现函数的代码(the code that implements the function’s behavior)&lt;/li&gt;
-&lt;/ol&gt;
-&lt;p&gt;和对象字面量一样，我们可以使用&lt;code&gt;函数字面量(function literal)&lt;/code&gt;来创建函数。类似于下面的方式：&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
-&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;4
-&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
-&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;//使用字面量方式创建一个函数，并赋值给add变量
+&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>在javascript，原型和函数是最重要的两个概念，上面说完了原型，下面说说函数对象。&lt;/p>
+&lt;h3 id="函数对象function">函数对象Function&lt;/h3>
+&lt;p>首先，函数在javascript中无非也是个对象，可以作为value赋值给某个变量，唯一不同的是函数能够被执行。&lt;/p>
+&lt;ul>
+&lt;li>使用对象字面量方式创建的对象的&lt;code>__proto__&lt;/code>属性指向&lt;code>Object.prototype&lt;/code>(&lt;code>Object.prototype&lt;/code>的&lt;code>__proto__&lt;/code>属性指向&lt;code>null&lt;/code>)；&lt;/li>
+&lt;li>使用函数字面量创建的对象的&lt;code>__proto__&lt;/code>属性指向&lt;code>Function.prototype&lt;/code>(&lt;code>Function.prototype&lt;/code>对象的&lt;code>__proto__&lt;/code>属性指向&lt;code>Object.prototype&lt;/code>)。
+函数对象除了&lt;code>__proto__&lt;/code>这个隐式属性外，还有两个隐式的属性：&lt;/li>
+&lt;/ul>
+&lt;ol>
+&lt;li>函数的上下文(function’s context)&lt;/li>
+&lt;li>实现函数的代码(the code that implements the function’s behavior)&lt;/li>
+&lt;/ol>
+&lt;p>和对象字面量一样，我们可以使用&lt;code>函数字面量(function literal)&lt;/code>来创建函数。类似于下面的方式：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code class="language-fallback" data-lang="fallback">//使用字面量方式创建一个函数，并赋值给add变量
 var add = function (a, b) {
-    return a + b;
+return a + b;
 };
-&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
-&lt;/div&gt;
-&lt;/div&gt;&lt;p&gt;一个函数字面量有四个部分：&lt;/p&gt;
-&lt;ol&gt;
-&lt;li&gt;function关键字，必选项。&lt;/li&gt;
-&lt;li&gt;函数名，可选项。上面的示例中就省略了函数名。&lt;/li&gt;
-&lt;li&gt;由圆括号括起来的一系列参数，必选项。&lt;/li&gt;
-&lt;li&gt;由花括号括起来的一系列语句，必选项。该函数执行时将会执行这些语句。&lt;/li&gt;
-&lt;/ol&gt;
-&lt;h4 id=&#34;函数调用与this&#34;&gt;函数调用与this&lt;/h4&gt;
-&lt;p&gt;一个函数在被调用时，除了声明的参数外，还会隐式传递两个额外的参数：&lt;code&gt;this&lt;/code&gt;与&lt;code&gt;arguments&lt;/code&gt;。
-this在OOP中很重要，this的值随着调用方式的不同而不同。javascript中共有四种调用方式：&lt;/p&gt;
-&lt;ol&gt;
-&lt;li&gt;
-&lt;p&gt;method invocation pattern。当函数作为某对象一个属性调用时，this指向这个对象。this赋值过程发生在函数调用时（也就是运行时），这叫做late binding&lt;/p&gt;
-&lt;/li&gt;
-&lt;li&gt;
-&lt;p&gt;function invocation pattern。当函数不作为属性调用时，this指向全局对象（这里的全局对象依宿舍环境而异，在浏览器中，是window对象），这是个设计上的错误，正确的话，内部函数的this应该指向外部函数。可以通过在函数中定义一个变量来解决这个问题。&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt; var add = function(a, b) {return a+b;}
- var obj = {
-     value: 3,
-     double: function() {
-         var self = this;//把this赋值给了self
-         this.value = add(self.value, self.value);
-     }
- }
- obj.double(); //obj.value现在为6
-&lt;/code&gt;&lt;/pre&gt;
-&lt;/li&gt;
-&lt;li&gt;
-&lt;p&gt;construct invocation pattern。javascript是一门原型继承语言，这也就意味着对象可以直接从其他对象中继承属性，没有类的概念。这和java中的继承不一样。但是javascript提供了一种类似与java创建对象的语法。当一个函数用new来调用时，this指向新创建的对象。这时的函数通常称为构造函数。&lt;/p&gt;
-&lt;/li&gt;
-&lt;li&gt;
-&lt;p&gt;apply invocation pattern。使用函数对象的&lt;a href=&#34;https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Function/apply&#34;&gt;apply方法&lt;/a&gt;来执行时，this指向apply的第一个参数。&lt;/p&gt;
-&lt;/li&gt;
-&lt;/ol&gt;
-&lt;p&gt;除了this外，函数在调用是额外传入的另一个参数是&lt;a href=&#34;https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Functions/arguments&#34;&gt;arguments&lt;/a&gt;。它是函数内部的一个变量，包含函数调用处的所有参数，甚至包含函数定义时没有的参数。&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
-&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;4
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;5
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;6
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;7
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;8
-&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
-&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;var sum = function () {
-    var i, sum = 0;
-    for (i = 0; i &amp;lt; arguments.length; i += 1) {
-        sum += arguments[i];
-    }
-    return sum;
+&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>一个函数字面量有四个部分：&lt;/p>
+&lt;ol>
+&lt;li>function关键字，必选项。&lt;/li>
+&lt;li>函数名，可选项。上面的示例中就省略了函数名。&lt;/li>
+&lt;li>由圆括号括起来的一系列参数，必选项。&lt;/li>
+&lt;li>由花括号括起来的一系列语句，必选项。该函数执行时将会执行这些语句。&lt;/li>
+&lt;/ol>
+&lt;h4 id="函数调用与this">函数调用与this&lt;/h4>
+&lt;p>一个函数在被调用时，除了声明的参数外，还会隐式传递两个额外的参数：&lt;code>this&lt;/code>与&lt;code>arguments&lt;/code>。
+this在OOP中很重要，this的值随着调用方式的不同而不同。javascript中共有四种调用方式：&lt;/p>
+&lt;ol>
+&lt;li>
+&lt;p>method invocation pattern。当函数作为某对象一个属性调用时，this指向这个对象。this赋值过程发生在函数调用时（也就是运行时），这叫做late binding&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>function invocation pattern。当函数不作为属性调用时，this指向全局对象（这里的全局对象依宿舍环境而异，在浏览器中，是window对象），这是个设计上的错误，正确的话，内部函数的this应该指向外部函数。可以通过在函数中定义一个变量来解决这个问题。&lt;/p>
+&lt;pre>&lt;code> var add = function(a, b) {return a+b;}
+var obj = {
+value: 3,
+double: function() {
+var self = this;//把this赋值给了self
+this.value = add(self.value, self.value);
+}
+}
+obj.double(); //obj.value现在为6
+&lt;/code>&lt;/pre>
+&lt;/li>
+&lt;li>
+&lt;p>construct invocation pattern。javascript是一门原型继承语言，这也就意味着对象可以直接从其他对象中继承属性，没有类的概念。这和java中的继承不一样。但是javascript提供了一种类似与java创建对象的语法。当一个函数用new来调用时，this指向新创建的对象。这时的函数通常称为构造函数。&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>apply invocation pattern。使用函数对象的&lt;a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Function/apply">apply方法&lt;/a>来执行时，this指向apply的第一个参数。&lt;/p>
+&lt;/li>
+&lt;/ol>
+&lt;p>除了this外，函数在调用是额外传入的另一个参数是&lt;a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Functions/arguments">arguments&lt;/a>。它是函数内部的一个变量，包含函数调用处的所有参数，甚至包含函数定义时没有的参数。&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;span class="lnt">6
+&lt;/span>&lt;span class="lnt">7
+&lt;/span>&lt;span class="lnt">8
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code class="language-fallback" data-lang="fallback">var sum = function () {
+var i, sum = 0;
+for (i = 0; i &amp;lt; arguments.length; i += 1) {
+sum += arguments[i];
+}
+return sum;
 };
 sum(4, 8, 15, 16, 23, 42); // 108
-&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
-&lt;/div&gt;
-&lt;/div&gt;&lt;p&gt;需要注意的是，这里的arguments不是一个数组，它只是一个有length属性的类数组对象(Array-like)，它并不拥有数组的其他方法。
-关于对象，最后说一下数组，javascript中的数组和平常编程中的数组不大一样。&lt;/p&gt;
-&lt;h3 id=&#34;数组对象array&#34;&gt;数组对象Array&lt;/h3&gt;
-&lt;p&gt;数组是一种在内存中线性分配的数据结构，通过下标计算出元素偏移量，从而取出元素。数组应该是一个快速存取的数据结构，但是在javascript中，数组不具备这种特性。
-数组在javascript中一个具有传统数组特性的对象，这种对象能够把数组下标转为字符串，然后把这个字符串作为对象的key，最后对取出对应该key的value（这又一次说明了对象在javascript中就是一系列键值对）。&lt;/p&gt;
-&lt;p&gt;虽然javascript中的数组没有传统语言中的数组那么快，但是由于javascript是弱类型的语言，所以javascript中的数组可以存放任何值。此外Array有很多实用的方法，大家可以去&lt;a href=&#34;https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array&#34;&gt;MDN Array&lt;/a&gt;查看。
-javascript也为数组提供了很方便的&lt;code&gt;字面量(Array Literal)&lt;/code&gt;定义方式：&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
-&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
-&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
-&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;var arr = [1,2,3]
-&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
-&lt;/div&gt;
-&lt;/div&gt;&lt;p&gt;通过数组字面量创建的数组对象的&lt;code&gt;__proto__&lt;/code&gt;指向Array.prototype。&lt;/p&gt;
-&lt;h2 id=&#34;继承inheritance&#34;&gt;继承Inheritance&lt;/h2&gt;
-&lt;p&gt;在Java中，对象是某个类的实例，一个类可以从另一个类中继承。但是在基于原型链的javascript中，对象可以直接从另一个对象创建。&lt;/p&gt;
-&lt;p&gt;在上面讲解对象时，我们知道了在创建一个对象时，该对象会自动赋予一个&lt;code&gt;__proto__&lt;/code&gt;属性，使用对象&lt;code&gt;字面量(Literal)&lt;/code&gt;来创建对象时，javascript解释器自动为&lt;code&gt;__proto__&lt;/code&gt;赋值。当我们在javascript使用new操作符创建对象时，javascript解释器在调用构造函数时，会执行类似于下面的语句&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
-&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
-&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
-&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;     this.__proto__ = {constructor: this};
-&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
-&lt;/div&gt;
-&lt;/div&gt;&lt;p&gt;新创建的对象都会有一个&lt;code&gt;__proto__&lt;/code&gt;属性，这个属性有一个&lt;code&gt;constructor&lt;/code&gt;属性，并且这个属性指向这个新对象。举个例子：&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
-&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
-&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
-&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;var d = new Date()
+&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>需要注意的是，这里的arguments不是一个数组，它只是一个有length属性的类数组对象(Array-like)，它并不拥有数组的其他方法。
+关于对象，最后说一下数组，javascript中的数组和平常编程中的数组不大一样。&lt;/p>
+&lt;h3 id="数组对象array">数组对象Array&lt;/h3>
+&lt;p>数组是一种在内存中线性分配的数据结构，通过下标计算出元素偏移量，从而取出元素。数组应该是一个快速存取的数据结构，但是在javascript中，数组不具备这种特性。
+数组在javascript中一个具有传统数组特性的对象，这种对象能够把数组下标转为字符串，然后把这个字符串作为对象的key，最后对取出对应该key的value（这又一次说明了对象在javascript中就是一系列键值对）。&lt;/p>
+&lt;p>虽然javascript中的数组没有传统语言中的数组那么快，但是由于javascript是弱类型的语言，所以javascript中的数组可以存放任何值。此外Array有很多实用的方法，大家可以去&lt;a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array">MDN Array&lt;/a>查看。
+javascript也为数组提供了很方便的&lt;code>字面量(Array Literal)&lt;/code>定义方式：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code class="language-fallback" data-lang="fallback">var arr = [1,2,3]
+&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>通过数组字面量创建的数组对象的&lt;code>__proto__&lt;/code>指向Array.prototype。&lt;/p>
+&lt;h2 id="继承inheritance">继承Inheritance&lt;/h2>
+&lt;p>在Java中，对象是某个类的实例，一个类可以从另一个类中继承。但是在基于原型链的javascript中，对象可以直接从另一个对象创建。&lt;/p>
+&lt;p>在上面讲解对象时，我们知道了在创建一个对象时，该对象会自动赋予一个&lt;code>__proto__&lt;/code>属性，使用对象&lt;code>字面量(Literal)&lt;/code>来创建对象时，javascript解释器自动为&lt;code>__proto__&lt;/code>赋值。当我们在javascript使用new操作符创建对象时，javascript解释器在调用构造函数时，会执行类似于下面的语句&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code class="language-fallback" data-lang="fallback"> this.__proto__ = {constructor: this};
+&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>新创建的对象都会有一个&lt;code>__proto__&lt;/code>属性，这个属性有一个&lt;code>constructor&lt;/code>属性，并且这个属性指向这个新对象。举个例子：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code class="language-fallback" data-lang="fallback">var d = new Date()
 d.__proto__.constructor === Date //这里为true
-&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
-&lt;/div&gt;
-&lt;/div&gt;&lt;p&gt;如果new不是一个操作符，而是一个函数的话，它的实现类似于下面的代码：&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
-&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;4
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;5
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;6
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;7
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;8
-&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
-&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;Function.prototype.new =  function () {
-    // Create a new object that inherits from the constructor&amp;#39;s prototype.
-    var that = Object.create(this.prototype);
-    // Invoke the constructor, binding –this- to the new object.
-    var other = this.apply(that, arguments);
-    // If its return value isn&amp;#39;t an object, substitute the new object.
-    return (typeof other === &amp;#39;object&amp;#39; &amp;amp;&amp;amp; other) || that;
+&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>如果new不是一个操作符，而是一个函数的话，它的实现类似于下面的代码：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;span class="lnt">6
+&lt;/span>&lt;span class="lnt">7
+&lt;/span>&lt;span class="lnt">8
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code class="language-fallback" data-lang="fallback">Function.prototype.new = function () {
+// Create a new object that inherits from the constructor&amp;#39;s prototype.
+var that = Object.create(this.prototype);
+// Invoke the constructor, binding –this- to the new object.
+var other = this.apply(that, arguments);
+// If its return value isn&amp;#39;t an object, substitute the new object.
+return (typeof other === &amp;#39;object&amp;#39; &amp;amp;&amp;amp; other) || that;
 };
-&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
-&lt;/div&gt;
-&lt;/div&gt;&lt;p&gt;之前也说了，基于原型的继承机制是根据运行时的语义决定的，这就给我们提供了很大的便利。比如，我们想为所有的Array添加一个map函数，那么我们可以这么做：&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
-&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;4
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;5
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;6
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;7
-&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
-&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;Array.prototype.map = function(f) {
-    var newArr = [];
-    for(i=0; i&amp;lt;this.length; i++) {
-        newArr.push(f(this[i]));
-    }
-    return newArr;
+&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>之前也说了，基于原型的继承机制是根据运行时的语义决定的，这就给我们提供了很大的便利。比如，我们想为所有的Array添加一个map函数，那么我们可以这么做：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;span class="lnt">6
+&lt;/span>&lt;span class="lnt">7
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code class="language-fallback" data-lang="fallback">Array.prototype.map = function(f) {
+var newArr = [];
+for(i=0; i&amp;lt;this.length; i++) {
+newArr.push(f(this[i]));
 }
-&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
-&lt;/div&gt;
-&lt;/div&gt;&lt;p&gt;因为所有的数组对象的&lt;code&gt;__proto__&lt;/code&gt;都指向Array.prototype对象，所以我们为这个对象增加方法，那么所有的数组对象就都拥有了这个方法。
-javascript解释器会顺着原型链查看某个方法或属性。如果想查看某对象的是否有某个属性，可以使用&lt;code&gt;Object.prototype.hasOwnProperty&lt;/code&gt;方法。&lt;/p&gt;
-&lt;h2 id=&#34;总结&#34;&gt;总结&lt;/h2&gt;
-&lt;p&gt;通过上面多次讲解，希望大家对&lt;code&gt;对象在javascript中就是一系列的键值对&lt;/code&gt;、&lt;code&gt;原型&lt;/code&gt;与&lt;code&gt;函数&lt;/code&gt;这三个概念有更加深刻的认识，使用javascript来写前端、后端与脚本。在&lt;a href=&#34;http://conf.reactjs.com/&#34;&gt;React.js 2015大会&lt;/a&gt;上，Facebook公布了即将开源的&lt;a href=&#34;https://github.com/facebook/react&#34;&gt;React Native&lt;/a&gt;，这意味着今后我们可以用javascript来写IOS、Android的原生应用了，这可真是&lt;code&gt;learn-once, write-anywhere&lt;/code&gt;。相信随着ECMAScript 6的发布，javascript这门语言还会有一系列翻天覆地的变化，Stay Tuned。:-)&lt;/p&gt;
-&lt;h2 id=&#34;参考&#34;&gt;参考&lt;/h2&gt;
-&lt;ul&gt;
-&lt;li&gt;&lt;a href=&#34;http://dmitrysoshnikov.com/ecmascript/javascript-the-core/&#34;&gt;JavaScript. The core&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;http://book.douban.com/subject/2994925/&#34;&gt;Javascript: The Good Parts&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;JQuery作者的 &lt;a href=&#34;http://ejohn.org/blog/objectgetprototypeof/&#34;&gt;Object.getPrototypeOf&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;JS 之父的 &lt;a href=&#34;https://brendaneich.com/2011/06/new-javascript-engine-module-owner/&#34;&gt;New JavaScript Engine Module Owner&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
-</description>
-    </item>
-    
-    <item>
-      <title>让firefox与chrome一样快</title>
-      <link>https://liujiacai.net/blog/2014/11/08/secret-of-firefox-prefs/</link>
-      <pubDate>Sat, 08 Nov 2014 00:00:00 +0000</pubDate>
-      
-      <guid>https://liujiacai.net/blog/2014/11/08/secret-of-firefox-prefs/</guid>
-      <description>&lt;p&gt;在如今这个Web时代，浏览器可以说是仅次于操作系统的软件了，各种应用都可以放到云端、移动端随时随地的使用，&lt;a href=&#34;http://www.w3.org/TR/html5/&#34;&gt;HTML5标准&lt;/a&gt;的最终版正式&lt;a href=&#34;http://www.w3.org/blog/news/archives/4167&#34;&gt;发布&lt;/a&gt;， 再次为使用Web技术开发跨平台应用奠定了基石。&lt;/p&gt;
-&lt;p&gt;HTML5现在是有统一标准了，但用户使用的浏览器可是五花八门了，身为程序员，IE可以忽略，一般linux下就是chrome与firefox，chrome快是快，就是太吃内存，所以在一些”老机器“上不敢用，下面就剩下firefox了，其实我自从看了《Code Rush》这个记录片以后，十分崇拜上个世纪有那么一群极客聚在一起，开发了很多促进了互联网发展的技术，以前我也写的文章&lt;a href=&#34;https://liujiacai.net/blog/2014/09/14/mozilla-history/&#34;&gt;《Mozilla前世今生》&lt;/a&gt;说过，这里就不在多说了。&lt;/p&gt;
-&lt;p&gt;但是不得不说的是firefox确实比chrome慢，有时候感觉chrome只需要一眨眼就能打开的网页，而firefox却要等上那么3、4秒，我真是无法忍受了。趁着这几天开发&lt;a href=&#34;https://liujiacai.net/gooreplacer/&#34;&gt;gooreplacer&lt;/a&gt;这个插件，又深入了解了下firefox一些工作机制，发现我们可以在不升级内存的情况下加速firefox打开网页的时间，我自己亲自实验了下，速度确实提了不少，现与大家分享之。&lt;/p&gt;
-&lt;p&gt;firefox的配置我们一般可以在”工具 -&amp;gt; 选项“菜单中找到，但是还有一些配置项并不在这里，在firefox中地址栏输入about:config，回车，进入时应该会有个警告，忽略之，之后就应该能看到很多如下的配置项了。&lt;/p&gt;
-&lt;img src=&#34;http://img04.taobaocdn.com/imgextra/i4/581166664/TB2L8ImaVXXXXcqXpXXXXXXXXXX_!!581166664.png&#34; alt=&#34; about-config截图&#34;/&gt;
-&lt;p&gt;这些配置项定义了很多浏览器的的默认参数，但不是全部，我们可以根据实际情况自己添加。使用上方的搜索输入框我们能够很容易地找到感兴趣的配置项。这里的配置项类型分三种：integer、boolean、string。这些配置项保存在本地一个叫prefs.js的文件中，prefs.js根据操作系统不同位置不同：&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
-&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;4
-&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
-&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;# Linxu
+return newArr;
+}
+&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>因为所有的数组对象的&lt;code>__proto__&lt;/code>都指向Array.prototype对象，所以我们为这个对象增加方法，那么所有的数组对象就都拥有了这个方法。
+javascript解释器会顺着原型链查看某个方法或属性。如果想查看某对象的是否有某个属性，可以使用&lt;code>Object.prototype.hasOwnProperty&lt;/code>方法。&lt;/p>
+&lt;h2 id="总结">总结&lt;/h2>
+&lt;p>通过上面多次讲解，希望大家对&lt;code>对象在javascript中就是一系列的键值对&lt;/code>、&lt;code>原型&lt;/code>与&lt;code>函数&lt;/code>这三个概念有更加深刻的认识，使用javascript来写前端、后端与脚本。在&lt;a href="http://conf.reactjs.com/">React.js 2015大会&lt;/a>上，Facebook公布了即将开源的&lt;a href="https://github.com/facebook/react">React Native&lt;/a>，这意味着今后我们可以用javascript来写IOS、Android的原生应用了，这可真是&lt;code>learn-once, write-anywhere&lt;/code>。相信随着ECMAScript 6的发布，javascript这门语言还会有一系列翻天覆地的变化，Stay Tuned。:-)&lt;/p>
+&lt;h2 id="参考">参考&lt;/h2>
+&lt;ul>
+&lt;li>&lt;a href="http://dmitrysoshnikov.com/ecmascript/javascript-the-core/">JavaScript. The core&lt;/a>&lt;/li>
+&lt;li>&lt;a href="http://book.douban.com/subject/2994925/">Javascript: The Good Parts&lt;/a>&lt;/li>
+&lt;li>JQuery作者的 &lt;a href="http://ejohn.org/blog/objectgetprototypeof/">Object.getPrototypeOf&lt;/a>&lt;/li>
+&lt;li>JS 之父的 &lt;a href="https://brendaneich.com/2011/06/new-javascript-engine-module-owner/">New JavaScript Engine Module Owner&lt;/a>&lt;/li>
+&lt;/ul></description></item><item><title>让firefox与chrome一样快</title><link>https://liujiacai.net/blog/2014/11/08/secret-of-firefox-prefs/</link><pubDate>Sat, 08 Nov 2014 00:00:00 +0000</pubDate><guid>https://liujiacai.net/blog/2014/11/08/secret-of-firefox-prefs/</guid><description>&lt;p>在如今这个Web时代，浏览器可以说是仅次于操作系统的软件了，各种应用都可以放到云端、移动端随时随地的使用，&lt;a href="http://www.w3.org/TR/html5/">HTML5标准&lt;/a>的最终版正式&lt;a href="http://www.w3.org/blog/news/archives/4167">发布&lt;/a>， 再次为使用Web技术开发跨平台应用奠定了基石。&lt;/p>
+&lt;p>HTML5现在是有统一标准了，但用户使用的浏览器可是五花八门了，身为程序员，IE可以忽略，一般linux下就是chrome与firefox，chrome快是快，就是太吃内存，所以在一些”老机器“上不敢用，下面就剩下firefox了，其实我自从看了《Code Rush》这个记录片以后，十分崇拜上个世纪有那么一群极客聚在一起，开发了很多促进了互联网发展的技术，以前我也写的文章&lt;a href="https://liujiacai.net/blog/2014/09/14/mozilla-history/">《Mozilla前世今生》&lt;/a>说过，这里就不在多说了。&lt;/p>
+&lt;p>但是不得不说的是firefox确实比chrome慢，有时候感觉chrome只需要一眨眼就能打开的网页，而firefox却要等上那么3、4秒，我真是无法忍受了。趁着这几天开发&lt;a href="https://liujiacai.net/gooreplacer/">gooreplacer&lt;/a>这个插件，又深入了解了下firefox一些工作机制，发现我们可以在不升级内存的情况下加速firefox打开网页的时间，我自己亲自实验了下，速度确实提了不少，现与大家分享之。&lt;/p>
+&lt;p>firefox的配置我们一般可以在”工具 -&amp;gt; 选项“菜单中找到，但是还有一些配置项并不在这里，在firefox中地址栏输入about:config，回车，进入时应该会有个警告，忽略之，之后就应该能看到很多如下的配置项了。&lt;/p>
+&lt;img src="http://img04.taobaocdn.com/imgextra/i4/581166664/TB2L8ImaVXXXXcqXpXXXXXXXXXX_!!581166664.png" alt=" about-config截图"/>
+&lt;p>这些配置项定义了很多浏览器的的默认参数，但不是全部，我们可以根据实际情况自己添加。使用上方的搜索输入框我们能够很容易地找到感兴趣的配置项。这里的配置项类型分三种：integer、boolean、string。这些配置项保存在本地一个叫prefs.js的文件中，prefs.js根据操作系统不同位置不同：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code class="language-fallback" data-lang="fallback"># Linxu
 ~/.mozilla/firefox/&amp;lt;profile ID&amp;gt;.default/
 # WinXP
 C:\Documents and Settings\&amp;lt;username&amp;gt;\Application Data\Mozilla\Firefox\Profiles\&amp;lt;profile ID&amp;gt;.default\
-&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
-&lt;/div&gt;
-&lt;/div&gt;&lt;p&gt;需要说明一点的是，我们最好不要直接修改这个文件，如果非修改不可，&lt;strong&gt;最好事先备份一份&lt;/strong&gt;。
-如果你想找到你机器上prefs.js文件在哪里，使用操作系统自带的搜索功能就好了。linux上可以使用这个命令：&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
-&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
-&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
-&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;find ~/.mozilla/firefox &lt;span class=&#34;p&#34;&gt;|&lt;/span&gt; grep prefs.js
-&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
-&lt;/div&gt;
-&lt;/div&gt;&lt;p&gt;下面重点说一些能够改善用户体验的配置项。
-事先说明一下，我这里只介绍了很小一部分配置项，更多的配置项以及每个配置项的含义大家可以在&lt;a href=&#34;http://kb.mozillazine.org/Category:Preferences&#34;&gt;mozillazine&lt;/a&gt;中找到。&lt;/p&gt;
-&lt;h2 id=&#34;渲染render相关&#34;&gt;渲染(render)相关&lt;/h2&gt;
-&lt;h3 id=&#34;减少渲染延迟&#34;&gt;减少渲染延迟&lt;/h3&gt;
-&lt;p&gt;创建一个整型配置项&lt;code&gt;nglayout.initialpaint.delay&lt;/code&gt;，这个配置定义了firefox在下载完HTML、CSS等资源后，到真正开始渲染的时间间隔，如果不设置，默认为250毫秒。如果设置为0,就能在使浏览器立即渲染了。&lt;/p&gt;
-&lt;p&gt;后面有细心的读者疑问为什么要有这个延迟，去看&lt;a href=&#34;http://kb.mozillazine.org/Nglayout.initialpaint.delay&#34;&gt;官方解释&lt;/a&gt;就很清楚了:&lt;/p&gt;
-&lt;blockquote&gt;
-&lt;p&gt;Since the start of a web page normally doesn&amp;rsquo;t have much useful information to display, Mozilla applications will wait a short interval before first rendering a page.&lt;/p&gt;
-&lt;/blockquote&gt;
-&lt;h3 id=&#34;减少reflow次数&#34;&gt;减少reflow次数&lt;/h3&gt;
-&lt;p&gt;当firefox加载一个网页时，它会在加载过程中，根据加载的数据，不间断的对页面进行&lt;a href=&#34;http://www.blueidea.com/tech/web/2007/4950.asp&#34;&gt;reflow&lt;/a&gt;。创建一个整型配置项&lt;code&gt;content.notify.interval&lt;/code&gt;，它能够控制两次reflow的间隔，它的单位是微秒，如果不设置，默认为120000（即0.12秒）。如果reflow次数过多，就会使得浏览器反应迟钝了，所以我们应该把这个值设的大些，500000（即0.5秒）或1000000（即1秒）都可以。
-需要注意一点的是，如果要是&lt;code&gt;content.notify.interval&lt;/code&gt;这个配置项生效，需要先创建一个布尔型的配置项&lt;code&gt;content.notify.ontimer&lt;/code&gt;，并且设为true。
-其次可以通过设置一个整型配置项&lt;code&gt;content.notify.backoffcount&lt;/code&gt;控制reflow执行的最大次数，我这里设为5。&lt;/p&gt;
-&lt;h3 id=&#34;控制不响应时间&#34;&gt;控制”不响应“时间&lt;/h3&gt;
-&lt;p&gt;在渲染一个网页时，firefox会间歇性地加速渲染过程，mozilla称之为tokenizing。但是这个加速是有代价的，在tokenizing过程中，浏览器不能响应用户的输入，tokenizing的时间长度是由一个整型配置项&lt;code&gt;content.max.tokenizing.time&lt;/code&gt;控制的。一般来说，把这个配置项的值设为&lt;code&gt;content.notify.interval&lt;/code&gt;值或者它的倍数。如果&lt;code&gt;content.max.tokenizing.time&lt;/code&gt;的值小于&lt;code&gt;content.notify.interval&lt;/code&gt;的值，浏览器就会因为过多响应用户输入而导致整个加载过程变慢。
-需要注意一点的是，如果要是&lt;code&gt;content.max.tokenizing.time&lt;/code&gt;这个配置项生效，需要先创建两个个布尔型的配置项&lt;code&gt;content.notify.ontimer&lt;/code&gt;与&lt;code&gt;content.interrupt.parsing&lt;/code&gt;，并且都设为true。&lt;/p&gt;
-&lt;h3 id=&#34;控制高响应时间&#34;&gt;控制”高响应“时间&lt;/h3&gt;
-&lt;p&gt;在渲染一个页面时，用户如果进行了某些操作（比如向下滚动）时，firefox会预留更多的时间来响应用户的输入，这里的时间间隔是由一个整型配置项&lt;code&gt;content.switch.threshold&lt;/code&gt;设置的。它的值一般是&lt;code&gt;content.notify.interval&lt;/code&gt;的三倍，  但是如果我们把这个值调小些，这时firefox虽然对用户的响应不会那么及时，但是会明显加速页面的渲染过程。
-如果你倾向于在网页加载完成后在进行操作（比如向下滚动），可以把&lt;code&gt;content.max.tokenizing.time&lt;/code&gt;值设的大些，&lt;code&gt;content.switch.threshold&lt;/code&gt;值设的小些；&lt;/p&gt;
-&lt;h2 id=&#34;网络network相关&#34;&gt;网络(network)相关&lt;/h2&gt;
-&lt;p&gt;与网络相关的参数一样要慎重设置，否则你的CPU会飙升到90%以上。。。&lt;/p&gt;
-&lt;h3 id=&#34;pipelining&#34;&gt;pipelining&lt;/h3&gt;
-&lt;p&gt;把&lt;code&gt;network.http.pipelining&lt;/code&gt;与&lt;code&gt;network.http.proxy.pipelining&lt;/code&gt;设置为true
-&lt;code&gt;network.http.pipelining.maxrequests&lt;/code&gt;可根据实际情况设置，我电脑上是默认值32.&lt;/p&gt;
-&lt;h3 id=&#34;dns&#34;&gt;dns&lt;/h3&gt;
-&lt;p&gt;把&lt;code&gt;network.dns.disableIPv6&lt;/code&gt;设为true，因为现在的网站都是ipv4,没听过那个网站是v6的。
-&lt;code&gt;network.dnsCacheEntries&lt;/code&gt;，这个设置firefox最多保存dns的数目，可根据个人情况设置，我电脑上chrome大约缓存了1500多个，这是chrome快的原因之一。
-&lt;code&gt;network.dnsCacheExpiration&lt;/code&gt;，dns的有限期限，单位为秒，可根据个人情况设置。&lt;/p&gt;
-&lt;h3 id=&#34;其他&#34;&gt;其他&lt;/h3&gt;
-&lt;p&gt;与网络相关的配置项还有很多都是以&lt;code&gt;network.http.&lt;/code&gt;，大家可自行修改之。&lt;/p&gt;
-&lt;h2 id=&#34;内存memory相关&#34;&gt;内存（memory）相关&lt;/h2&gt;
-&lt;h3 id=&#34;增大缓存空间&#34;&gt;增大缓存空间&lt;/h3&gt;
-&lt;p&gt;这里说的缓存空间可以用来缓存网页中的图片等资源，整型配置项&lt;code&gt;browser.cache.memory.capacity&lt;/code&gt;设置了缓存的最大值，单位为KB，大家根据自己需求修改即可。
-整型配置项&lt;code&gt;browser.cache.memory.max_entry_size&lt;/code&gt;设置了最大缓存资源数。&lt;/p&gt;
-&lt;p&gt;需要注意的是，要是上面两个配置项生效，需要把布尔型配置项&lt;code&gt;browser.cache.memory.enable&lt;/code&gt;设置为true。&lt;/p&gt;
-&lt;p&gt;查看当前firefox使用缓存的情况，可以在地址栏输入&lt;code&gt;about:cache?device=memory&lt;/code&gt; 查看。&lt;/p&gt;
-&lt;h3 id=&#34;减少历史记录&#34;&gt;减少历史记录&lt;/h3&gt;
-&lt;p&gt;firefox会把我们已经访问过得网页缓存起来，这样是加速我们下次打开的速度，但是默认的参数有些粗暴了，可以适当修改，毕竟这些东西都是占用内存的。主要有下面三个（如果某个配置项不存在，就用的是默认值）：&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;&lt;code&gt;browser.history_expire_days&lt;/code&gt;这个配置项设置缓存失效的时间，默认为180，可以改为5天。&lt;/li&gt;
-&lt;li&gt;&lt;code&gt;browser.history_expire_days_min&lt;/code&gt;很明显，这是个配置项限制了最小的失效天数，默认90，可改为5&lt;/li&gt;
-&lt;li&gt;&lt;code&gt;browser.history_expire_sites&lt;/code&gt;这个配置项决定了，历史记录中可以最多存储多少个网站，默认为20000，还是觉得有些大了，可改为500&lt;/li&gt;
-&lt;/ul&gt;
-&lt;h2 id=&#34;即时编译jit&#34;&gt;即时编译（JIT）&lt;/h2&gt;
-&lt;p&gt;这里的JIT主要指的是JavaScript，我首次接触JIT还是在Java上，新版Android不也是通过JIT来提高系统的运行速度嘛。
-firefox的JIT是通过&lt;a href=&#34;https://wiki.mozilla.org/JavaScript:TraceMonkey&#34;&gt;TraceMonkey&lt;/a&gt;这个JavaScript引擎实现的，这里主要有两个布尔型配置项：&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;&lt;code&gt;javascript.options.jit.content&lt;/code&gt;，这个主要是用来JIT网页中的JS的，貌似默认就是true&lt;/li&gt;
-&lt;li&gt;&lt;code&gt;javascript.options.jit.chrome&lt;/code&gt;，这个主要是用来JIT扩展（XUL/chrome）中的JS的，默认好像没有这个配置项，我们可以手动创建，设置为true。&lt;/li&gt;
-&lt;/ul&gt;
-&lt;h2 id=&#34;总结&#34;&gt;总结&lt;/h2&gt;
-&lt;p&gt;我发现firefox比chrome慢的原因是，很多配置项firefox设置的比较保守，这么做无非是照顾一些“老机器”了，把更多的选择权交给了用户；chrome的默认配置就比较简单暴力了，光是separate-process-per-tab这个就把大家电脑的内存占用了大半。Firefox的&lt;a href=&#34;https://wiki.mozilla.org/Electrolysis&#34;&gt;E10 project也称Electrolysis&lt;/a&gt;其实也对这项技术提供了支持，但是只在&lt;a href=&#34;http://nightly.mozilla.org/&#34;&gt;nightly&lt;/a&gt;版本上可用，因为这个技术会导致&lt;a href=&#34;https://developer.mozilla.org/en-US/Add-ons/Working_with_multiprocess_Firefox&#34;&gt;很多插件无法使用&lt;/a&gt;，所有没有集成到正式版上，firefox更看重软件的兼容性。
-其实chrome自2008年9月发布，在很短的时间内就超过了firefox的市场份额，究其原因就是顺应了大家对“用户体验”的追求，硬件升级现在很简单，买个内存条也很便宜；而从上个世纪走过来的firefox，相比之下显得保守了，这也可以理解，毕竟早期大家的电脑配置都不高。大家有兴趣的可以去看看&lt;a href=&#34;https://www.mozilla.org/en-US/firefox/releases/&#34;&gt;Firefox Release Notes&lt;/a&gt;了解Firefox的版本更新信息。&lt;/p&gt;
-&lt;p&gt;Happy Hacking！&lt;/p&gt;
-&lt;h2 id=&#34;参考&#34;&gt;参考&lt;/h2&gt;
-&lt;ul&gt;
-&lt;li&gt;&lt;a href=&#34;http://www.computerworld.com/article/2541429/networking/hacking-firefox--the-secrets-of-about-config.html&#34;&gt;Hacking Firefox: The secrets of about:config&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;http://wikimatze.de/making-firefox-as-fast-as-chrome/&#34;&gt;Making Firefox as Fast as Chrome&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;https://www.wikivs.com/wiki/Chrome_vs_Firefox&#34;&gt;Chrome_vs_Firefox&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;http://www.quora.com/Mozilla-Firefox-Why-hasnt-firefox-adopted-a-chrome-like-model-of-having-each-tab-as-a-separate-process&#34;&gt;Why-hasnt-firefox-adopted-tab-as-a-separate-process-like-chrome&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;https://areweslimyet.com/&#34;&gt;Firefox memory benchmark&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;http://www.kuqin.com/shuoit/20091006/70402.html&#34;&gt;如何优化Firefox才能比Chrome更快&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
-</description>
-    </item>
-    
-    <item>
-      <title>Mozilla 前世今生</title>
-      <link>https://liujiacai.net/blog/2014/09/14/mozilla-history/</link>
-      <pubDate>Sun, 14 Sep 2014 00:00:00 +0000</pubDate>
-      
-      <guid>https://liujiacai.net/blog/2014/09/14/mozilla-history/</guid>
-      <description>&lt;p&gt;用过 Firefox 的同学多多少少都应该对 Mozilla 有些了解，Mozilla 作为一老牌软件公司，诞生了很多传奇性的故事和人物，本篇文章将带来读者重新回顾上个世纪九十年代发生的那些激荡人心的时刻。&lt;/p&gt;
-&lt;p&gt;Mozilla 这个词现在主要有三个含义:&lt;/p&gt;
-&lt;ol&gt;
-&lt;li&gt;以开发 Firefox 浏览器出名的&lt;a href=&#34;http://en.wikipedia.org/wiki/Mozilla&#34;&gt;软件套件&lt;/a&gt;，除此之外，产品还有&lt;a href=&#34;http://en.wikipedia.org/wiki/Mozilla_Thunderbird&#34;&gt;Thunderbird&lt;/a&gt;、 &lt;a href=&#34;http://en.wikipedia.org/wiki/Firefox_Mobile&#34;&gt;Firefox_Mobile&lt;/a&gt;、&lt;a href=&#34;http://en.wikipedia.org/wiki/Firefox_OS&#34;&gt;Firefox OS&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;http://en.wikipedia.org/wiki/Mozilla_Foundation&#34;&gt;Mozilla Foundation&lt;/a&gt;，成立于2003-7-15,一个支持并且领导开发Mozilla项目的非盈利组织&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;http://en.wikipedia.org/wiki/Mozilla_Corporation&#34;&gt;Mozilla Corporation&lt;/a&gt;，成立于2005-8-3，是Mozilla Foundation的附属公司，创建Corporation的目的是解决Foundation税务相关的问题，其董事会成员很大部分都是Foundation的人员，这里不用区分这两个组织。&lt;/li&gt;
-&lt;/ol&gt;
-&lt;h2 id=&#34;netscape&#34;&gt;Netscape&lt;/h2&gt;
-&lt;p&gt;要想了解 Mozilla，不的不提上个世纪末的&lt;a href=&#34;http://en.wikipedia.org/wiki/Netscape_Communications_Corporation&#34;&gt; Netscape 公司&lt;/a&gt;与&lt;a href=&#34;http://en.wikipedia.org/wiki/Browser_wars#First_browser_war&#34;&gt;第一次浏览器大战&lt;/a&gt;,下面本文从1990年开始兴起的 &lt;a href=&#34;http://en.wikipedia.org/wiki/World_Wide_Web&#34;&gt;WWW&lt;/a&gt; 开始，简单说一下主流浏览器的发展过程。&lt;/p&gt;
-&lt;p&gt;WWW是一份&lt;a href=&#34;http://www.w3.org/Proposal&#34;&gt;具有超链接的文档系统&lt;/a&gt;，主要是为 Internet 设计，也就是我们现在看到的网页了。这份文档也提出了广为所知的URL、HTTP、HTML。&lt;a href=&#34;http://en.wikipedia.org/wiki/Tim_Berners-Lee&#34;&gt;Tim Berners-Lee&lt;/a&gt; 被认为是 WWW 之父，Tim 也设计出了世界上第一个浏览器 &lt;a href=&#34;http://en.wikipedia.org/wiki/WorldWideWeb&#34;&gt;WorldWideWeb&lt;/a&gt;。当然，发布的第一版是命令行操作的，如下图：
-&lt;img src=&#34;http://img04.taobaocdn.com/imgextra/i4/581166664/TB2N9C8apXXXXaoXXXXXXXXXXXX_!!581166664.gif&#34; alt=&#34;WorldWideWeb&#34;/&gt;&lt;/p&gt;
-&lt;p&gt;Tim Berners-Lee 同时还开发了 Libwww 这个接口，用以构建浏览器，Line Mode Browser、ViolaWWW、Erwise、MidasWWW 和 Mac WWW等浏览器均已 Libwww 为基础。&lt;/p&gt;
-&lt;p&gt;第一个具有 GUI 且较为通用的浏览器是 &lt;a href=&#34;http://en.wikipedia.org/wiki/Erwise&#34;&gt;Erwise&lt;/a&gt;，之后一直到了1993年，&lt;a href=&#34;http://en.wikipedia.org/wiki/Marc_Andreessen&#34;&gt;Marc Andreessen&lt;/a&gt; 与他雇的全职程序员 &lt;a href=&#34;http://en.wikipedia.org/wiki/Eric_Bina&#34;&gt;Eric Bina&lt;/a&gt; 在 &lt;a href=&#34;http://en.wikipedia.org/wiki/University_of_Illinois_at_Urbana-Champaign&#34;&gt;UIUC&lt;/a&gt; 的 &lt;a href=&#34;http://en.wikipedia.org/wiki/National_Center_for_Supercomputing_Applications&#34;&gt;NCSA&lt;/a&gt; 开发出了 &lt;a href=&#34;http://en.wikipedia.org/wiki/Mosaic_%28web_browser%29&#34;&gt;Mosaic&lt;/a&gt;，Andreessen 在 NCSA 时结识 Time Berners-Lee。
-当年 Andreessen 在 UIUC 毕业后去加州工作，在那里认识了 &lt;a href=&#34;http://en.wikipedia.org/wiki/James_H._Clark&#34;&gt;Jim Clark&lt;/a&gt;, Clark 觉得 Mosaic 非常有商业价值，想与 Andreessen 合作开个软件公司，就这样，&lt;a href=&#34;http://en.wikipedia.org/wiki/Mosaic_Communications_Corporation&#34;&gt;Mosaic_Communications_Corporation&lt;/a&gt; 在1994年加州成立了。
-UIUC 大学不满意他们的公司名字中有 Mosaic（有可能侵犯了商标权），最后公司名字改为 &lt;a href=&#34;http://en.wikipedia.org/wiki/Netscape&#34;&gt;Netscape Communications&lt;/a&gt;，旗舰(flagship)产品当然是 &lt;a href=&#34;http://en.wikipedia.org/wiki/Netscape_Navigator&#34;&gt;Netscape_Navigator&lt;/a&gt;，值得一提的是，Navigator 中没有使用 NCSA Mosaic 中的代码。&lt;/p&gt;
-&lt;p&gt;Netscape 在1995年8月9号，IPO非常成功，股票由开始的每股$14，到最后涨的$28，翻了一倍。谁都没想到 Netscape 会一夜暴富。Andreessen 也上了当年的&lt;a href=&#34;http://content.time.com/time/covers/0,16641,1101960219,00.html&#34;&gt;Time Magazine 封面&lt;/a&gt;。&lt;/p&gt;
-&lt;h2 id=&#34;浏览器大战&#34;&gt;浏览器大战&lt;/h2&gt;
-&lt;p&gt;Netscape 的口号是&amp;quot;The Web is For Everyone&amp;quot;，并声明他们的目标是为不同浏览器平台提供一致的浏览体验。这一时期，也正是 Microsoft 在 PC 端发展迅猛，MS 意识到 Netscape 的浏览器对他们是个潜在的定时炸弹，因为用户可以在任何操作系统上使用他们浏览器，也就是说用户从 Windows 切换到其他操作系统，基本没有什么障碍。可见 Gates 真的是个有远见的企业家，在 1995 年就遇见到现在移动互联网的情景了，瘦客户端的兴起，BS 架构也逐渐替代 CS 架构。据某些不可考察的言论说：MS 的行政领导曾在1995年6月拜访过Netscape，建议分割市场，即 Windows 上由 MS 来开发浏览器，其他操作系统由 Netscape 开发操作系统（MS 当然否认了这些言论，否则就触犯了反垄断法）。&lt;/p&gt;
-&lt;p&gt;MS 在&lt;a href=&#34;http://en.wikipedia.org/wiki/Windows_95&#34;&gt;Windows 95&lt;/a&gt; &lt;a href=&#34;http://en.wikipedia.org/wiki/Microsoft_Plus!&#34;&gt;Plus Pack&lt;/a&gt;上发行了 &lt;a href=&#34;http://en.wikipedia.org/wiki/Internet_Explorer&#34;&gt;Internet Explorer&lt;/a&gt; 1.0，据曾经在 Spyglass 工作过的程序员&lt;a href=&#34;http://en.wikipedia.org/wiki/Eric_Sink&#34;&gt;Eric Sink&lt;/a&gt;&lt;a href=&#34;http://www.ericsink.com/Browser_Wars.html&#34;&gt;描述&lt;/a&gt;：IE不是以 NSCA Mosaic 为基础的，而是由 Spyglass 开发的 Mosaic 版本，而 Spyglass 的版本是基于 NSCA 的。&lt;/p&gt;
-&lt;p&gt;MS为了迅速抢占市场，使用了软件捆绑，即在发布 Windows 时预装 IE，而且是免费的，这样对 Netscape 来说无疑是重创，想想咱们中国的杀毒行业的 360，不也是靠免费把金山、江民、瑞星等等给打的不成样子了嘛。&lt;/p&gt;
-&lt;p&gt;MS 之后与 Netscape 展开了第一次浏览器大战，这两个公司都在通过不断研发新功能来争夺市场，但 IE 在财力、资源上更胜一筹，毕竟 MS 是靠卖 Windows 与 Office 挣钱的，而 Netscape 虽然也有其他产品，但浏览器是主要收入来源，无疑 Netscape 处于劣势。到 IE3.0 时，IE 的功能基本就与 Netscape Communicator 的相当了，到 IE4.0 Windows 已经比 Macintosh 系统更为稳定。同时， MS 开始研发 Netscape 其产品的替代品，像 &lt;a href=&#34;http://en.wikipedia.org/wiki/Internet_Information_Server&#34;&gt;IIS&lt;/a&gt;,与 Windows NT 捆绑在一起。&lt;/p&gt;
-&lt;p&gt;&lt;a href=&#34;http://en.wikipedia.org/wiki/Netscape&#34;&gt;Netscape&lt;/a&gt;在此期间研发出来现在依然广为使用的&lt;a href=&#34;http://en.wikipedia.org/wiki/Transport_Layer_Security&#34;&gt;SSL&lt;/a&gt;与&lt;a href=&#34;http://en.wikipedia.org/wiki/JavaScript&#34;&gt;JavaScript&lt;/a&gt;。&lt;/p&gt;
-&lt;p&gt;Netscape直到1998年1月才向公众免费发放 Netscape Navigator，而 IE 与 IIS 则一直是免费与 Windows 操作系统捆绑售卖。&lt;/p&gt;
-&lt;p&gt;在 MS 与 Netscape 竞争时也有一些好玩的事，我这里说一件&lt;a href=&#34;http://home.snafu.de/tilman/mozilla/stomps.html&#34;&gt;mozilla stomps IE&lt;/a&gt;。&lt;/p&gt;
-&lt;h3 id=&#34;mozilla-stomp-ie&#34;&gt;Mozilla stomp IE&lt;/h3&gt;
-&lt;p&gt;事情的简单经过就是 MS 在发布 IE4.0 时，把一个很大的 IE logo（而且貌似是由“重”金属打造而成）在 Netscape 公司前面的草坪上，而且是在深夜，这样第二天有可能会有一些记者看到并且发表出来。但是事情显然没有 MS 想的那么简单，Netscape 不仅在立刻察觉了这件事情，而且还把一个身高 7 英尺（大约2米多）Mozilla 的卡通像放到 IE logo 上，并且 Mozilla 手上拿这着个牌子，上面写着 &lt;code&gt;Netscape 72, Microsoft 18&lt;/code&gt; ，这是当时他们的市场份额。
-&lt;img src=&#34;http://img01.taobaocdn.com/imgextra/i1/581166664/TB23EOTapXXXXarXpXXXXXXXXXX_!!581166664.jpg&#34; alt=&#34;mozilla-stomps-ie&#34;/&gt;&lt;/p&gt;
-&lt;h3 id=&#34;open-source-mozilla&#34;&gt;Open Source Mozilla&lt;/h3&gt;
-&lt;p&gt;值得一提的是，在1998年1月，Netscape 发动了 &lt;a href=&#34;http://en.wikipedia.org/wiki/Mozilla&#34;&gt;Mozilla&lt;/a&gt;开源项目（哈哈，终于进入正题了），Mozilla 这个名字是继 Netscape Navigator 代码号之后，由 &lt;a href=&#34;http://en.wikipedia.org/wiki/Mosaic_%28web_browser%29&#34;&gt;Mosaic&lt;/a&gt; 与 &lt;a href=&#34;http://en.wikipedia.org/wiki/Godzilla&#34;&gt;Godzilla&lt;/a&gt; 合成而来。&lt;a href=&#34;http://en.wikipedia.org/wiki/Jamie_Zawinski&#34;&gt;Jamie Zawinski&lt;/a&gt;说是在一次 Netscape 员工会议上&lt;a href=&#34;http://www.davetitus.com/mozilla/&#34;&gt;想到这个名字的&lt;/a&gt;。&lt;/p&gt;
-&lt;p&gt;Mozilla 这个开源项目一开始的目的是为像 Netscape 这样的公司提供技术服务，而反过来 Netscape 这些公司可以把 &lt;a href=&#34;http://www-archive.mozilla.org/hacking/coding-introduction.html&#34;&gt;Mozilla 的代码&lt;/a&gt;商业化。&lt;/p&gt;
-&lt;p&gt;这里有个&lt;a href=&#34;http://v.youku.com/v_show/id_XNjA2NDI2MTUy.html&#34;&gt;纪录片《Code Rush》&lt;/a&gt;，记录的是1998年3月到1999年4月 Netscape 内部的一些真实情况，推荐读者观看。&lt;/p&gt;
-&lt;p&gt;很遗憾，Netscape 这么一个由 Hacker 组成的优秀公司也免不了被收购的命运，Netscape 与 AOL 的收购谈判自1998年12月24号开始，到1999年3月17号结束，收购后很多优秀的程序员也选择了离开。&lt;/p&gt;
-&lt;h3 id=&#34;aol-收购-netscape&#34;&gt;AOL 收购 Netscape&lt;/h3&gt;
-&lt;p&gt;AOL 接管 Netscape 之后也发布过几次 Navigator 的版本，但到2003年7月，AOL开始缩减开发 Mozilla 的投入，也就在这时候，&lt;a href=&#34;http://www.mozilla.org/en-US/press/mozilla-foundation.html&#34;&gt;mozilla.org&lt;/a&gt;应时而出，宣布成立Mozilla Foundation，这之后，Mozilla Foundation 放弃了 Mozilla 套件(suite)，转而研发功能独立的应用，主要就是 &lt;a href=&#34;http://en.wikipedia.org/wiki/Firefox&#34;&gt;Firefox&lt;/a&gt;浏览器与 &lt;a href=&#34;http://en.wikipedia.org/wiki/Mozilla_Thunderbird&#34;&gt;Thunderbird&lt;/a&gt; 邮件客户端。&lt;/p&gt;
-&lt;p&gt;最近在移动互联网时代，Mozilla 推出了&lt;a href=&#34;http://en.wikipedia.org/wiki/Firefox_OS&#34;&gt;Firefox OS&lt;/a&gt;，基于 WEB 的认证系统&lt;a href=&#34;http://en.wikipedia.org/wiki/Mozilla_Persona&#34;&gt;Mozilla Persona&lt;/a&gt;,以及为开发 HTML5 应用的 marketplace。但貌似市场份额都不高。&lt;/p&gt;
-&lt;h2 id=&#34;总结&#34;&gt;总结&lt;/h2&gt;
-&lt;p&gt;本文基本上把围绕 Mozilla 的一些重要的事情都整理了一边，大部分资料都来自&lt;a href=&#34;http://en.wikipedia.org&#34;&gt;wikipedia&lt;/a&gt;，最后附上一张浏览器发展历程的图片，以飨读者。&lt;/p&gt;
-&lt;p&gt;
-  &lt;figure&gt;
-    &lt;img src=&#34;https://liujiacai.net/images/Timeline_of_web_browsers.svg&#34; alt=&#34;Timeline_of_web_browsers&#34;&gt;
-    &lt;figcaption&gt;&lt;center&gt;Timeline_of_web_browsers&lt;/center&gt;&lt;/figcaption&gt;
-  &lt;/figure&gt;
-
-
-（图比较大，可点击查看原图）&lt;/p&gt;
-&lt;h3 id=&#34;code-rush&#34;&gt;Code Rush&lt;/h3&gt;
-&lt;p&gt;纪录片&lt;a href=&#34;http://www.imdb.com/title/tt0499004/&#34;&gt;《Code Rush》&lt;/a&gt;截图&lt;/p&gt;
-&lt;img src=&#34;http://img04.taobaocdn.com/imgextra/i4/581166664/TB2_jO2apXXXXcHXXXXXXXXXXXX_!!581166664.png&#34; alt=&#34; Brendan-Eich&#34;/&gt;
-&lt;p&gt;没错，就是&lt;a href=&#34;http://en.wikipedia.org/wiki/Brendan_Eich&#34;&gt;Eich 这家伙&lt;/a&gt;，用了10天时间开发出来JavaScript，其他一开始他是想把 Scheme 移植到 Navigator 上的，但公司管理层想借当时大红大紫的 Java 的光，于是语法既想 Scheme 又想 Java 的 JS 就这么诞生了。&lt;/p&gt;
-&lt;img src=&#34;http://img04.taobaocdn.com/imgextra/i4/581166664/TB2L4eSapXXXXbtXpXXXXXXXXXX_!!581166664.png&#34; alt=&#34; CEO-of-mozilla&#34;/&gt;
-&lt;p&gt;&lt;a href=&#34;http://en.wikipedia.org/wiki/Jim_Barksdale&#34;&gt;Jim Barksdale&lt;/a&gt; 在纪录片第 15 分钟在审判微软垄断的法案时说的一段话：&lt;/p&gt;
-&lt;blockquote&gt;
-&lt;p&gt;&amp;ldquo;How many of you use Intel-based PCs in this audience, not Macintoshes?&amp;rdquo; Most people in the room raised their hands. &amp;ldquo;Of that group who use PCs? How many of you use a PC without Microsoft&amp;rsquo;s operating system?&amp;rdquo;. All of the hands went down. He said to the Senate panel, &amp;ldquo;Gentlemen, that is a monopoly.&amp;rdquo;&lt;/p&gt;
-&lt;/blockquote&gt;
-&lt;img src=&#34;http://img03.taobaocdn.com/imgextra/i3/581166664/TB2d4K0apXXXXX4XpXXXXXXXXXX_!!581166664.png&#34; alt=&#34;Tara-Hernandez&#34;/&gt;
-&lt;p&gt;&lt;a href=&#34;http://www.linkedin.com/pub/tara-hernandez/3/b26/755&#34;&gt;Tara-Hernandez&lt;/a&gt;这是当时的测试工程师吧，她负责 Navigator 上线前的最后检查。&lt;/p&gt;
-&lt;img src=&#34;http://img02.taobaocdn.com/imgextra/i2/581166664/TB28GG4apXXXXb_XXXXXXXXXXXX_!!581166664.png&#34; alt=&#34; Jamie-Zawinski&#34;/&gt;
-&lt;img src=&#34;http://img03.taobaocdn.com/imgextra/i3/581166664/TB2w7eVapXXXXacXpXXXXXXXXXX_!!581166664.png&#34; alt=&#34; Jamie-Zawinski自由开源软件布道师&#34;/&gt;
-&lt;p&gt;&lt;a href=&#34;http://en.wikipedia.org/wiki/Jamie_Zawinski&#34;&gt;Jamie-Zawinski&lt;/a&gt;发型好帅，是个LISP程序员，&lt;a href=&#34;http://www.xemacs.org/&#34;&gt;xemacs&lt;/a&gt;、&lt;a href=&#34;http://www.jwz.org/xscreensaver/&#34;&gt;xscreensaver&lt;/a&gt;作者，&lt;a href=&#34;http://www.jwz.org&#34;&gt;个人博客&lt;/a&gt;&lt;/p&gt;
-&lt;img src=&#34;http://img02.taobaocdn.com/imgextra/i2/581166664/TB20A96apXXXXasXXXXXXXXXXXX_!!581166664.png&#34; alt=&#34;Jim-Roskind&#34;/&gt;
-&lt;p&gt;哥，Chrome 快是快，但是你知道他有多占内存吗！&lt;a href=&#34;http://www.roskind.com/&#34;&gt;个人博客&lt;/a&gt;&lt;/p&gt;
-&lt;img src=&#34;http://img04.taobaocdn.com/imgextra/i4/581166664/TB2n.S1apXXXXXfXpXXXXXXXXXX_!!581166664.png&#34; alt=&#34; Scott-Collins&#34;/&gt;
-&lt;p&gt;比较低调的胖子，网上就找到这么&lt;a href=&#34;http://arstechnica.com/information-technology/2004/06/collins-interview/&#34;&gt;一篇关于他的采访&lt;/a&gt;。&lt;/p&gt;
-&lt;img src=&#34;http://img03.taobaocdn.com/imgextra/i3/581166664/TB2oB5QapXXXXbYXpXXXXXXXXXX_!!581166664.png&#34; alt=&#34; Stuart-Parmenter&#34;/&gt;
-&lt;img src=&#34;http://img02.taobaocdn.com/imgextra/i2/581166664/TB2e090apXXXXXxXpXXXXXXXXXX_!!581166664.png&#34; alt=&#34; Stuart-Pamener2&#34;/&gt;
-&lt;p&gt;又是一个牛叉的小胖子，&lt;a href=&#34;https://blog.mozilla.org/blog/author/pavlovmozilla-com/&#34;&gt;Mozilla 官方博客&lt;/a&gt; ，&lt;a href=&#34;https://www.linkedin.com/in/stuartparmenter/&#34;&gt;Linkedin 账号&lt;/a&gt;。&lt;/p&gt;
-&lt;p&gt;好了，纪录片截图就这些，看完后我觉得你也一定会忍不住看一遍吧。Go ahead, buddy!&lt;/p&gt;
-</description>
-    </item>
-    
-  </channel>
-</rss>
+&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>需要说明一点的是，我们最好不要直接修改这个文件，如果非修改不可，&lt;strong>最好事先备份一份&lt;/strong>。
+如果你想找到你机器上prefs.js文件在哪里，使用操作系统自带的搜索功能就好了。linux上可以使用这个命令：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code class="language-bash" data-lang="bash">find ~/.mozilla/firefox &lt;span class="p">|&lt;/span> grep prefs.js
+&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>下面重点说一些能够改善用户体验的配置项。
+事先说明一下，我这里只介绍了很小一部分配置项，更多的配置项以及每个配置项的含义大家可以在&lt;a href="http://kb.mozillazine.org/Category:Preferences">mozillazine&lt;/a>中找到。&lt;/p>
+&lt;h2 id="渲染render相关">渲染(render)相关&lt;/h2>
+&lt;h3 id="减少渲染延迟">减少渲染延迟&lt;/h3>
+&lt;p>创建一个整型配置项&lt;code>nglayout.initialpaint.delay&lt;/code>，这个配置定义了firefox在下载完HTML、CSS等资源后，到真正开始渲染的时间间隔，如果不设置，默认为250毫秒。如果设置为0,就能在使浏览器立即渲染了。&lt;/p>
+&lt;p>后面有细心的读者疑问为什么要有这个延迟，去看&lt;a href="http://kb.mozillazine.org/Nglayout.initialpaint.delay">官方解释&lt;/a>就很清楚了:&lt;/p>
+&lt;blockquote>
+&lt;p>Since the start of a web page normally doesn&amp;rsquo;t have much useful information to display, Mozilla applications will wait a short interval before first rendering a page.&lt;/p>
+&lt;/blockquote>
+&lt;h3 id="减少reflow次数">减少reflow次数&lt;/h3>
+&lt;p>当firefox加载一个网页时，它会在加载过程中，根据加载的数据，不间断的对页面进行&lt;a href="http://www.blueidea.com/tech/web/2007/4950.asp">reflow&lt;/a>。创建一个整型配置项&lt;code>content.notify.interval&lt;/code>，它能够控制两次reflow的间隔，它的单位是微秒，如果不设置，默认为120000（即0.12秒）。如果reflow次数过多，就会使得浏览器反应迟钝了，所以我们应该把这个值设的大些，500000（即0.5秒）或1000000（即1秒）都可以。
+需要注意一点的是，如果要是&lt;code>content.notify.interval&lt;/code>这个配置项生效，需要先创建一个布尔型的配置项&lt;code>content.notify.ontimer&lt;/code>，并且设为true。
+其次可以通过设置一个整型配置项&lt;code>content.notify.backoffcount&lt;/code>控制reflow执行的最大次数，我这里设为5。&lt;/p>
+&lt;h3 id="控制不响应时间">控制”不响应“时间&lt;/h3>
+&lt;p>在渲染一个网页时，firefox会间歇性地加速渲染过程，mozilla称之为tokenizing。但是这个加速是有代价的，在tokenizing过程中，浏览器不能响应用户的输入，tokenizing的时间长度是由一个整型配置项&lt;code>content.max.tokenizing.time&lt;/code>控制的。一般来说，把这个配置项的值设为&lt;code>content.notify.interval&lt;/code>值或者它的倍数。如果&lt;code>content.max.tokenizing.time&lt;/code>的值小于&lt;code>content.notify.interval&lt;/code>的值，浏览器就会因为过多响应用户输入而导致整个加载过程变慢。
+需要注意一点的是，如果要是&lt;code>content.max.tokenizing.time&lt;/code>这个配置项生效，需要先创建两个个布尔型的配置项&lt;code>content.notify.ontimer&lt;/code>与&lt;code>content.interrupt.parsing&lt;/code>，并且都设为true。&lt;/p>
+&lt;h3 id="控制高响应时间">控制”高响应“时间&lt;/h3>
+&lt;p>在渲染一个页面时，用户如果进行了某些操作（比如向下滚动）时，firefox会预留更多的时间来响应用户的输入，这里的时间间隔是由一个整型配置项&lt;code>content.switch.threshold&lt;/code>设置的。它的值一般是&lt;code>content.notify.interval&lt;/code>的三倍， 但是如果我们把这个值调小些，这时firefox虽然对用户的响应不会那么及时，但是会明显加速页面的渲染过程。
+如果你倾向于在网页加载完成后在进行操作（比如向下滚动），可以把&lt;code>content.max.tokenizing.time&lt;/code>值设的大些，&lt;code>content.switch.threshold&lt;/code>值设的小些；&lt;/p>
+&lt;h2 id="网络network相关">网络(network)相关&lt;/h2>
+&lt;p>与网络相关的参数一样要慎重设置，否则你的CPU会飙升到90%以上。。。&lt;/p>
+&lt;h3 id="pipelining">pipelining&lt;/h3>
+&lt;p>把&lt;code>network.http.pipelining&lt;/code>与&lt;code>network.http.proxy.pipelining&lt;/code>设置为true
+&lt;code>network.http.pipelining.maxrequests&lt;/code>可根据实际情况设置，我电脑上是默认值32.&lt;/p>
+&lt;h3 id="dns">dns&lt;/h3>
+&lt;p>把&lt;code>network.dns.disableIPv6&lt;/code>设为true，因为现在的网站都是ipv4,没听过那个网站是v6的。
+&lt;code>network.dnsCacheEntries&lt;/code>，这个设置firefox最多保存dns的数目，可根据个人情况设置，我电脑上chrome大约缓存了1500多个，这是chrome快的原因之一。
+&lt;code>network.dnsCacheExpiration&lt;/code>，dns的有限期限，单位为秒，可根据个人情况设置。&lt;/p>
+&lt;h3 id="其他">其他&lt;/h3>
+&lt;p>与网络相关的配置项还有很多都是以&lt;code>network.http.&lt;/code>，大家可自行修改之。&lt;/p>
+&lt;h2 id="内存memory相关">内存（memory）相关&lt;/h2>
+&lt;h3 id="增大缓存空间">增大缓存空间&lt;/h3>
+&lt;p>这里说的缓存空间可以用来缓存网页中的图片等资源，整型配置项&lt;code>browser.cache.memory.capacity&lt;/code>设置了缓存的最大值，单位为KB，大家根据自己需求修改即可。
+整型配置项&lt;code>browser.cache.memory.max_entry_size&lt;/code>设置了最大缓存资源数。&lt;/p>
+&lt;p>需要注意的是，要是上面两个配置项生效，需要把布尔型配置项&lt;code>browser.cache.memory.enable&lt;/code>设置为true。&lt;/p>
+&lt;p>查看当前firefox使用缓存的情况，可以在地址栏输入&lt;code>about:cache?device=memory&lt;/code> 查看。&lt;/p>
+&lt;h3 id="减少历史记录">减少历史记录&lt;/h3>
+&lt;p>firefox会把我们已经访问过得网页缓存起来，这样是加速我们下次打开的速度，但是默认的参数有些粗暴了，可以适当修改，毕竟这些东西都是占用内存的。主要有下面三个（如果某个配置项不存在，就用的是默认值）：&lt;/p>
+&lt;ul>
+&lt;li>&lt;code>browser.history_expire_days&lt;/code>这个配置项设置缓存失效的时间，默认为180，可以改为5天。&lt;/li>
+&lt;li>&lt;code>browser.history_expire_days_min&lt;/code>很明显，这是个配置项限制了最小的失效天数，默认90，可改为5&lt;/li>
+&lt;li>&lt;code>browser.history_expire_sites&lt;/code>这个配置项决定了，历史记录中可以最多存储多少个网站，默认为20000，还是觉得有些大了，可改为500&lt;/li>
+&lt;/ul>
+&lt;h2 id="即时编译jit">即时编译（JIT）&lt;/h2>
+&lt;p>这里的JIT主要指的是JavaScript，我首次接触JIT还是在Java上，新版Android不也是通过JIT来提高系统的运行速度嘛。
+firefox的JIT是通过&lt;a href="https://wiki.mozilla.org/JavaScript:TraceMonkey">TraceMonkey&lt;/a>这个JavaScript引擎实现的，这里主要有两个布尔型配置项：&lt;/p>
+&lt;ul>
+&lt;li>&lt;code>javascript.options.jit.content&lt;/code>，这个主要是用来JIT网页中的JS的，貌似默认就是true&lt;/li>
+&lt;li>&lt;code>javascript.options.jit.chrome&lt;/code>，这个主要是用来JIT扩展（XUL/chrome）中的JS的，默认好像没有这个配置项，我们可以手动创建，设置为true。&lt;/li>
+&lt;/ul>
+&lt;h2 id="总结">总结&lt;/h2>
+&lt;p>我发现firefox比chrome慢的原因是，很多配置项firefox设置的比较保守，这么做无非是照顾一些“老机器”了，把更多的选择权交给了用户；chrome的默认配置就比较简单暴力了，光是separate-process-per-tab这个就把大家电脑的内存占用了大半。Firefox的&lt;a href="https://wiki.mozilla.org/Electrolysis">E10 project也称Electrolysis&lt;/a>其实也对这项技术提供了支持，但是只在&lt;a href="http://nightly.mozilla.org/">nightly&lt;/a>版本上可用，因为这个技术会导致&lt;a href="https://developer.mozilla.org/en-US/Add-ons/Working_with_multiprocess_Firefox">很多插件无法使用&lt;/a>，所有没有集成到正式版上，firefox更看重软件的兼容性。
+其实chrome自2008年9月发布，在很短的时间内就超过了firefox的市场份额，究其原因就是顺应了大家对“用户体验”的追求，硬件升级现在很简单，买个内存条也很便宜；而从上个世纪走过来的firefox，相比之下显得保守了，这也可以理解，毕竟早期大家的电脑配置都不高。大家有兴趣的可以去看看&lt;a href="https://www.mozilla.org/en-US/firefox/releases/">Firefox Release Notes&lt;/a>了解Firefox的版本更新信息。&lt;/p>
+&lt;p>Happy Hacking！&lt;/p>
+&lt;h2 id="参考">参考&lt;/h2>
+&lt;ul>
+&lt;li>&lt;a href="http://www.computerworld.com/article/2541429/networking/hacking-firefox--the-secrets-of-about-config.html">Hacking Firefox: The secrets of about:config&lt;/a>&lt;/li>
+&lt;li>&lt;a href="http://wikimatze.de/making-firefox-as-fast-as-chrome/">Making Firefox as Fast as Chrome&lt;/a>&lt;/li>
+&lt;li>&lt;a href="https://www.wikivs.com/wiki/Chrome_vs_Firefox">Chrome_vs_Firefox&lt;/a>&lt;/li>
+&lt;li>&lt;a href="http://www.quora.com/Mozilla-Firefox-Why-hasnt-firefox-adopted-a-chrome-like-model-of-having-each-tab-as-a-separate-process">Why-hasnt-firefox-adopted-tab-as-a-separate-process-like-chrome&lt;/a>&lt;/li>
+&lt;li>&lt;a href="https://areweslimyet.com/">Firefox memory benchmark&lt;/a>&lt;/li>
+&lt;li>&lt;a href="http://www.kuqin.com/shuoit/20091006/70402.html">如何优化Firefox才能比Chrome更快&lt;/a>&lt;/li>
+&lt;/ul></description></item><item><title>Mozilla 前世今生</title><link>https://liujiacai.net/blog/2014/09/14/mozilla-history/</link><pubDate>Sun, 14 Sep 2014 00:00:00 +0000</pubDate><guid>https://liujiacai.net/blog/2014/09/14/mozilla-history/</guid><description>&lt;p>用过 Firefox 的同学多多少少都应该对 Mozilla 有些了解，Mozilla 作为一老牌软件公司，诞生了很多传奇性的故事和人物，本篇文章将带来读者重新回顾上个世纪九十年代发生的那些激荡人心的时刻。&lt;/p>
+&lt;p>Mozilla 这个词现在主要有三个含义:&lt;/p>
+&lt;ol>
+&lt;li>以开发 Firefox 浏览器出名的&lt;a href="http://en.wikipedia.org/wiki/Mozilla">软件套件&lt;/a>，除此之外，产品还有&lt;a href="http://en.wikipedia.org/wiki/Mozilla_Thunderbird">Thunderbird&lt;/a>、 &lt;a href="http://en.wikipedia.org/wiki/Firefox_Mobile">Firefox_Mobile&lt;/a>、&lt;a href="http://en.wikipedia.org/wiki/Firefox_OS">Firefox OS&lt;/a>&lt;/li>
+&lt;li>&lt;a href="http://en.wikipedia.org/wiki/Mozilla_Foundation">Mozilla Foundation&lt;/a>，成立于2003-7-15,一个支持并且领导开发Mozilla项目的非盈利组织&lt;/li>
+&lt;li>&lt;a href="http://en.wikipedia.org/wiki/Mozilla_Corporation">Mozilla Corporation&lt;/a>，成立于2005-8-3，是Mozilla Foundation的附属公司，创建Corporation的目的是解决Foundation税务相关的问题，其董事会成员很大部分都是Foundation的人员，这里不用区分这两个组织。&lt;/li>
+&lt;/ol>
+&lt;h2 id="netscape">Netscape&lt;/h2>
+&lt;p>要想了解 Mozilla，不的不提上个世纪末的&lt;a href="http://en.wikipedia.org/wiki/Netscape_Communications_Corporation"> Netscape 公司&lt;/a>与&lt;a href="http://en.wikipedia.org/wiki/Browser_wars#First_browser_war">第一次浏览器大战&lt;/a>,下面本文从1990年开始兴起的 &lt;a href="http://en.wikipedia.org/wiki/World_Wide_Web">WWW&lt;/a> 开始，简单说一下主流浏览器的发展过程。&lt;/p>
+&lt;p>WWW是一份&lt;a href="http://www.w3.org/Proposal">具有超链接的文档系统&lt;/a>，主要是为 Internet 设计，也就是我们现在看到的网页了。这份文档也提出了广为所知的URL、HTTP、HTML。&lt;a href="http://en.wikipedia.org/wiki/Tim_Berners-Lee">Tim Berners-Lee&lt;/a> 被认为是 WWW 之父，Tim 也设计出了世界上第一个浏览器 &lt;a href="http://en.wikipedia.org/wiki/WorldWideWeb">WorldWideWeb&lt;/a>。当然，发布的第一版是命令行操作的，如下图：
+&lt;img src="http://img04.taobaocdn.com/imgextra/i4/581166664/TB2N9C8apXXXXaoXXXXXXXXXXXX_!!581166664.gif" alt="WorldWideWeb"/>&lt;/p>
+&lt;p>Tim Berners-Lee 同时还开发了 Libwww 这个接口，用以构建浏览器，Line Mode Browser、ViolaWWW、Erwise、MidasWWW 和 Mac WWW等浏览器均已 Libwww 为基础。&lt;/p>
+&lt;p>第一个具有 GUI 且较为通用的浏览器是 &lt;a href="http://en.wikipedia.org/wiki/Erwise">Erwise&lt;/a>，之后一直到了1993年，&lt;a href="http://en.wikipedia.org/wiki/Marc_Andreessen">Marc Andreessen&lt;/a> 与他雇的全职程序员 &lt;a href="http://en.wikipedia.org/wiki/Eric_Bina">Eric Bina&lt;/a> 在 &lt;a href="http://en.wikipedia.org/wiki/University_of_Illinois_at_Urbana-Champaign">UIUC&lt;/a> 的 &lt;a href="http://en.wikipedia.org/wiki/National_Center_for_Supercomputing_Applications">NCSA&lt;/a> 开发出了 &lt;a href="http://en.wikipedia.org/wiki/Mosaic_%28web_browser%29">Mosaic&lt;/a>，Andreessen 在 NCSA 时结识 Time Berners-Lee。
+当年 Andreessen 在 UIUC 毕业后去加州工作，在那里认识了 &lt;a href="http://en.wikipedia.org/wiki/James_H._Clark">Jim Clark&lt;/a>, Clark 觉得 Mosaic 非常有商业价值，想与 Andreessen 合作开个软件公司，就这样，&lt;a href="http://en.wikipedia.org/wiki/Mosaic_Communications_Corporation">Mosaic_Communications_Corporation&lt;/a> 在1994年加州成立了。
+UIUC 大学不满意他们的公司名字中有 Mosaic（有可能侵犯了商标权），最后公司名字改为 &lt;a href="http://en.wikipedia.org/wiki/Netscape">Netscape Communications&lt;/a>，旗舰(flagship)产品当然是 &lt;a href="http://en.wikipedia.org/wiki/Netscape_Navigator">Netscape_Navigator&lt;/a>，值得一提的是，Navigator 中没有使用 NCSA Mosaic 中的代码。&lt;/p>
+&lt;p>Netscape 在1995年8月9号，IPO非常成功，股票由开始的每股$14，到最后涨的$28，翻了一倍。谁都没想到 Netscape 会一夜暴富。Andreessen 也上了当年的&lt;a href="http://content.time.com/time/covers/0,16641,1101960219,00.html">Time Magazine 封面&lt;/a>。&lt;/p>
+&lt;h2 id="浏览器大战">浏览器大战&lt;/h2>
+&lt;p>Netscape 的口号是&amp;quot;The Web is For Everyone&amp;quot;，并声明他们的目标是为不同浏览器平台提供一致的浏览体验。这一时期，也正是 Microsoft 在 PC 端发展迅猛，MS 意识到 Netscape 的浏览器对他们是个潜在的定时炸弹，因为用户可以在任何操作系统上使用他们浏览器，也就是说用户从 Windows 切换到其他操作系统，基本没有什么障碍。可见 Gates 真的是个有远见的企业家，在 1995 年就遇见到现在移动互联网的情景了，瘦客户端的兴起，BS 架构也逐渐替代 CS 架构。据某些不可考察的言论说：MS 的行政领导曾在1995年6月拜访过Netscape，建议分割市场，即 Windows 上由 MS 来开发浏览器，其他操作系统由 Netscape 开发操作系统（MS 当然否认了这些言论，否则就触犯了反垄断法）。&lt;/p>
+&lt;p>MS 在&lt;a href="http://en.wikipedia.org/wiki/Windows_95">Windows 95&lt;/a> &lt;a href="http://en.wikipedia.org/wiki/Microsoft_Plus!">Plus Pack&lt;/a>上发行了 &lt;a href="http://en.wikipedia.org/wiki/Internet_Explorer">Internet Explorer&lt;/a> 1.0，据曾经在 Spyglass 工作过的程序员&lt;a href="http://en.wikipedia.org/wiki/Eric_Sink">Eric Sink&lt;/a>&lt;a href="http://www.ericsink.com/Browser_Wars.html">描述&lt;/a>：IE不是以 NSCA Mosaic 为基础的，而是由 Spyglass 开发的 Mosaic 版本，而 Spyglass 的版本是基于 NSCA 的。&lt;/p>
+&lt;p>MS为了迅速抢占市场，使用了软件捆绑，即在发布 Windows 时预装 IE，而且是免费的，这样对 Netscape 来说无疑是重创，想想咱们中国的杀毒行业的 360，不也是靠免费把金山、江民、瑞星等等给打的不成样子了嘛。&lt;/p>
+&lt;p>MS 之后与 Netscape 展开了第一次浏览器大战，这两个公司都在通过不断研发新功能来争夺市场，但 IE 在财力、资源上更胜一筹，毕竟 MS 是靠卖 Windows 与 Office 挣钱的，而 Netscape 虽然也有其他产品，但浏览器是主要收入来源，无疑 Netscape 处于劣势。到 IE3.0 时，IE 的功能基本就与 Netscape Communicator 的相当了，到 IE4.0 Windows 已经比 Macintosh 系统更为稳定。同时， MS 开始研发 Netscape 其产品的替代品，像 &lt;a href="http://en.wikipedia.org/wiki/Internet_Information_Server">IIS&lt;/a>,与 Windows NT 捆绑在一起。&lt;/p>
+&lt;p>&lt;a href="http://en.wikipedia.org/wiki/Netscape">Netscape&lt;/a>在此期间研发出来现在依然广为使用的&lt;a href="http://en.wikipedia.org/wiki/Transport_Layer_Security">SSL&lt;/a>与&lt;a href="http://en.wikipedia.org/wiki/JavaScript">JavaScript&lt;/a>。&lt;/p>
+&lt;p>Netscape直到1998年1月才向公众免费发放 Netscape Navigator，而 IE 与 IIS 则一直是免费与 Windows 操作系统捆绑售卖。&lt;/p>
+&lt;p>在 MS 与 Netscape 竞争时也有一些好玩的事，我这里说一件&lt;a href="http://home.snafu.de/tilman/mozilla/stomps.html">mozilla stomps IE&lt;/a>。&lt;/p>
+&lt;h3 id="mozilla-stomp-ie">Mozilla stomp IE&lt;/h3>
+&lt;p>事情的简单经过就是 MS 在发布 IE4.0 时，把一个很大的 IE logo（而且貌似是由“重”金属打造而成）在 Netscape 公司前面的草坪上，而且是在深夜，这样第二天有可能会有一些记者看到并且发表出来。但是事情显然没有 MS 想的那么简单，Netscape 不仅在立刻察觉了这件事情，而且还把一个身高 7 英尺（大约2米多）Mozilla 的卡通像放到 IE logo 上，并且 Mozilla 手上拿这着个牌子，上面写着 &lt;code>Netscape 72, Microsoft 18&lt;/code> ，这是当时他们的市场份额。
+&lt;img src="http://img01.taobaocdn.com/imgextra/i1/581166664/TB23EOTapXXXXarXpXXXXXXXXXX_!!581166664.jpg" alt="mozilla-stomps-ie"/>&lt;/p>
+&lt;h3 id="open-source-mozilla">Open Source Mozilla&lt;/h3>
+&lt;p>值得一提的是，在1998年1月，Netscape 发动了 &lt;a href="http://en.wikipedia.org/wiki/Mozilla">Mozilla&lt;/a>开源项目（哈哈，终于进入正题了），Mozilla 这个名字是继 Netscape Navigator 代码号之后，由 &lt;a href="http://en.wikipedia.org/wiki/Mosaic_%28web_browser%29">Mosaic&lt;/a> 与 &lt;a href="http://en.wikipedia.org/wiki/Godzilla">Godzilla&lt;/a> 合成而来。&lt;a href="http://en.wikipedia.org/wiki/Jamie_Zawinski">Jamie Zawinski&lt;/a>说是在一次 Netscape 员工会议上&lt;a href="http://www.davetitus.com/mozilla/">想到这个名字的&lt;/a>。&lt;/p>
+&lt;p>Mozilla 这个开源项目一开始的目的是为像 Netscape 这样的公司提供技术服务，而反过来 Netscape 这些公司可以把 &lt;a href="http://www-archive.mozilla.org/hacking/coding-introduction.html">Mozilla 的代码&lt;/a>商业化。&lt;/p>
+&lt;p>这里有个&lt;a href="http://v.youku.com/v_show/id_XNjA2NDI2MTUy.html">纪录片《Code Rush》&lt;/a>，记录的是1998年3月到1999年4月 Netscape 内部的一些真实情况，推荐读者观看。&lt;/p>
+&lt;p>很遗憾，Netscape 这么一个由 Hacker 组成的优秀公司也免不了被收购的命运，Netscape 与 AOL 的收购谈判自1998年12月24号开始，到1999年3月17号结束，收购后很多优秀的程序员也选择了离开。&lt;/p>
+&lt;h3 id="aol-收购-netscape">AOL 收购 Netscape&lt;/h3>
+&lt;p>AOL 接管 Netscape 之后也发布过几次 Navigator 的版本，但到2003年7月，AOL开始缩减开发 Mozilla 的投入，也就在这时候，&lt;a href="http://www.mozilla.org/en-US/press/mozilla-foundation.html">mozilla.org&lt;/a>应时而出，宣布成立Mozilla Foundation，这之后，Mozilla Foundation 放弃了 Mozilla 套件(suite)，转而研发功能独立的应用，主要就是 &lt;a href="http://en.wikipedia.org/wiki/Firefox">Firefox&lt;/a>浏览器与 &lt;a href="http://en.wikipedia.org/wiki/Mozilla_Thunderbird">Thunderbird&lt;/a> 邮件客户端。&lt;/p>
+&lt;p>最近在移动互联网时代，Mozilla 推出了&lt;a href="http://en.wikipedia.org/wiki/Firefox_OS">Firefox OS&lt;/a>，基于 WEB 的认证系统&lt;a href="http://en.wikipedia.org/wiki/Mozilla_Persona">Mozilla Persona&lt;/a>,以及为开发 HTML5 应用的 marketplace。但貌似市场份额都不高。&lt;/p>
+&lt;h2 id="总结">总结&lt;/h2>
+&lt;p>本文基本上把围绕 Mozilla 的一些重要的事情都整理了一边，大部分资料都来自&lt;a href="http://en.wikipedia.org">wikipedia&lt;/a>，最后附上一张浏览器发展历程的图片，以飨读者。&lt;/p>
+&lt;p>
+&lt;figure>
+&lt;img src="https://liujiacai.net/images/Timeline_of_web_browsers.svg" alt="Timeline_of_web_browsers">
+&lt;figcaption>&lt;center>Timeline_of_web_browsers&lt;/center>&lt;/figcaption>
+&lt;/figure>
+（图比较大，可点击查看原图）&lt;/p>
+&lt;h3 id="code-rush">Code Rush&lt;/h3>
+&lt;p>纪录片&lt;a href="http://www.imdb.com/title/tt0499004/">《Code Rush》&lt;/a>截图&lt;/p>
+&lt;img src="http://img04.taobaocdn.com/imgextra/i4/581166664/TB2_jO2apXXXXcHXXXXXXXXXXXX_!!581166664.png" alt=" Brendan-Eich"/>
+&lt;p>没错，就是&lt;a href="http://en.wikipedia.org/wiki/Brendan_Eich">Eich 这家伙&lt;/a>，用了10天时间开发出来JavaScript，其他一开始他是想把 Scheme 移植到 Navigator 上的，但公司管理层想借当时大红大紫的 Java 的光，于是语法既想 Scheme 又想 Java 的 JS 就这么诞生了。&lt;/p>
+&lt;img src="http://img04.taobaocdn.com/imgextra/i4/581166664/TB2L4eSapXXXXbtXpXXXXXXXXXX_!!581166664.png" alt=" CEO-of-mozilla"/>
+&lt;p>&lt;a href="http://en.wikipedia.org/wiki/Jim_Barksdale">Jim Barksdale&lt;/a> 在纪录片第 15 分钟在审判微软垄断的法案时说的一段话：&lt;/p>
+&lt;blockquote>
+&lt;p>&amp;ldquo;How many of you use Intel-based PCs in this audience, not Macintoshes?&amp;rdquo; Most people in the room raised their hands. &amp;ldquo;Of that group who use PCs? How many of you use a PC without Microsoft&amp;rsquo;s operating system?&amp;rdquo;. All of the hands went down. He said to the Senate panel, &amp;ldquo;Gentlemen, that is a monopoly.&amp;rdquo;&lt;/p>
+&lt;/blockquote>
+&lt;img src="http://img03.taobaocdn.com/imgextra/i3/581166664/TB2d4K0apXXXXX4XpXXXXXXXXXX_!!581166664.png" alt="Tara-Hernandez"/>
+&lt;p>&lt;a href="http://www.linkedin.com/pub/tara-hernandez/3/b26/755">Tara-Hernandez&lt;/a>这是当时的测试工程师吧，她负责 Navigator 上线前的最后检查。&lt;/p>
+&lt;img src="http://img02.taobaocdn.com/imgextra/i2/581166664/TB28GG4apXXXXb_XXXXXXXXXXXX_!!581166664.png" alt=" Jamie-Zawinski"/>
+&lt;img src="http://img03.taobaocdn.com/imgextra/i3/581166664/TB2w7eVapXXXXacXpXXXXXXXXXX_!!581166664.png" alt=" Jamie-Zawinski自由开源软件布道师"/>
+&lt;p>&lt;a href="http://en.wikipedia.org/wiki/Jamie_Zawinski">Jamie-Zawinski&lt;/a>发型好帅，是个LISP程序员，&lt;a href="http://www.xemacs.org/">xemacs&lt;/a>、&lt;a href="http://www.jwz.org/xscreensaver/">xscreensaver&lt;/a>作者，&lt;a href="http://www.jwz.org">个人博客&lt;/a>&lt;/p>
+&lt;img src="http://img02.taobaocdn.com/imgextra/i2/581166664/TB20A96apXXXXasXXXXXXXXXXXX_!!581166664.png" alt="Jim-Roskind"/>
+&lt;p>哥，Chrome 快是快，但是你知道他有多占内存吗！&lt;a href="http://www.roskind.com/">个人博客&lt;/a>&lt;/p>
+&lt;img src="http://img04.taobaocdn.com/imgextra/i4/581166664/TB2n.S1apXXXXXfXpXXXXXXXXXX_!!581166664.png" alt=" Scott-Collins"/>
+&lt;p>比较低调的胖子，网上就找到这么&lt;a href="http://arstechnica.com/information-technology/2004/06/collins-interview/">一篇关于他的采访&lt;/a>。&lt;/p>
+&lt;img src="http://img03.taobaocdn.com/imgextra/i3/581166664/TB2oB5QapXXXXbYXpXXXXXXXXXX_!!581166664.png" alt=" Stuart-Parmenter"/>
+&lt;img src="http://img02.taobaocdn.com/imgextra/i2/581166664/TB2e090apXXXXXxXpXXXXXXXXXX_!!581166664.png" alt=" Stuart-Pamener2"/>
+&lt;p>又是一个牛叉的小胖子，&lt;a href="https://blog.mozilla.org/blog/author/pavlovmozilla-com/">Mozilla 官方博客&lt;/a> ，&lt;a href="https://www.linkedin.com/in/stuartparmenter/">Linkedin 账号&lt;/a>。&lt;/p>
+&lt;p>好了，纪录片截图就这些，看完后我觉得你也一定会忍不住看一遍吧。Go ahead, buddy!&lt;/p></description></item></channel></rss>

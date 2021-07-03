@@ -1,1161 +1,1113 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?>
-<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
-  <channel>
-    <title>tsdb, on Keep Coding</title>
-    <link>https://liujiacai.net/tags/tsdb/</link>
-    <description>Recent content in tsdb, on Keep Coding</description>
-    <generator>Hugo -- gohugo.io</generator>
-    <language>zh-cn</language>
-    <lastBuildDate>Sun, 11 Apr 2021 00:00:00 +0000</lastBuildDate><atom:link href="https://liujiacai.net/tags/tsdb/atom.xml" rel="self" type="application/rss+xml" />
-    <item>
-      <title>Prometheus 存储引擎分析</title>
-      <link>https://liujiacai.net/blog/2021/04/11/prometheus-storage-engine/</link>
-      <pubDate>Sun, 11 Apr 2021 00:00:00 +0000</pubDate>
-      
-      <guid>https://liujiacai.net/blog/2021/04/11/prometheus-storage-engine/</guid>
-      <description>
-&lt;p&gt;Prometheus 作为云原生时代的时序数据库， 是当下最流行的监控平台之一，尽管其整体架构一直没怎么变，但其底层的存储引擎却演进了几个版本，感兴趣的读者可参考 &lt;a href=&#34;https://tech.ipalfish.com/blog/2020/03/31/the-evolution-of-prometheus-storage-layer/&#34;&gt;Prometheus 存储层的演进&lt;/a&gt;。本文主要介绍 Prometheus V2 版本（现在主要使用）的存储格式细节，以及查询如何定位到符合条件的数据，旨在通过本文的分析，对 Prometheus 的存储引擎有更深入了解。&lt;/p&gt;
-&lt;p&gt;
-说明：本文并不会涉及到查询的解析与函数求值过程。代码分析基于 &lt;a href=&#34;https://github.com/prometheus/prometheus/tree/v2.25.2&#34;&gt;v2.25.2&lt;/a&gt; 版本。&lt;/p&gt;
-&lt;div id=&#34;outline-container-headline-1&#34; class=&#34;outline-2&#34;&gt;
-&lt;h2 id=&#34;headline-1&#34;&gt;
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>tsdb, on Keep Coding</title><link>https://liujiacai.net/tags/tsdb/</link><description>Recent content in tsdb, on Keep Coding</description><generator>Hugo -- gohugo.io</generator><language>zh-cn</language><lastBuildDate>Sun, 11 Apr 2021 00:00:00 +0000</lastBuildDate><atom:link href="https://liujiacai.net/tags/tsdb/atom.xml" rel="self" type="application/rss+xml"/><item><title>Prometheus 存储引擎分析</title><link>https://liujiacai.net/blog/2021/04/11/prometheus-storage-engine/</link><pubDate>Sun, 11 Apr 2021 00:00:00 +0000</pubDate><guid>https://liujiacai.net/blog/2021/04/11/prometheus-storage-engine/</guid><description>
+&lt;p>Prometheus 作为云原生时代的时序数据库， 是当下最流行的监控平台之一，尽管其整体架构一直没怎么变，但其底层的存储引擎却演进了几个版本，感兴趣的读者可参考 &lt;a href="https://tech.ipalfish.com/blog/2020/03/31/the-evolution-of-prometheus-storage-layer/">Prometheus 存储层的演进&lt;/a>。本文主要介绍 Prometheus V2 版本（现在主要使用）的存储格式细节，以及查询如何定位到符合条件的数据，旨在通过本文的分析，对 Prometheus 的存储引擎有更深入了解。&lt;/p>
+&lt;p>
+说明：本文并不会涉及到查询的解析与函数求值过程。代码分析基于 &lt;a href="https://github.com/prometheus/prometheus/tree/v2.25.2">v2.25.2&lt;/a> 版本。&lt;/p>
+&lt;div id="outline-container-headline-1" class="outline-2">
+&lt;h2 id="headline-1">
 背景知识
-&lt;/h2&gt;
-&lt;div id=&#34;outline-text-headline-1&#34; class=&#34;outline-text-2&#34;&gt;
-&lt;div id=&#34;outline-container-headline-2&#34; class=&#34;outline-3&#34;&gt;
-&lt;h3 id=&#34;headline-2&#34;&gt;
+&lt;/h2>
+&lt;div id="outline-text-headline-1" class="outline-text-2">
+&lt;div id="outline-container-headline-2" class="outline-3">
+&lt;h3 id="headline-2">
 时序特点
-&lt;/h3&gt;
-&lt;div id=&#34;outline-text-headline-2&#34; class=&#34;outline-text-3&#34;&gt;
-&lt;p&gt;时序数据的特点可以用一话概括：垂直写（最新数据），水平查。&lt;/p&gt;
-&lt;figure&gt;
-&lt;img src=&#34;https://img.alicdn.com/imgextra/i4/581166664/O1CN01GSCLPT1z6A3QWdN19_!!581166664.jpg&#34; alt=&#34;https://img.alicdn.com/imgextra/i4/581166664/O1CN01GSCLPT1z6A3QWdN19_!!581166664.jpg&#34; title=&#34;https://img.alicdn.com/imgextra/i4/581166664/O1CN01GSCLPT1z6A3QWdN19_!!581166664.jpg&#34; /&gt;&lt;figcaption&gt;
+&lt;/h3>
+&lt;div id="outline-text-headline-2" class="outline-text-3">
+&lt;p>时序数据的特点可以用一话概括：垂直写（最新数据），水平查。&lt;/p>
+&lt;figure>
+&lt;img src="https://img.alicdn.com/imgextra/i4/581166664/O1CN01GSCLPT1z6A3QWdN19_!!581166664.jpg" alt="https://img.alicdn.com/imgextra/i4/581166664/O1CN01GSCLPT1z6A3QWdN19_!!581166664.jpg" title="https://img.alicdn.com/imgextra/i4/581166664/O1CN01GSCLPT1z6A3QWdN19_!!581166664.jpg" />&lt;figcaption>
 时序特点
-&lt;/figcaption&gt;
-&lt;/figure&gt;
-&lt;p&gt;
+&lt;/figcaption>
+&lt;/figure>
+&lt;p>
 对于云原生场景来说，另一个特点是数据生命周期短，一次容器的扩缩容会导致时间线膨胀一倍。
-了解这两个特点后，来看看 Prometheus 是如何存储数据来迎合上述模式：&lt;/p&gt;
-&lt;div class=&#34;src src-text&#34;&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
-&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt; 1
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 2
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 3
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 4
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 5
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 6
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 7
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 8
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 9
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;10
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;11
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;12
-&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
-&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-text&#34; data-lang=&#34;text&#34;&gt;├── 01BKGV7JC0RY8A6MACW02A2PJD  // block 的 ULID
-│   ├── chunks
-│   │   └── 000001
-│   ├── tombstones
-│   ├── index
-│   └── meta.json
+了解这两个特点后，来看看 Prometheus 是如何存储数据来迎合上述模式：&lt;/p>
+&lt;div class="src src-text">
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code class="language-text" data-lang="text">├── 01BKGV7JC0RY8A6MACW02A2PJD // block 的 ULID
+│ ├── chunks
+│ │ └── 000001
+│ ├── tombstones
+│ ├── index
+│ └── meta.json
 ├── chunks_head
-│   └── 000001
+│ └── 000001
 └── wal
-    ├── 000000002
-    └── checkpoint.00000001
-        └── 00000000&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
-&lt;/div&gt;
-&lt;/div&gt;
-&lt;/div&gt;
-&lt;p&gt;可以看到，数据目录主要有以下几部分：&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;
-&lt;p&gt;block，一个时间段内（默认 2 小时）的所有数据，只读，用 &lt;a href=&#34;https://github.com/oklog/ulid&#34;&gt;ULID&lt;/a&gt; 命名。每一个 block 内主要包括：&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;
-&lt;p&gt;chunks 固定大小（最大 128M）的 chunks 文件&lt;/p&gt;
-&lt;/li&gt;
-&lt;li&gt;
-&lt;p&gt;index 索引文件，主要包含倒排索引的信息&lt;/p&gt;
-&lt;/li&gt;
-&lt;li&gt;
-&lt;p&gt;meta.json 元信息，主要包括 block 的 minTime/maxTime，方便查询时过滤&lt;/p&gt;
-&lt;/li&gt;
-&lt;/ul&gt;
-&lt;/li&gt;
-&lt;li&gt;
-&lt;p&gt;chunks_head，当前在写入的 block 对应的 chunks 文件，只读，最多 120 个数据点，时间跨度最大 2 小时。&lt;/p&gt;
-&lt;/li&gt;
-&lt;li&gt;
-&lt;p&gt;wal，Prometheus 采用攒批的方式来异步刷盘，因此需要 WAL 来保证数据可靠性&lt;/p&gt;
-&lt;/li&gt;
-&lt;/ul&gt;
-&lt;figure&gt;
-&lt;img src=&#34;https://img.alicdn.com/imgextra/i3/581166664/O1CN01eC1PK31z6A3SfXFpd_!!581166664.jpg&#34; alt=&#34;https://img.alicdn.com/imgextra/i3/581166664/O1CN01eC1PK31z6A3SfXFpd_!!581166664.jpg&#34; title=&#34;https://img.alicdn.com/imgextra/i3/581166664/O1CN01eC1PK31z6A3SfXFpd_!!581166664.jpg&#34; /&gt;&lt;figcaption&gt;
+├── 000000002
+└── checkpoint.00000001
+└── 00000000&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>
+&lt;/div>
+&lt;p>可以看到，数据目录主要有以下几部分：&lt;/p>
+&lt;ul>
+&lt;li>
+&lt;p>block，一个时间段内（默认 2 小时）的所有数据，只读，用 &lt;a href="https://github.com/oklog/ulid">ULID&lt;/a> 命名。每一个 block 内主要包括：&lt;/p>
+&lt;ul>
+&lt;li>
+&lt;p>chunks 固定大小（最大 128M）的 chunks 文件&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>index 索引文件，主要包含倒排索引的信息&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>meta.json 元信息，主要包括 block 的 minTime/maxTime，方便查询时过滤&lt;/p>
+&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;li>
+&lt;p>chunks_head，当前在写入的 block 对应的 chunks 文件，只读，最多 120 个数据点，时间跨度最大 2 小时。&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>wal，Prometheus 采用攒批的方式来异步刷盘，因此需要 WAL 来保证数据可靠性&lt;/p>
+&lt;/li>
+&lt;/ul>
+&lt;figure>
+&lt;img src="https://img.alicdn.com/imgextra/i3/581166664/O1CN01eC1PK31z6A3SfXFpd_!!581166664.jpg" alt="https://img.alicdn.com/imgextra/i3/581166664/O1CN01eC1PK31z6A3SfXFpd_!!581166664.jpg" title="https://img.alicdn.com/imgextra/i3/581166664/O1CN01eC1PK31z6A3SfXFpd_!!581166664.jpg" />&lt;figcaption>
 Block 分布
-&lt;/figcaption&gt;
-&lt;/figure&gt;
-&lt;p&gt;
-通过上面的目录结构，不难看出 Prometheus 的设计思路：&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;
-&lt;p&gt;通过数据按时间分片的方式来解决数据生命周期短的问题&lt;/p&gt;
-&lt;/li&gt;
-&lt;li&gt;
-&lt;p&gt;通过内存攒批的方式来对应只写最新数据的场景&lt;/p&gt;
-&lt;/li&gt;
-&lt;/ul&gt;
-&lt;/div&gt;
-&lt;/div&gt;
-&lt;div id=&#34;outline-container-headline-3&#34; class=&#34;outline-3&#34;&gt;
-&lt;h3 id=&#34;headline-3&#34;&gt;
+&lt;/figcaption>
+&lt;/figure>
+&lt;p>
+通过上面的目录结构，不难看出 Prometheus 的设计思路：&lt;/p>
+&lt;ul>
+&lt;li>
+&lt;p>通过数据按时间分片的方式来解决数据生命周期短的问题&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>通过内存攒批的方式来对应只写最新数据的场景&lt;/p>
+&lt;/li>
+&lt;/ul>
+&lt;/div>
+&lt;/div>
+&lt;div id="outline-container-headline-3" class="outline-3">
+&lt;h3 id="headline-3">
 数据模式
-&lt;/h3&gt;
-&lt;div id=&#34;outline-text-headline-3&#34; class=&#34;outline-text-3&#34;&gt;
-&lt;p&gt;Prometheus 支持的模式比较简单，只支持单值模式，如下：&lt;/p&gt;
-&lt;div class=&#34;src src-text&#34;&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
-&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
-&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
-&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-text&#34; data-lang=&#34;text&#34;&gt;cpu_usage{core=&amp;#34;1&amp;#34;, ip=&amp;#34;130.25.175.171&amp;#34;} 14.04 1618137750
-metric     labels                        value timesample&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
-&lt;/div&gt;
-&lt;/div&gt;
-&lt;/div&gt;
-&lt;/div&gt;
-&lt;/div&gt;
-&lt;div id=&#34;outline-container-headline-4&#34; class=&#34;outline-3&#34;&gt;
-&lt;h3 id=&#34;headline-4&#34;&gt;
+&lt;/h3>
+&lt;div id="outline-text-headline-3" class="outline-text-3">
+&lt;p>Prometheus 支持的模式比较简单，只支持单值模式，如下：&lt;/p>
+&lt;div class="src src-text">
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code class="language-text" data-lang="text">cpu_usage{core=&amp;#34;1&amp;#34;, ip=&amp;#34;130.25.175.171&amp;#34;} 14.04 1618137750
+metric labels value timesample&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>
+&lt;/div>
+&lt;/div>
+&lt;/div>
+&lt;div id="outline-container-headline-4" class="outline-3">
+&lt;h3 id="headline-4">
 倒排索引
-&lt;/h3&gt;
-&lt;div id=&#34;outline-text-headline-4&#34; class=&#34;outline-text-3&#34;&gt;
-&lt;p&gt;索引是支持多维搜索的主要手段，时序中的索引结构和搜索引擎的类似，是个倒排索引，可参考下图&lt;/p&gt;
-&lt;figure&gt;
-&lt;img src=&#34;https://img.alicdn.com/imgextra/i3/581166664/O1CN01Bzbt3A1z6A3Q7J1Gl_!!581166664.jpg&#34; alt=&#34;https://img.alicdn.com/imgextra/i3/581166664/O1CN01Bzbt3A1z6A3Q7J1Gl_!!581166664.jpg&#34; title=&#34;https://img.alicdn.com/imgextra/i3/581166664/O1CN01Bzbt3A1z6A3Q7J1Gl_!!581166664.jpg&#34; /&gt;&lt;figcaption&gt;
+&lt;/h3>
+&lt;div id="outline-text-headline-4" class="outline-text-3">
+&lt;p>索引是支持多维搜索的主要手段，时序中的索引结构和搜索引擎的类似，是个倒排索引，可参考下图&lt;/p>
+&lt;figure>
+&lt;img src="https://img.alicdn.com/imgextra/i3/581166664/O1CN01Bzbt3A1z6A3Q7J1Gl_!!581166664.jpg" alt="https://img.alicdn.com/imgextra/i3/581166664/O1CN01Bzbt3A1z6A3Q7J1Gl_!!581166664.jpg" title="https://img.alicdn.com/imgextra/i3/581166664/O1CN01Bzbt3A1z6A3Q7J1Gl_!!581166664.jpg" />&lt;figcaption>
 倒排索引工作示意图
-&lt;/figcaption&gt;
-&lt;/figure&gt;
-&lt;p&gt;
-在一次查询中，会对涉及到的 label 分别求对应的 postings lists（即时间线集合），然后根据 filter 类型进行集合运算，最后根据运算结果得出的时间线，去查相应数据即可。&lt;/p&gt;
-&lt;/div&gt;
-&lt;/div&gt;
-&lt;/div&gt;
-&lt;/div&gt;
-&lt;div id=&#34;outline-container-headline-5&#34; class=&#34;outline-2&#34;&gt;
-&lt;h2 id=&#34;headline-5&#34;&gt;
+&lt;/figcaption>
+&lt;/figure>
+&lt;p>
+在一次查询中，会对涉及到的 label 分别求对应的 postings lists（即时间线集合），然后根据 filter 类型进行集合运算，最后根据运算结果得出的时间线，去查相应数据即可。&lt;/p>
+&lt;/div>
+&lt;/div>
+&lt;/div>
+&lt;/div>
+&lt;div id="outline-container-headline-5" class="outline-2">
+&lt;h2 id="headline-5">
 磁盘存储格式
-&lt;/h2&gt;
-&lt;div id=&#34;outline-text-headline-5&#34; class=&#34;outline-text-2&#34;&gt;
-&lt;div id=&#34;outline-container-headline-6&#34; class=&#34;outline-3&#34;&gt;
-&lt;h3 id=&#34;headline-6&#34;&gt;
+&lt;/h2>
+&lt;div id="outline-text-headline-5" class="outline-text-2">
+&lt;div id="outline-container-headline-6" class="outline-3">
+&lt;h3 id="headline-6">
 数据格式
-&lt;/h3&gt;
-&lt;div id=&#34;outline-text-headline-6&#34; class=&#34;outline-text-3&#34;&gt;
-&lt;div class=&#34;src src-text&#34;&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
-&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt; 1
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 2
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 3
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 4
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 5
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 6
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 7
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 8
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 9
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;10
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;11
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;12
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;13
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;14
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;15
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;16
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;17
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;18
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;19
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;20
-&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
-&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-text&#34; data-lang=&#34;text&#34;&gt;┌──────────────────────────────┐
-│  magic(0x0130BC91) &amp;lt;4 byte&amp;gt;  │
+&lt;/h3>
+&lt;div id="outline-text-headline-6" class="outline-text-3">
+&lt;div class="src src-text">
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;span class="lnt">16
+&lt;/span>&lt;span class="lnt">17
+&lt;/span>&lt;span class="lnt">18
+&lt;/span>&lt;span class="lnt">19
+&lt;/span>&lt;span class="lnt">20
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code class="language-text" data-lang="text">┌──────────────────────────────┐
+│ magic(0x0130BC91) &amp;lt;4 byte&amp;gt; │
 ├──────────────────────────────┤
-│    version(1) &amp;lt;1 byte&amp;gt;       │
+│ version(1) &amp;lt;1 byte&amp;gt; │
 ├──────────────────────────────┤
-│    padding(0) &amp;lt;3 byte&amp;gt;       │
+│ padding(0) &amp;lt;3 byte&amp;gt; │
 ├──────────────────────────────┤
 │ ┌──────────────────────────┐ │
-│ │         Chunk 1          │ │
+│ │ Chunk 1 │ │
 │ ├──────────────────────────┤ │
-│ │          ...             │ │
+│ │ ... │ │
 │ ├──────────────────────────┤ │
-│ │         Chunk N          │ │
+│ │ Chunk N │ │
 │ └──────────────────────────┘ │
 └──────────────────────────────┘
-
 # 单个 chunk 内的结构
 ┌─────────────────────┬───────────────────────┬───────────────────────┬───────────────────┬───────────────┬──────────────┬────────────────┐
 | series ref &amp;lt;8 byte&amp;gt; | mint &amp;lt;8 byte, uint64&amp;gt; | maxt &amp;lt;8 byte, uint64&amp;gt; | encoding &amp;lt;1 byte&amp;gt; | len &amp;lt;uvarint&amp;gt; | data &amp;lt;bytes&amp;gt; │ CRC32 &amp;lt;4 byte&amp;gt; │
-└─────────────────────┴───────────────────────┴───────────────────────┴───────────────────┴───────────────┴──────────────┴────────────────┘&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
-&lt;/div&gt;
-&lt;/div&gt;
-&lt;/div&gt;
-&lt;p&gt;chunk 为数据在磁盘中的最小组织单元，需要明确以下两点：&lt;/p&gt;
-&lt;ol&gt;
-&lt;li&gt;
-&lt;p&gt;单个 chunk 的时间跨度默认是 2 小时，Prometheus 后台会有合并操作，把时间相邻的 block 合到一起&lt;/p&gt;
-&lt;/li&gt;
-&lt;li&gt;
-&lt;p&gt;series ref 为时间线的唯一标示，由 8 个字节组成，前 4 个表示文件 id，后 4 个表示在文件内的 offset，需配合后文的索引结构来实现数据的定位&lt;/p&gt;
-&lt;/li&gt;
-&lt;/ol&gt;
-&lt;/div&gt;
-&lt;/div&gt;
-&lt;div id=&#34;outline-container-headline-7&#34; class=&#34;outline-3&#34;&gt;
-&lt;h3 id=&#34;headline-7&#34;&gt;
+└─────────────────────┴───────────────────────┴───────────────────────┴───────────────────┴───────────────┴──────────────┴────────────────┘&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>
+&lt;/div>
+&lt;p>chunk 为数据在磁盘中的最小组织单元，需要明确以下两点：&lt;/p>
+&lt;ol>
+&lt;li>
+&lt;p>单个 chunk 的时间跨度默认是 2 小时，Prometheus 后台会有合并操作，把时间相邻的 block 合到一起&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>series ref 为时间线的唯一标示，由 8 个字节组成，前 4 个表示文件 id，后 4 个表示在文件内的 offset，需配合后文的索引结构来实现数据的定位&lt;/p>
+&lt;/li>
+&lt;/ol>
+&lt;/div>
+&lt;/div>
+&lt;div id="outline-container-headline-7" class="outline-3">
+&lt;h3 id="headline-7">
 索引格式
-&lt;/h3&gt;
-&lt;div id=&#34;outline-text-headline-7&#34; class=&#34;outline-text-3&#34;&gt;
-&lt;div class=&#34;src src-text&#34;&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
-&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt; 1
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 2
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 3
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 4
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 5
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 6
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 7
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 8
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 9
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;10
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;11
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;12
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;13
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;14
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;15
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;16
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;17
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;18
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;19
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;20
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;21
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;22
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;23
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;24
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;25
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;26
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;27
-&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
-&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-text&#34; data-lang=&#34;text&#34;&gt;┌────────────────────────────┬─────────────────────┐
-│ magic(0xBAAAD700) &amp;lt;4b&amp;gt;     │ version(1) &amp;lt;1 byte&amp;gt; │
+&lt;/h3>
+&lt;div id="outline-text-headline-7" class="outline-text-3">
+&lt;div class="src src-text">
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;span class="lnt">16
+&lt;/span>&lt;span class="lnt">17
+&lt;/span>&lt;span class="lnt">18
+&lt;/span>&lt;span class="lnt">19
+&lt;/span>&lt;span class="lnt">20
+&lt;/span>&lt;span class="lnt">21
+&lt;/span>&lt;span class="lnt">22
+&lt;/span>&lt;span class="lnt">23
+&lt;/span>&lt;span class="lnt">24
+&lt;/span>&lt;span class="lnt">25
+&lt;/span>&lt;span class="lnt">26
+&lt;/span>&lt;span class="lnt">27
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code class="language-text" data-lang="text">┌────────────────────────────┬─────────────────────┐
+│ magic(0xBAAAD700) &amp;lt;4b&amp;gt; │ version(1) &amp;lt;1 byte&amp;gt; │
 ├────────────────────────────┴─────────────────────┤
 │ ┌──────────────────────────────────────────────┐ │
-│ │                 Symbol Table                 │ │
+│ │ Symbol Table │ │
 │ ├──────────────────────────────────────────────┤ │
-│ │                    Series                    │ │
+│ │ Series │ │
 │ ├──────────────────────────────────────────────┤ │
-│ │                 Label Index 1                │ │
+│ │ Label Index 1 │ │
 │ ├──────────────────────────────────────────────┤ │
-│ │                      ...                     │ │
+│ │ ... │ │
 │ ├──────────────────────────────────────────────┤ │
-│ │                 Label Index N                │ │
+│ │ Label Index N │ │
 │ ├──────────────────────────────────────────────┤ │
-│ │                   Postings 1                 │ │
+│ │ Postings 1 │ │
 │ ├──────────────────────────────────────────────┤ │
-│ │                      ...                     │ │
+│ │ ... │ │
 │ ├──────────────────────────────────────────────┤ │
-│ │                   Postings N                 │ │
+│ │ Postings N │ │
 │ ├──────────────────────────────────────────────┤ │
-│ │               Label Offset Table             │ │
+│ │ Label Offset Table │ │
 │ ├──────────────────────────────────────────────┤ │
-│ │             Postings Offset Table            │ │
+│ │ Postings Offset Table │ │
 │ ├──────────────────────────────────────────────┤ │
-│ │                      TOC                     │ │
+│ │ TOC │ │
 │ └──────────────────────────────────────────────┘ │
-└──────────────────────────────────────────────────┘&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
-&lt;/div&gt;
-&lt;/div&gt;
-&lt;/div&gt;
-&lt;p&gt;在一个索引文件中，最主要的是以下几部分（从下往上）：&lt;/p&gt;
-&lt;ol&gt;
-&lt;li&gt;
-&lt;p&gt;TOC 存储的是其他部分的 offset&lt;/p&gt;
-&lt;/li&gt;
-&lt;li&gt;
-&lt;p&gt;Postings Offset Table，用来存储倒排索引，Key 为 label name/value 序对，Value 为 Postings 在文件中的 offset。&lt;/p&gt;
-&lt;/li&gt;
-&lt;li&gt;
-&lt;p&gt;Postings N，存储的是具体的时间线序列&lt;/p&gt;
-&lt;/li&gt;
-&lt;li&gt;
-&lt;p&gt;Series，存储的是当前时间线，对应的 chunk 文件信息&lt;/p&gt;
-&lt;/li&gt;
-&lt;li&gt;
-&lt;p&gt;Label Offset Table 与 Label Index 目前在查询时没有使用到，这里不再讲述&lt;/p&gt;
-&lt;/li&gt;
-&lt;/ol&gt;
-&lt;p&gt;每个部分的具体编码格式，可参考官方文档 &lt;a href=&#34;https://github.com/prometheus/prometheus/blob/main/tsdb/docs/format/index.md&#34;&gt;Index Disk Format&lt;/a&gt;，这里重点讲述一次查询是如何找到符合条件的数据的：&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;
-&lt;p&gt;首先在 Posting Offset Table 中，找到对应 label 的 Postings 位置&lt;/p&gt;
-&lt;/li&gt;
-&lt;/ul&gt;
-&lt;figure&gt;
-&lt;img src=&#34;https://img.alicdn.com/imgextra/i2/581166664/O1CN01ncQkYZ1z6A3SfXvO3_!!581166664.jpg&#34; alt=&#34;https://img.alicdn.com/imgextra/i2/581166664/O1CN01ncQkYZ1z6A3SfXvO3_!!581166664.jpg&#34; title=&#34;https://img.alicdn.com/imgextra/i2/581166664/O1CN01ncQkYZ1z6A3SfXvO3_!!581166664.jpg&#34; /&gt;&lt;figcaption&gt;
+└──────────────────────────────────────────────────┘&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>
+&lt;/div>
+&lt;p>在一个索引文件中，最主要的是以下几部分（从下往上）：&lt;/p>
+&lt;ol>
+&lt;li>
+&lt;p>TOC 存储的是其他部分的 offset&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>Postings Offset Table，用来存储倒排索引，Key 为 label name/value 序对，Value 为 Postings 在文件中的 offset。&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>Postings N，存储的是具体的时间线序列&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>Series，存储的是当前时间线，对应的 chunk 文件信息&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>Label Offset Table 与 Label Index 目前在查询时没有使用到，这里不再讲述&lt;/p>
+&lt;/li>
+&lt;/ol>
+&lt;p>每个部分的具体编码格式，可参考官方文档 &lt;a href="https://github.com/prometheus/prometheus/blob/main/tsdb/docs/format/index.md">Index Disk Format&lt;/a>，这里重点讲述一次查询是如何找到符合条件的数据的：&lt;/p>
+&lt;ul>
+&lt;li>
+&lt;p>首先在 Posting Offset Table 中，找到对应 label 的 Postings 位置&lt;/p>
+&lt;/li>
+&lt;/ul>
+&lt;figure>
+&lt;img src="https://img.alicdn.com/imgextra/i2/581166664/O1CN01ncQkYZ1z6A3SfXvO3_!!581166664.jpg" alt="https://img.alicdn.com/imgextra/i2/581166664/O1CN01ncQkYZ1z6A3SfXvO3_!!581166664.jpg" title="https://img.alicdn.com/imgextra/i2/581166664/O1CN01ncQkYZ1z6A3SfXvO3_!!581166664.jpg" />&lt;figcaption>
 offset table 到 postings 的映射过程
-&lt;/figcaption&gt;
-&lt;/figure&gt;
-&lt;ul&gt;
-&lt;li&gt;
-&lt;p&gt;然后再根据 Postings 中的 series 信息，找到对应的 chunk 位置，即上文中的 series ref。&lt;/p&gt;
-&lt;/li&gt;
-&lt;/ul&gt;
-&lt;figure&gt;
-&lt;img src=&#34;https://img.alicdn.com/imgextra/i4/581166664/O1CN01HsQNy31z6A3HT9l5B_!!581166664.jpg&#34; alt=&#34;https://img.alicdn.com/imgextra/i4/581166664/O1CN01HsQNy31z6A3HT9l5B_!!581166664.jpg&#34; title=&#34;https://img.alicdn.com/imgextra/i4/581166664/O1CN01HsQNy31z6A3HT9l5B_!!581166664.jpg&#34; /&gt;&lt;figcaption&gt;
+&lt;/figcaption>
+&lt;/figure>
+&lt;ul>
+&lt;li>
+&lt;p>然后再根据 Postings 中的 series 信息，找到对应的 chunk 位置，即上文中的 series ref。&lt;/p>
+&lt;/li>
+&lt;/ul>
+&lt;figure>
+&lt;img src="https://img.alicdn.com/imgextra/i4/581166664/O1CN01HsQNy31z6A3HT9l5B_!!581166664.jpg" alt="https://img.alicdn.com/imgextra/i4/581166664/O1CN01HsQNy31z6A3HT9l5B_!!581166664.jpg" title="https://img.alicdn.com/imgextra/i4/581166664/O1CN01HsQNy31z6A3HT9l5B_!!581166664.jpg" />&lt;figcaption>
 series 到 chunks 数据文件的映射过程
-&lt;/figcaption&gt;
-&lt;/figure&gt;
-&lt;/div&gt;
-&lt;/div&gt;
-&lt;div id=&#34;outline-container-headline-8&#34; class=&#34;outline-3&#34;&gt;
-&lt;h3 id=&#34;headline-8&#34;&gt;
+&lt;/figcaption>
+&lt;/figure>
+&lt;/div>
+&lt;/div>
+&lt;div id="outline-container-headline-8" class="outline-3">
+&lt;h3 id="headline-8">
 使用方式
-&lt;/h3&gt;
-&lt;div id=&#34;outline-text-headline-8&#34; class=&#34;outline-text-3&#34;&gt;
-&lt;p&gt;Prometheus 在启动时，会去加载数据元信息到内存中。主要有下面两部分：&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;
-&lt;p&gt;block 的元信息，最主要的是 mint/maxt，用来确定一次查询是否需要查看当前 block 文件，之后把 chunks 文件以 mmap 方式打开&lt;/p&gt;
-&lt;div class=&#34;src src-go&#34;&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
-&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt; 1
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 2
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 3
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 4
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 5
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 6
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 7
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 8
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 9
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;10
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;11
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;12
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;13
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;14
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;15
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;16
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;17
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;18
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;19
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;20
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;21
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;22
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;23
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;24
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;25
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;26
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;27
-&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
-&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-go&#34; data-lang=&#34;go&#34;&gt;&lt;span class=&#34;c1&#34;&gt;// open all blocks
-&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;bDirs&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;err&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;:=&lt;/span&gt; &lt;span class=&#34;nf&#34;&gt;blockDirs&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;dir&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
-&lt;span class=&#34;k&#34;&gt;for&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;_&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;bDir&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;:=&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;range&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;bDirs&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
- &lt;span class=&#34;nx&#34;&gt;meta&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;_&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;err&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;:=&lt;/span&gt; &lt;span class=&#34;nf&#34;&gt;readMetaFile&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;bDir&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
- &lt;span class=&#34;c1&#34;&gt;// See if we already have the block in memory or open it otherwise.
-&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;block&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;open&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;:=&lt;/span&gt; &lt;span class=&#34;nf&#34;&gt;getBlock&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;loaded&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;meta&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;ULID&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
- &lt;span class=&#34;k&#34;&gt;if&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;!&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;open&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
-     &lt;span class=&#34;nx&#34;&gt;block&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;err&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;nf&#34;&gt;OpenBlock&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;l&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;bDir&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;chunkPool&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
-     &lt;span class=&#34;k&#34;&gt;if&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;err&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;!=&lt;/span&gt; &lt;span class=&#34;kc&#34;&gt;nil&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
-         &lt;span class=&#34;nx&#34;&gt;corrupted&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;meta&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;ULID&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;err&lt;/span&gt;
-         &lt;span class=&#34;k&#34;&gt;continue&lt;/span&gt;
-     &lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
- &lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
- &lt;span class=&#34;nx&#34;&gt;blocks&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;nb&#34;&gt;append&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;blocks&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;block&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
-&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
-&lt;span class=&#34;c1&#34;&gt;// open chunk files
-&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;&lt;span class=&#34;k&#34;&gt;for&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;_&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;fn&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;:=&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;range&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;files&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
- &lt;span class=&#34;nx&#34;&gt;f&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;err&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;:=&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;fileutil&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nf&#34;&gt;OpenMmapFile&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;fn&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
- &lt;span class=&#34;k&#34;&gt;if&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;err&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;!=&lt;/span&gt; &lt;span class=&#34;kc&#34;&gt;nil&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
-     &lt;span class=&#34;k&#34;&gt;return&lt;/span&gt; &lt;span class=&#34;kc&#34;&gt;nil&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;tsdb_errors&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nf&#34;&gt;NewMulti&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;
-         &lt;span class=&#34;nx&#34;&gt;errors&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nf&#34;&gt;Wrap&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;err&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;s&#34;&gt;&amp;#34;mmap files&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;),&lt;/span&gt;
-         &lt;span class=&#34;nx&#34;&gt;tsdb_errors&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nf&#34;&gt;CloseAll&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;cs&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;),&lt;/span&gt;
-     &lt;span class=&#34;p&#34;&gt;).&lt;/span&gt;&lt;span class=&#34;nf&#34;&gt;Err&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;()&lt;/span&gt;
- &lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
- &lt;span class=&#34;nx&#34;&gt;cs&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;nb&#34;&gt;append&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;cs&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;f&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
- &lt;span class=&#34;nx&#34;&gt;bs&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;nb&#34;&gt;append&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;bs&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;nf&#34;&gt;realByteSlice&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;f&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nf&#34;&gt;Bytes&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;()))&lt;/span&gt;
-&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
-&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
-&lt;/div&gt;
-&lt;/div&gt;
-&lt;/div&gt;
-&lt;/li&gt;
-&lt;li&gt;
-&lt;p&gt;block 对应的索引信息，主要是倒排索引。由于单个 label 对应的 Postings 可能会非常大，Prometheus 不是全量加载，而是每隔 32 个加载，来减轻内存压力。并且保证第一个与最后一个一定被加载，查询时采用类似跳表的方式进行 posting 定位。&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;
-&lt;p&gt;下面代码为 DB 启动时，读入 postings 的逻辑：&lt;/p&gt;
-&lt;div class=&#34;src src-go&#34;&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
-&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt; 1
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 2
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 3
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 4
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 5
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 6
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 7
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 8
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 9
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;10
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;11
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;12
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;13
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;14
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;15
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;16
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;17
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;18
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;19
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;20
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;21
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;22
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;23
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;24
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;25
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;26
-&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
-&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-go&#34; data-lang=&#34;go&#34;&gt;&lt;span class=&#34;c1&#34;&gt;// For the postings offset table we keep every label name but only every nth
-&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;// label value (plus the first and last one), to save memory.
-&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nf&#34;&gt;ReadOffsetTable&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;r&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;b&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;r&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;toc&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;PostingsTable&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;kd&#34;&gt;func&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;key&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;[]&lt;/span&gt;&lt;span class=&#34;kt&#34;&gt;string&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;_&lt;/span&gt; &lt;span class=&#34;kt&#34;&gt;uint64&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;off&lt;/span&gt; &lt;span class=&#34;kt&#34;&gt;int&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt; &lt;span class=&#34;kt&#34;&gt;error&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
- &lt;span class=&#34;k&#34;&gt;if&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;_&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;ok&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;:=&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;r&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;postings&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;key&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;0&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]];&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;!&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;ok&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
-     &lt;span class=&#34;c1&#34;&gt;// Next label name.
-&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;     &lt;span class=&#34;nx&#34;&gt;r&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;postings&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;key&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;0&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]]&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;[]&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;postingOffset&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;{}&lt;/span&gt;
-     &lt;span class=&#34;k&#34;&gt;if&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;lastKey&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;!=&lt;/span&gt; &lt;span class=&#34;kc&#34;&gt;nil&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
-         &lt;span class=&#34;c1&#34;&gt;// Always include last value for each label name.
-&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;         &lt;span class=&#34;nx&#34;&gt;r&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;postings&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;lastKey&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;0&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]]&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;nb&#34;&gt;append&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;r&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;postings&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;lastKey&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;0&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]],&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;postingOffset&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;value&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;lastKey&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;1&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;],&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;off&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;lastOff&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;})&lt;/span&gt;
-     &lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
-     &lt;span class=&#34;nx&#34;&gt;lastKey&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;kc&#34;&gt;nil&lt;/span&gt;
-     &lt;span class=&#34;nx&#34;&gt;valueCount&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;0&lt;/span&gt;
- &lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
- &lt;span class=&#34;k&#34;&gt;if&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;valueCount&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;%&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;32&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;==&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;0&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
-     &lt;span class=&#34;nx&#34;&gt;r&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;postings&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;key&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;0&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]]&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;nb&#34;&gt;append&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;r&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;postings&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;key&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;0&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]],&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;postingOffset&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;value&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;key&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;1&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;],&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;off&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;off&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;})&lt;/span&gt;
-     &lt;span class=&#34;nx&#34;&gt;lastKey&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;kc&#34;&gt;nil&lt;/span&gt;
- &lt;span class=&#34;p&#34;&gt;}&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;else&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
-     &lt;span class=&#34;nx&#34;&gt;lastKey&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;key&lt;/span&gt;
-     &lt;span class=&#34;nx&#34;&gt;lastOff&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;off&lt;/span&gt;
- &lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
- &lt;span class=&#34;nx&#34;&gt;valueCount&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;++&lt;/span&gt;
-&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
-
-&lt;span class=&#34;k&#34;&gt;if&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;lastKey&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;!=&lt;/span&gt; &lt;span class=&#34;kc&#34;&gt;nil&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
- &lt;span class=&#34;nx&#34;&gt;r&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;postings&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;lastKey&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;0&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]]&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;nb&#34;&gt;append&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;r&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;postings&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;lastKey&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;0&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]],&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;postingOffset&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;value&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;lastKey&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;1&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;],&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;off&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;lastOff&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;})&lt;/span&gt;
-&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
-&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
-&lt;/div&gt;
-&lt;/div&gt;
-&lt;/div&gt;
-&lt;/li&gt;
-&lt;li&gt;
-&lt;p&gt;下面代码为根据 label 查询 postings 的逻辑，完整可见 index 的 &lt;a href=&#34;https://github.com/prometheus/prometheus/blob/bda05a23ada314a0b9806a362da39b7a1a4e04c3/tsdb/index/index.go#L1555&#34;&gt;Postings 方法&lt;/a&gt;：&lt;/p&gt;
-&lt;div class=&#34;src src-go&#34;&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
-&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt; 1
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 2
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 3
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 4
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 5
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 6
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 7
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 8
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 9
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;10
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;11
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;12
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;13
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;14
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;15
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;16
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;17
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;18
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;19
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;20
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;21
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;22
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;23
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;24
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;25
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;26
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;27
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;28
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;29
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;30
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;31
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;32
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;33
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;34
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;35
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;36
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;37
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;38
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;39
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;40
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;41
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;42
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;43
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;44
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;45
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;46
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;47
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;48
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;49
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;50
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;51
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;52
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;53
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;54
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;55
-&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
-&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-go&#34; data-lang=&#34;go&#34;&gt;&lt;span class=&#34;nx&#34;&gt;e&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;ok&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;:=&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;r&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;postings&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;name&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt; &lt;span class=&#34;c1&#34;&gt;// name 为 label key
-&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;&lt;span class=&#34;k&#34;&gt;if&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;!&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;ok&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;||&lt;/span&gt; &lt;span class=&#34;nb&#34;&gt;len&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;values&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;==&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;0&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt; &lt;span class=&#34;c1&#34;&gt;// values 为当前需要查询的 label values
-&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;return&lt;/span&gt; &lt;span class=&#34;nf&#34;&gt;EmptyPostings&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(),&lt;/span&gt; &lt;span class=&#34;kc&#34;&gt;nil&lt;/span&gt;
-&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
-
-&lt;span class=&#34;nx&#34;&gt;res&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;:=&lt;/span&gt; &lt;span class=&#34;nb&#34;&gt;make&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;([]&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;Postings&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;0&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;nb&#34;&gt;len&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;values&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;))&lt;/span&gt;
-&lt;span class=&#34;nx&#34;&gt;skip&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;:=&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;0&lt;/span&gt;
-&lt;span class=&#34;nx&#34;&gt;valueIndex&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;:=&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;0&lt;/span&gt;
-&lt;span class=&#34;k&#34;&gt;for&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;valueIndex&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;&amp;lt;&lt;/span&gt; &lt;span class=&#34;nb&#34;&gt;len&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;values&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;&amp;amp;&amp;amp;&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;values&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;valueIndex&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;&amp;lt;&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;e&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;0&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;].&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;value&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
- &lt;span class=&#34;c1&#34;&gt;// Discard values before the start.
-&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;valueIndex&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;++&lt;/span&gt;
-&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
-&lt;span class=&#34;k&#34;&gt;for&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;valueIndex&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;&amp;lt;&lt;/span&gt; &lt;span class=&#34;nb&#34;&gt;len&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;values&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
- &lt;span class=&#34;nx&#34;&gt;value&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;:=&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;values&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;valueIndex&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;
-
- &lt;span class=&#34;c1&#34;&gt;// 用二分查找，找到当前 value 在 postings 中的位置
-&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;i&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;:=&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;sort&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nf&#34;&gt;Search&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nb&#34;&gt;len&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;e&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;),&lt;/span&gt; &lt;span class=&#34;kd&#34;&gt;func&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;i&lt;/span&gt; &lt;span class=&#34;kt&#34;&gt;int&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt; &lt;span class=&#34;kt&#34;&gt;bool&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;return&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;e&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;i&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;].&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;value&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;&amp;gt;=&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;value&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;})&lt;/span&gt;
- &lt;span class=&#34;k&#34;&gt;if&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;i&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;==&lt;/span&gt; &lt;span class=&#34;nb&#34;&gt;len&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;e&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
-     &lt;span class=&#34;c1&#34;&gt;// We&amp;#39;re past the end.
-&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;     &lt;span class=&#34;k&#34;&gt;break&lt;/span&gt;
- &lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
- &lt;span class=&#34;k&#34;&gt;if&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;i&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;&amp;gt;&lt;/span&gt; &lt;span class=&#34;mi&#34;&gt;0&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;&amp;amp;&amp;amp;&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;e&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;i&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;].&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;value&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;!=&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;value&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;  &lt;span class=&#34;c1&#34;&gt;// postings 中没有该 value，需要用前面一个来在文件中搜索
-&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;     &lt;span class=&#34;c1&#34;&gt;// Need to look from previous entry.
-&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;     &lt;span class=&#34;nx&#34;&gt;i&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;--&lt;/span&gt;
- &lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
- &lt;span class=&#34;c1&#34;&gt;// Don&amp;#39;t Crc32 the entire postings offset table, this is very slow
-&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt; &lt;span class=&#34;c1&#34;&gt;// so hope any issues were caught at startup.
-&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;d&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;:=&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;encoding&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nf&#34;&gt;NewDecbufAt&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;r&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;b&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;nb&#34;&gt;int&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;r&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;toc&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;PostingsTable&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;),&lt;/span&gt; &lt;span class=&#34;kc&#34;&gt;nil&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
- &lt;span class=&#34;nx&#34;&gt;d&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nf&#34;&gt;Skip&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;e&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;i&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;].&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;off&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
-
- &lt;span class=&#34;c1&#34;&gt;// Iterate on the offset table.
-&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt; &lt;span class=&#34;kd&#34;&gt;var&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;postingsOff&lt;/span&gt; &lt;span class=&#34;kt&#34;&gt;uint64&lt;/span&gt; &lt;span class=&#34;c1&#34;&gt;// The offset into the postings table.
-&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;for&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;d&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nf&#34;&gt;Err&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;()&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;==&lt;/span&gt; &lt;span class=&#34;kc&#34;&gt;nil&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
-     &lt;span class=&#34;c1&#34;&gt;// ... skip 逻辑省略
-&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;     &lt;span class=&#34;nx&#34;&gt;v&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;:=&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;d&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nf&#34;&gt;UvarintBytes&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;()&lt;/span&gt;       &lt;span class=&#34;c1&#34;&gt;// Label value.
-&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;     &lt;span class=&#34;nx&#34;&gt;postingsOff&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;d&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nf&#34;&gt;Uvarint64&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;()&lt;/span&gt; &lt;span class=&#34;c1&#34;&gt;// Offset.
-&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;     &lt;span class=&#34;k&#34;&gt;for&lt;/span&gt; &lt;span class=&#34;nb&#34;&gt;string&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;v&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;&amp;gt;=&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;value&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
-         &lt;span class=&#34;k&#34;&gt;if&lt;/span&gt; &lt;span class=&#34;nb&#34;&gt;string&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;v&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;==&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;value&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
-             &lt;span class=&#34;c1&#34;&gt;// Read from the postings table.
-&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;             &lt;span class=&#34;nx&#34;&gt;d2&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;:=&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;encoding&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nf&#34;&gt;NewDecbufAt&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;r&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;b&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;nb&#34;&gt;int&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;postingsOff&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;),&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;castagnoliTable&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
-             &lt;span class=&#34;nx&#34;&gt;_&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;p&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;err&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;:=&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;r&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;dec&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nf&#34;&gt;Postings&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;d2&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nf&#34;&gt;Get&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;())&lt;/span&gt;
-             &lt;span class=&#34;nx&#34;&gt;res&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;nb&#34;&gt;append&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;res&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;p&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
-         &lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
-         &lt;span class=&#34;nx&#34;&gt;valueIndex&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;++&lt;/span&gt;
-         &lt;span class=&#34;k&#34;&gt;if&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;valueIndex&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;==&lt;/span&gt; &lt;span class=&#34;nb&#34;&gt;len&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;values&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
-             &lt;span class=&#34;k&#34;&gt;break&lt;/span&gt;
-         &lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
-         &lt;span class=&#34;nx&#34;&gt;value&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;values&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;valueIndex&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;
-     &lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
-     &lt;span class=&#34;k&#34;&gt;if&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;i&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;+&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;1&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;==&lt;/span&gt; &lt;span class=&#34;nb&#34;&gt;len&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;e&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;||&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;value&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;&amp;gt;=&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;e&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;i&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;+&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;1&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;].&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;value&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;||&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;valueIndex&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;==&lt;/span&gt; &lt;span class=&#34;nb&#34;&gt;len&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;values&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
-         &lt;span class=&#34;c1&#34;&gt;// Need to go to a later postings offset entry, if there is one.
-&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;         &lt;span class=&#34;k&#34;&gt;break&lt;/span&gt;
-     &lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
- &lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
-&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
-&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
-&lt;/div&gt;
-&lt;/div&gt;
-&lt;/div&gt;
-&lt;/li&gt;
-&lt;/ul&gt;
-&lt;/li&gt;
-&lt;/ul&gt;
-&lt;/div&gt;
-&lt;/div&gt;
-&lt;/div&gt;
-&lt;/div&gt;
-&lt;div id=&#34;outline-container-headline-9&#34; class=&#34;outline-2&#34;&gt;
-&lt;h2 id=&#34;headline-9&#34;&gt;
+&lt;/h3>
+&lt;div id="outline-text-headline-8" class="outline-text-3">
+&lt;p>Prometheus 在启动时，会去加载数据元信息到内存中。主要有下面两部分：&lt;/p>
+&lt;ul>
+&lt;li>
+&lt;p>block 的元信息，最主要的是 mint/maxt，用来确定一次查询是否需要查看当前 block 文件，之后把 chunks 文件以 mmap 方式打开&lt;/p>
+&lt;div class="src src-go">
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;span class="lnt">16
+&lt;/span>&lt;span class="lnt">17
+&lt;/span>&lt;span class="lnt">18
+&lt;/span>&lt;span class="lnt">19
+&lt;/span>&lt;span class="lnt">20
+&lt;/span>&lt;span class="lnt">21
+&lt;/span>&lt;span class="lnt">22
+&lt;/span>&lt;span class="lnt">23
+&lt;/span>&lt;span class="lnt">24
+&lt;/span>&lt;span class="lnt">25
+&lt;/span>&lt;span class="lnt">26
+&lt;/span>&lt;span class="lnt">27
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code class="language-go" data-lang="go">&lt;span class="c1">// open all blocks
+&lt;/span>&lt;span class="c1">&lt;/span>&lt;span class="nx">bDirs&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="nx">err&lt;/span> &lt;span class="o">:=&lt;/span> &lt;span class="nf">blockDirs&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="nx">dir&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;span class="k">for&lt;/span> &lt;span class="nx">_&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="nx">bDir&lt;/span> &lt;span class="o">:=&lt;/span> &lt;span class="k">range&lt;/span> &lt;span class="nx">bDirs&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;span class="nx">meta&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="nx">_&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="nx">err&lt;/span> &lt;span class="o">:=&lt;/span> &lt;span class="nf">readMetaFile&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="nx">bDir&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;span class="c1">// See if we already have the block in memory or open it otherwise.
+&lt;/span>&lt;span class="c1">&lt;/span> &lt;span class="nx">block&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="nx">open&lt;/span> &lt;span class="o">:=&lt;/span> &lt;span class="nf">getBlock&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="nx">loaded&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="nx">meta&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">ULID&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;span class="k">if&lt;/span> &lt;span class="p">!&lt;/span>&lt;span class="nx">open&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;span class="nx">block&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="nx">err&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="nf">OpenBlock&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="nx">l&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="nx">bDir&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="nx">chunkPool&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;span class="k">if&lt;/span> &lt;span class="nx">err&lt;/span> &lt;span class="o">!=&lt;/span> &lt;span class="kc">nil&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;span class="nx">corrupted&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="nx">meta&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">ULID&lt;/span>&lt;span class="p">]&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="nx">err&lt;/span>
+&lt;span class="k">continue&lt;/span>
+&lt;span class="p">}&lt;/span>
+&lt;span class="p">}&lt;/span>
+&lt;span class="nx">blocks&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="nb">append&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="nx">blocks&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="nx">block&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;span class="p">}&lt;/span>
+&lt;span class="c1">// open chunk files
+&lt;/span>&lt;span class="c1">&lt;/span>&lt;span class="k">for&lt;/span> &lt;span class="nx">_&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="nx">fn&lt;/span> &lt;span class="o">:=&lt;/span> &lt;span class="k">range&lt;/span> &lt;span class="nx">files&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;span class="nx">f&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="nx">err&lt;/span> &lt;span class="o">:=&lt;/span> &lt;span class="nx">fileutil&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nf">OpenMmapFile&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="nx">fn&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;span class="k">if&lt;/span> &lt;span class="nx">err&lt;/span> &lt;span class="o">!=&lt;/span> &lt;span class="kc">nil&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;span class="k">return&lt;/span> &lt;span class="kc">nil&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="nx">tsdb_errors&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nf">NewMulti&lt;/span>&lt;span class="p">(&lt;/span>
+&lt;span class="nx">errors&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nf">Wrap&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="nx">err&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="s">&amp;#34;mmap files&amp;#34;&lt;/span>&lt;span class="p">),&lt;/span>
+&lt;span class="nx">tsdb_errors&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nf">CloseAll&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="nx">cs&lt;/span>&lt;span class="p">),&lt;/span>
+&lt;span class="p">).&lt;/span>&lt;span class="nf">Err&lt;/span>&lt;span class="p">()&lt;/span>
+&lt;span class="p">}&lt;/span>
+&lt;span class="nx">cs&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="nb">append&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="nx">cs&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="nx">f&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;span class="nx">bs&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="nb">append&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="nx">bs&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="nf">realByteSlice&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="nx">f&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nf">Bytes&lt;/span>&lt;span class="p">()))&lt;/span>
+&lt;span class="p">}&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>
+&lt;/div>
+&lt;/li>
+&lt;li>
+&lt;p>block 对应的索引信息，主要是倒排索引。由于单个 label 对应的 Postings 可能会非常大，Prometheus 不是全量加载，而是每隔 32 个加载，来减轻内存压力。并且保证第一个与最后一个一定被加载，查询时采用类似跳表的方式进行 posting 定位。&lt;/p>
+&lt;ul>
+&lt;li>
+&lt;p>下面代码为 DB 启动时，读入 postings 的逻辑：&lt;/p>
+&lt;div class="src src-go">
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;span class="lnt">16
+&lt;/span>&lt;span class="lnt">17
+&lt;/span>&lt;span class="lnt">18
+&lt;/span>&lt;span class="lnt">19
+&lt;/span>&lt;span class="lnt">20
+&lt;/span>&lt;span class="lnt">21
+&lt;/span>&lt;span class="lnt">22
+&lt;/span>&lt;span class="lnt">23
+&lt;/span>&lt;span class="lnt">24
+&lt;/span>&lt;span class="lnt">25
+&lt;/span>&lt;span class="lnt">26
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code class="language-go" data-lang="go">&lt;span class="c1">// For the postings offset table we keep every label name but only every nth
+&lt;/span>&lt;span class="c1">// label value (plus the first and last one), to save memory.
+&lt;/span>&lt;span class="c1">&lt;/span>&lt;span class="nf">ReadOffsetTable&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="nx">r&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">b&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="nx">r&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">toc&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">PostingsTable&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="kd">func&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="nx">key&lt;/span> &lt;span class="p">[]&lt;/span>&lt;span class="kt">string&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="nx">_&lt;/span> &lt;span class="kt">uint64&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="nx">off&lt;/span> &lt;span class="kt">int&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="kt">error&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;span class="k">if&lt;/span> &lt;span class="nx">_&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="nx">ok&lt;/span> &lt;span class="o">:=&lt;/span> &lt;span class="nx">r&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">postings&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="nx">key&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="mi">0&lt;/span>&lt;span class="p">]];&lt;/span> &lt;span class="p">!&lt;/span>&lt;span class="nx">ok&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;span class="c1">// Next label name.
+&lt;/span>&lt;span class="c1">&lt;/span> &lt;span class="nx">r&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">postings&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="nx">key&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="mi">0&lt;/span>&lt;span class="p">]]&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="p">[]&lt;/span>&lt;span class="nx">postingOffset&lt;/span>&lt;span class="p">{}&lt;/span>
+&lt;span class="k">if&lt;/span> &lt;span class="nx">lastKey&lt;/span> &lt;span class="o">!=&lt;/span> &lt;span class="kc">nil&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;span class="c1">// Always include last value for each label name.
+&lt;/span>&lt;span class="c1">&lt;/span> &lt;span class="nx">r&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">postings&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="nx">lastKey&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="mi">0&lt;/span>&lt;span class="p">]]&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="nb">append&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="nx">r&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">postings&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="nx">lastKey&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="mi">0&lt;/span>&lt;span class="p">]],&lt;/span> &lt;span class="nx">postingOffset&lt;/span>&lt;span class="p">{&lt;/span>&lt;span class="nx">value&lt;/span>&lt;span class="p">:&lt;/span> &lt;span class="nx">lastKey&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="mi">1&lt;/span>&lt;span class="p">],&lt;/span> &lt;span class="nx">off&lt;/span>&lt;span class="p">:&lt;/span> &lt;span class="nx">lastOff&lt;/span>&lt;span class="p">})&lt;/span>
+&lt;span class="p">}&lt;/span>
+&lt;span class="nx">lastKey&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="kc">nil&lt;/span>
+&lt;span class="nx">valueCount&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="mi">0&lt;/span>
+&lt;span class="p">}&lt;/span>
+&lt;span class="k">if&lt;/span> &lt;span class="nx">valueCount&lt;/span>&lt;span class="o">%&lt;/span>&lt;span class="mi">32&lt;/span> &lt;span class="o">==&lt;/span> &lt;span class="mi">0&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;span class="nx">r&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">postings&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="nx">key&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="mi">0&lt;/span>&lt;span class="p">]]&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="nb">append&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="nx">r&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">postings&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="nx">key&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="mi">0&lt;/span>&lt;span class="p">]],&lt;/span> &lt;span class="nx">postingOffset&lt;/span>&lt;span class="p">{&lt;/span>&lt;span class="nx">value&lt;/span>&lt;span class="p">:&lt;/span> &lt;span class="nx">key&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="mi">1&lt;/span>&lt;span class="p">],&lt;/span> &lt;span class="nx">off&lt;/span>&lt;span class="p">:&lt;/span> &lt;span class="nx">off&lt;/span>&lt;span class="p">})&lt;/span>
+&lt;span class="nx">lastKey&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="kc">nil&lt;/span>
+&lt;span class="p">}&lt;/span> &lt;span class="k">else&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;span class="nx">lastKey&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="nx">key&lt;/span>
+&lt;span class="nx">lastOff&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="nx">off&lt;/span>
+&lt;span class="p">}&lt;/span>
+&lt;span class="nx">valueCount&lt;/span>&lt;span class="o">++&lt;/span>
+&lt;span class="p">}&lt;/span>
+&lt;span class="k">if&lt;/span> &lt;span class="nx">lastKey&lt;/span> &lt;span class="o">!=&lt;/span> &lt;span class="kc">nil&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;span class="nx">r&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">postings&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="nx">lastKey&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="mi">0&lt;/span>&lt;span class="p">]]&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="nb">append&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="nx">r&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">postings&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="nx">lastKey&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="mi">0&lt;/span>&lt;span class="p">]],&lt;/span> &lt;span class="nx">postingOffset&lt;/span>&lt;span class="p">{&lt;/span>&lt;span class="nx">value&lt;/span>&lt;span class="p">:&lt;/span> &lt;span class="nx">lastKey&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="mi">1&lt;/span>&lt;span class="p">],&lt;/span> &lt;span class="nx">off&lt;/span>&lt;span class="p">:&lt;/span> &lt;span class="nx">lastOff&lt;/span>&lt;span class="p">})&lt;/span>
+&lt;span class="p">}&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>
+&lt;/div>
+&lt;/li>
+&lt;li>
+&lt;p>下面代码为根据 label 查询 postings 的逻辑，完整可见 index 的 &lt;a href="https://github.com/prometheus/prometheus/blob/bda05a23ada314a0b9806a362da39b7a1a4e04c3/tsdb/index/index.go#L1555">Postings 方法&lt;/a>：&lt;/p>
+&lt;div class="src src-go">
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;span class="lnt">16
+&lt;/span>&lt;span class="lnt">17
+&lt;/span>&lt;span class="lnt">18
+&lt;/span>&lt;span class="lnt">19
+&lt;/span>&lt;span class="lnt">20
+&lt;/span>&lt;span class="lnt">21
+&lt;/span>&lt;span class="lnt">22
+&lt;/span>&lt;span class="lnt">23
+&lt;/span>&lt;span class="lnt">24
+&lt;/span>&lt;span class="lnt">25
+&lt;/span>&lt;span class="lnt">26
+&lt;/span>&lt;span class="lnt">27
+&lt;/span>&lt;span class="lnt">28
+&lt;/span>&lt;span class="lnt">29
+&lt;/span>&lt;span class="lnt">30
+&lt;/span>&lt;span class="lnt">31
+&lt;/span>&lt;span class="lnt">32
+&lt;/span>&lt;span class="lnt">33
+&lt;/span>&lt;span class="lnt">34
+&lt;/span>&lt;span class="lnt">35
+&lt;/span>&lt;span class="lnt">36
+&lt;/span>&lt;span class="lnt">37
+&lt;/span>&lt;span class="lnt">38
+&lt;/span>&lt;span class="lnt">39
+&lt;/span>&lt;span class="lnt">40
+&lt;/span>&lt;span class="lnt">41
+&lt;/span>&lt;span class="lnt">42
+&lt;/span>&lt;span class="lnt">43
+&lt;/span>&lt;span class="lnt">44
+&lt;/span>&lt;span class="lnt">45
+&lt;/span>&lt;span class="lnt">46
+&lt;/span>&lt;span class="lnt">47
+&lt;/span>&lt;span class="lnt">48
+&lt;/span>&lt;span class="lnt">49
+&lt;/span>&lt;span class="lnt">50
+&lt;/span>&lt;span class="lnt">51
+&lt;/span>&lt;span class="lnt">52
+&lt;/span>&lt;span class="lnt">53
+&lt;/span>&lt;span class="lnt">54
+&lt;/span>&lt;span class="lnt">55
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code class="language-go" data-lang="go">&lt;span class="nx">e&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="nx">ok&lt;/span> &lt;span class="o">:=&lt;/span> &lt;span class="nx">r&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">postings&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="nx">name&lt;/span>&lt;span class="p">]&lt;/span> &lt;span class="c1">// name 为 label key
+&lt;/span>&lt;span class="c1">&lt;/span>&lt;span class="k">if&lt;/span> &lt;span class="p">!&lt;/span>&lt;span class="nx">ok&lt;/span> &lt;span class="o">||&lt;/span> &lt;span class="nb">len&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="nx">values&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="o">==&lt;/span> &lt;span class="mi">0&lt;/span> &lt;span class="p">{&lt;/span> &lt;span class="c1">// values 为当前需要查询的 label values
+&lt;/span>&lt;span class="c1">&lt;/span> &lt;span class="k">return&lt;/span> &lt;span class="nf">EmptyPostings&lt;/span>&lt;span class="p">(),&lt;/span> &lt;span class="kc">nil&lt;/span>
+&lt;span class="p">}&lt;/span>
+&lt;span class="nx">res&lt;/span> &lt;span class="o">:=&lt;/span> &lt;span class="nb">make&lt;/span>&lt;span class="p">([]&lt;/span>&lt;span class="nx">Postings&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="mi">0&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="nb">len&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="nx">values&lt;/span>&lt;span class="p">))&lt;/span>
+&lt;span class="nx">skip&lt;/span> &lt;span class="o">:=&lt;/span> &lt;span class="mi">0&lt;/span>
+&lt;span class="nx">valueIndex&lt;/span> &lt;span class="o">:=&lt;/span> &lt;span class="mi">0&lt;/span>
+&lt;span class="k">for&lt;/span> &lt;span class="nx">valueIndex&lt;/span> &lt;span class="p">&amp;lt;&lt;/span> &lt;span class="nb">len&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="nx">values&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="o">&amp;amp;&amp;amp;&lt;/span> &lt;span class="nx">values&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="nx">valueIndex&lt;/span>&lt;span class="p">]&lt;/span> &lt;span class="p">&amp;lt;&lt;/span> &lt;span class="nx">e&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="mi">0&lt;/span>&lt;span class="p">].&lt;/span>&lt;span class="nx">value&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;span class="c1">// Discard values before the start.
+&lt;/span>&lt;span class="c1">&lt;/span> &lt;span class="nx">valueIndex&lt;/span>&lt;span class="o">++&lt;/span>
+&lt;span class="p">}&lt;/span>
+&lt;span class="k">for&lt;/span> &lt;span class="nx">valueIndex&lt;/span> &lt;span class="p">&amp;lt;&lt;/span> &lt;span class="nb">len&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="nx">values&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;span class="nx">value&lt;/span> &lt;span class="o">:=&lt;/span> &lt;span class="nx">values&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="nx">valueIndex&lt;/span>&lt;span class="p">]&lt;/span>
+&lt;span class="c1">// 用二分查找，找到当前 value 在 postings 中的位置
+&lt;/span>&lt;span class="c1">&lt;/span> &lt;span class="nx">i&lt;/span> &lt;span class="o">:=&lt;/span> &lt;span class="nx">sort&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nf">Search&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="nb">len&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="nx">e&lt;/span>&lt;span class="p">),&lt;/span> &lt;span class="kd">func&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="nx">i&lt;/span> &lt;span class="kt">int&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="kt">bool&lt;/span> &lt;span class="p">{&lt;/span> &lt;span class="k">return&lt;/span> &lt;span class="nx">e&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="nx">i&lt;/span>&lt;span class="p">].&lt;/span>&lt;span class="nx">value&lt;/span> &lt;span class="o">&amp;gt;=&lt;/span> &lt;span class="nx">value&lt;/span> &lt;span class="p">})&lt;/span>
+&lt;span class="k">if&lt;/span> &lt;span class="nx">i&lt;/span> &lt;span class="o">==&lt;/span> &lt;span class="nb">len&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="nx">e&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;span class="c1">// We&amp;#39;re past the end.
+&lt;/span>&lt;span class="c1">&lt;/span> &lt;span class="k">break&lt;/span>
+&lt;span class="p">}&lt;/span>
+&lt;span class="k">if&lt;/span> &lt;span class="nx">i&lt;/span> &lt;span class="p">&amp;gt;&lt;/span> &lt;span class="mi">0&lt;/span> &lt;span class="o">&amp;amp;&amp;amp;&lt;/span> &lt;span class="nx">e&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="nx">i&lt;/span>&lt;span class="p">].&lt;/span>&lt;span class="nx">value&lt;/span> &lt;span class="o">!=&lt;/span> &lt;span class="nx">value&lt;/span> &lt;span class="p">{&lt;/span> &lt;span class="c1">// postings 中没有该 value，需要用前面一个来在文件中搜索
+&lt;/span>&lt;span class="c1">&lt;/span> &lt;span class="c1">// Need to look from previous entry.
+&lt;/span>&lt;span class="c1">&lt;/span> &lt;span class="nx">i&lt;/span>&lt;span class="o">--&lt;/span>
+&lt;span class="p">}&lt;/span>
+&lt;span class="c1">// Don&amp;#39;t Crc32 the entire postings offset table, this is very slow
+&lt;/span>&lt;span class="c1">&lt;/span> &lt;span class="c1">// so hope any issues were caught at startup.
+&lt;/span>&lt;span class="c1">&lt;/span> &lt;span class="nx">d&lt;/span> &lt;span class="o">:=&lt;/span> &lt;span class="nx">encoding&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nf">NewDecbufAt&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="nx">r&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">b&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="nb">int&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="nx">r&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">toc&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">PostingsTable&lt;/span>&lt;span class="p">),&lt;/span> &lt;span class="kc">nil&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;span class="nx">d&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nf">Skip&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="nx">e&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="nx">i&lt;/span>&lt;span class="p">].&lt;/span>&lt;span class="nx">off&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;span class="c1">// Iterate on the offset table.
+&lt;/span>&lt;span class="c1">&lt;/span> &lt;span class="kd">var&lt;/span> &lt;span class="nx">postingsOff&lt;/span> &lt;span class="kt">uint64&lt;/span> &lt;span class="c1">// The offset into the postings table.
+&lt;/span>&lt;span class="c1">&lt;/span> &lt;span class="k">for&lt;/span> &lt;span class="nx">d&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nf">Err&lt;/span>&lt;span class="p">()&lt;/span> &lt;span class="o">==&lt;/span> &lt;span class="kc">nil&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;span class="c1">// ... skip 逻辑省略
+&lt;/span>&lt;span class="c1">&lt;/span> &lt;span class="nx">v&lt;/span> &lt;span class="o">:=&lt;/span> &lt;span class="nx">d&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nf">UvarintBytes&lt;/span>&lt;span class="p">()&lt;/span> &lt;span class="c1">// Label value.
+&lt;/span>&lt;span class="c1">&lt;/span> &lt;span class="nx">postingsOff&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="nx">d&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nf">Uvarint64&lt;/span>&lt;span class="p">()&lt;/span> &lt;span class="c1">// Offset.
+&lt;/span>&lt;span class="c1">&lt;/span> &lt;span class="k">for&lt;/span> &lt;span class="nb">string&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="nx">v&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="o">&amp;gt;=&lt;/span> &lt;span class="nx">value&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;span class="k">if&lt;/span> &lt;span class="nb">string&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="nx">v&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="o">==&lt;/span> &lt;span class="nx">value&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;span class="c1">// Read from the postings table.
+&lt;/span>&lt;span class="c1">&lt;/span> &lt;span class="nx">d2&lt;/span> &lt;span class="o">:=&lt;/span> &lt;span class="nx">encoding&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nf">NewDecbufAt&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="nx">r&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">b&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="nb">int&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="nx">postingsOff&lt;/span>&lt;span class="p">),&lt;/span> &lt;span class="nx">castagnoliTable&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;span class="nx">_&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="nx">p&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="nx">err&lt;/span> &lt;span class="o">:=&lt;/span> &lt;span class="nx">r&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">dec&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nf">Postings&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="nx">d2&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nf">Get&lt;/span>&lt;span class="p">())&lt;/span>
+&lt;span class="nx">res&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="nb">append&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="nx">res&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="nx">p&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;span class="p">}&lt;/span>
+&lt;span class="nx">valueIndex&lt;/span>&lt;span class="o">++&lt;/span>
+&lt;span class="k">if&lt;/span> &lt;span class="nx">valueIndex&lt;/span> &lt;span class="o">==&lt;/span> &lt;span class="nb">len&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="nx">values&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;span class="k">break&lt;/span>
+&lt;span class="p">}&lt;/span>
+&lt;span class="nx">value&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="nx">values&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="nx">valueIndex&lt;/span>&lt;span class="p">]&lt;/span>
+&lt;span class="p">}&lt;/span>
+&lt;span class="k">if&lt;/span> &lt;span class="nx">i&lt;/span>&lt;span class="o">+&lt;/span>&lt;span class="mi">1&lt;/span> &lt;span class="o">==&lt;/span> &lt;span class="nb">len&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="nx">e&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="o">||&lt;/span> &lt;span class="nx">value&lt;/span> &lt;span class="o">&amp;gt;=&lt;/span> &lt;span class="nx">e&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="nx">i&lt;/span>&lt;span class="o">+&lt;/span>&lt;span class="mi">1&lt;/span>&lt;span class="p">].&lt;/span>&lt;span class="nx">value&lt;/span> &lt;span class="o">||&lt;/span> &lt;span class="nx">valueIndex&lt;/span> &lt;span class="o">==&lt;/span> &lt;span class="nb">len&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="nx">values&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;span class="c1">// Need to go to a later postings offset entry, if there is one.
+&lt;/span>&lt;span class="c1">&lt;/span> &lt;span class="k">break&lt;/span>
+&lt;span class="p">}&lt;/span>
+&lt;span class="p">}&lt;/span>
+&lt;span class="p">}&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>
+&lt;/div>
+&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;/ul>
+&lt;/div>
+&lt;/div>
+&lt;/div>
+&lt;/div>
+&lt;div id="outline-container-headline-9" class="outline-2">
+&lt;h2 id="headline-9">
 内存结构
-&lt;/h2&gt;
-&lt;div id=&#34;outline-text-headline-9&#34; class=&#34;outline-text-2&#34;&gt;
-&lt;p&gt;Block 在 Prometheus 实现中，主要分为两类：&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;
-&lt;p&gt;当前正在写入的，称为 head。当超过 2 小时或超过 120 个点时，head 会将 chunk 写入到本地磁盘中，并使用 mmap 映射到内存中，保存在下文的 mmappedChunk 中。&lt;/p&gt;
-&lt;/li&gt;
-&lt;li&gt;
-&lt;p&gt;历史只读的，存放在一数组中&lt;/p&gt;
-&lt;/li&gt;
-&lt;/ul&gt;
-&lt;div class=&#34;src src-go&#34;&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
-&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt; 1
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 2
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 3
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 4
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 5
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 6
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 7
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 8
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 9
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;10
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;11
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;12
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;13
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;14
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;15
-&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
-&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-go&#34; data-lang=&#34;go&#34;&gt;&lt;span class=&#34;kd&#34;&gt;type&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;DB&lt;/span&gt; &lt;span class=&#34;kd&#34;&gt;struct&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
-    &lt;span class=&#34;nx&#34;&gt;blocks&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;[]&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;*&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;Block&lt;/span&gt;
-    &lt;span class=&#34;nx&#34;&gt;head&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;*&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;Head&lt;/span&gt;
-    &lt;span class=&#34;c1&#34;&gt;// ... 忽略其他字段
-&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
-
-&lt;span class=&#34;c1&#34;&gt;// Block 内的主要字段是 IndexReader，其内部主要是 postings，即倒排索引
-&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;// Map of LabelName to a list of some LabelValues&amp;#39;s position in the offset table.
-&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;// The first and last values for each name are always present.
-&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;postings&lt;/span&gt; &lt;span class=&#34;kd&#34;&gt;map&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;kt&#34;&gt;string&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;][]&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;postingOffset&lt;/span&gt;
-
-&lt;span class=&#34;kd&#34;&gt;type&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;postingOffset&lt;/span&gt; &lt;span class=&#34;kd&#34;&gt;struct&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
-    &lt;span class=&#34;nx&#34;&gt;value&lt;/span&gt; &lt;span class=&#34;kt&#34;&gt;string&lt;/span&gt; &lt;span class=&#34;c1&#34;&gt;// label value
-&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;nx&#34;&gt;off&lt;/span&gt;   &lt;span class=&#34;kt&#34;&gt;int&lt;/span&gt;    &lt;span class=&#34;c1&#34;&gt;// posting 在对于文件中的 offset
-&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
-&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
-&lt;/div&gt;
-&lt;/div&gt;
-&lt;/div&gt;
-&lt;p&gt;在上文磁盘结构中介绍过，postingOffset 不是全量加载，而是每隔 32 个。&lt;/p&gt;
-&lt;div id=&#34;outline-container-headline-10&#34; class=&#34;outline-3&#34;&gt;
-&lt;h3 id=&#34;headline-10&#34;&gt;
+&lt;/h2>
+&lt;div id="outline-text-headline-9" class="outline-text-2">
+&lt;p>Block 在 Prometheus 实现中，主要分为两类：&lt;/p>
+&lt;ul>
+&lt;li>
+&lt;p>当前正在写入的，称为 head。当超过 2 小时或超过 120 个点时，head 会将 chunk 写入到本地磁盘中，并使用 mmap 映射到内存中，保存在下文的 mmappedChunk 中。&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>历史只读的，存放在一数组中&lt;/p>
+&lt;/li>
+&lt;/ul>
+&lt;div class="src src-go">
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code class="language-go" data-lang="go">&lt;span class="kd">type&lt;/span> &lt;span class="nx">DB&lt;/span> &lt;span class="kd">struct&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;span class="nx">blocks&lt;/span> &lt;span class="p">[]&lt;/span>&lt;span class="o">*&lt;/span>&lt;span class="nx">Block&lt;/span>
+&lt;span class="nx">head&lt;/span> &lt;span class="o">*&lt;/span>&lt;span class="nx">Head&lt;/span>
+&lt;span class="c1">// ... 忽略其他字段
+&lt;/span>&lt;span class="c1">&lt;/span>&lt;span class="p">}&lt;/span>
+&lt;span class="c1">// Block 内的主要字段是 IndexReader，其内部主要是 postings，即倒排索引
+&lt;/span>&lt;span class="c1">// Map of LabelName to a list of some LabelValues&amp;#39;s position in the offset table.
+&lt;/span>&lt;span class="c1">// The first and last values for each name are always present.
+&lt;/span>&lt;span class="c1">&lt;/span>&lt;span class="nx">postings&lt;/span> &lt;span class="kd">map&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="kt">string&lt;/span>&lt;span class="p">][]&lt;/span>&lt;span class="nx">postingOffset&lt;/span>
+&lt;span class="kd">type&lt;/span> &lt;span class="nx">postingOffset&lt;/span> &lt;span class="kd">struct&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;span class="nx">value&lt;/span> &lt;span class="kt">string&lt;/span> &lt;span class="c1">// label value
+&lt;/span>&lt;span class="c1">&lt;/span> &lt;span class="nx">off&lt;/span> &lt;span class="kt">int&lt;/span> &lt;span class="c1">// posting 在对于文件中的 offset
+&lt;/span>&lt;span class="c1">&lt;/span>&lt;span class="p">}&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>
+&lt;/div>
+&lt;p>在上文磁盘结构中介绍过，postingOffset 不是全量加载，而是每隔 32 个。&lt;/p>
+&lt;div id="outline-container-headline-10" class="outline-3">
+&lt;h3 id="headline-10">
 Head
-&lt;/h3&gt;
-&lt;div id=&#34;outline-text-headline-10&#34; class=&#34;outline-text-3&#34;&gt;
-&lt;div class=&#34;src src-go&#34;&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
-&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt; 1
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 2
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 3
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 4
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 5
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 6
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 7
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 8
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 9
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;10
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;11
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;12
-&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
-&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-go&#34; data-lang=&#34;go&#34;&gt;&lt;span class=&#34;kd&#34;&gt;type&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;Head&lt;/span&gt; &lt;span class=&#34;kd&#34;&gt;struct&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
-    &lt;span class=&#34;nx&#34;&gt;postings&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;*&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;index&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;MemPostings&lt;/span&gt; &lt;span class=&#34;c1&#34;&gt;// Postings lists for terms.
-&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;c1&#34;&gt;// All series addressable by their ID or hash.
-&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;nx&#34;&gt;series&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;*&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;stripeSeries&lt;/span&gt;
-    &lt;span class=&#34;c1&#34;&gt;// ... 忽略其他字段
-&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
-
-&lt;span class=&#34;kd&#34;&gt;type&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;MemPostings&lt;/span&gt; &lt;span class=&#34;kd&#34;&gt;struct&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
-    &lt;span class=&#34;nx&#34;&gt;mtx&lt;/span&gt;     &lt;span class=&#34;nx&#34;&gt;sync&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;RWMutex&lt;/span&gt;
-    &lt;span class=&#34;nx&#34;&gt;m&lt;/span&gt;       &lt;span class=&#34;kd&#34;&gt;map&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;kt&#34;&gt;string&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;&lt;span class=&#34;kd&#34;&gt;map&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;kt&#34;&gt;string&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;][]&lt;/span&gt;&lt;span class=&#34;kt&#34;&gt;uint64&lt;/span&gt;  &lt;span class=&#34;c1&#34;&gt;// label key -&amp;gt; label value -&amp;gt; posting lists
-&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;nx&#34;&gt;ordered&lt;/span&gt; &lt;span class=&#34;kt&#34;&gt;bool&lt;/span&gt;
-&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
-&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
-&lt;/div&gt;
-&lt;/div&gt;
-&lt;/div&gt;
-&lt;ul&gt;
-&lt;li&gt;
-&lt;p&gt;MemPostings 是 Head 中的索引结构，与 Block 的 postingOffset 不同，posting 是全量加载的，毕竟 Head 保存的数据较小，对内存压力也小。&lt;/p&gt;
-&lt;/li&gt;
-&lt;/ul&gt;
-&lt;div class=&#34;src src-go&#34;&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
-&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt; 1
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 2
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 3
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 4
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 5
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 6
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 7
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 8
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 9
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;10
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;11
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;12
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;13
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;14
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;15
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;16
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;17
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;18
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;19
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;20
-&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
-&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-go&#34; data-lang=&#34;go&#34;&gt;&lt;span class=&#34;kd&#34;&gt;type&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;stripeSeries&lt;/span&gt; &lt;span class=&#34;kd&#34;&gt;struct&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
-    &lt;span class=&#34;nx&#34;&gt;size&lt;/span&gt;                    &lt;span class=&#34;kt&#34;&gt;int&lt;/span&gt;
-    &lt;span class=&#34;nx&#34;&gt;series&lt;/span&gt;                  &lt;span class=&#34;p&#34;&gt;[]&lt;/span&gt;&lt;span class=&#34;kd&#34;&gt;map&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;kt&#34;&gt;uint64&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;*&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;memSeries&lt;/span&gt;
-    &lt;span class=&#34;nx&#34;&gt;hashes&lt;/span&gt;                  &lt;span class=&#34;p&#34;&gt;[]&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;seriesHashmap&lt;/span&gt;
-    &lt;span class=&#34;nx&#34;&gt;locks&lt;/span&gt;                   &lt;span class=&#34;p&#34;&gt;[]&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;stripeLock&lt;/span&gt;
-    &lt;span class=&#34;nx&#34;&gt;seriesLifecycleCallback&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;SeriesLifecycleCallback&lt;/span&gt;
-&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
-&lt;span class=&#34;kd&#34;&gt;type&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;memSeries&lt;/span&gt; &lt;span class=&#34;kd&#34;&gt;struct&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
-    &lt;span class=&#34;nx&#34;&gt;sync&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;RWMutex&lt;/span&gt;
-    &lt;span class=&#34;nx&#34;&gt;mmappedChunks&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;[]&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;*&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;mmappedChunk&lt;/span&gt; &lt;span class=&#34;c1&#34;&gt;// 只读
-&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;nx&#34;&gt;headChunk&lt;/span&gt;     &lt;span class=&#34;o&#34;&gt;*&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;memChunk&lt;/span&gt; &lt;span class=&#34;c1&#34;&gt;// 读写
-&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;o&#34;&gt;......&lt;/span&gt; &lt;span class=&#34;c1&#34;&gt;// 省略其他字段
-&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
-
-&lt;span class=&#34;kd&#34;&gt;type&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;mmappedChunk&lt;/span&gt; &lt;span class=&#34;kd&#34;&gt;struct&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
-    &lt;span class=&#34;c1&#34;&gt;// 数据文件在磁盘上的位置，即上文中的 series ref
-&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;nx&#34;&gt;ref&lt;/span&gt;              &lt;span class=&#34;kt&#34;&gt;uint64&lt;/span&gt;
-    &lt;span class=&#34;nx&#34;&gt;numSamples&lt;/span&gt;       &lt;span class=&#34;kt&#34;&gt;uint16&lt;/span&gt;
-    &lt;span class=&#34;nx&#34;&gt;minTime&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;maxTime&lt;/span&gt; &lt;span class=&#34;kt&#34;&gt;int64&lt;/span&gt;
-&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
-&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
-&lt;/div&gt;
-&lt;/div&gt;
-&lt;/div&gt;
-&lt;ul&gt;
-&lt;li&gt;
-&lt;p&gt;&lt;a href=&#34;https://github.com/prometheus/prometheus/blob/bda05a23ada314a0b9806a362da39b7a1a4e04c3/tsdb/head.go#L1861&#34;&gt;stripeSeries&lt;/a&gt; 是比较的核心结构，series 字段的 key 为时间线，采用&lt;a href=&#34;https://gitee.com/mirrors/prometheus/blob/bda05a23ada314a0b9806a362da39b7a1a4e04c3/tsdb/head.go#L1771&#34;&gt;自增&lt;/a&gt;方式生成；value 为 memSeries，内部有存储具体数据的 chunk，采用分段锁思路来减少锁竞争。&lt;/p&gt;
-&lt;/li&gt;
-&lt;/ul&gt;
-&lt;/div&gt;
-&lt;/div&gt;
-&lt;div id=&#34;outline-container-headline-11&#34; class=&#34;outline-3&#34;&gt;
-&lt;h3 id=&#34;headline-11&#34;&gt;
+&lt;/h3>
+&lt;div id="outline-text-headline-10" class="outline-text-3">
+&lt;div class="src src-go">
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code class="language-go" data-lang="go">&lt;span class="kd">type&lt;/span> &lt;span class="nx">Head&lt;/span> &lt;span class="kd">struct&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;span class="nx">postings&lt;/span> &lt;span class="o">*&lt;/span>&lt;span class="nx">index&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">MemPostings&lt;/span> &lt;span class="c1">// Postings lists for terms.
+&lt;/span>&lt;span class="c1">&lt;/span> &lt;span class="c1">// All series addressable by their ID or hash.
+&lt;/span>&lt;span class="c1">&lt;/span> &lt;span class="nx">series&lt;/span> &lt;span class="o">*&lt;/span>&lt;span class="nx">stripeSeries&lt;/span>
+&lt;span class="c1">// ... 忽略其他字段
+&lt;/span>&lt;span class="c1">&lt;/span>&lt;span class="p">}&lt;/span>
+&lt;span class="kd">type&lt;/span> &lt;span class="nx">MemPostings&lt;/span> &lt;span class="kd">struct&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;span class="nx">mtx&lt;/span> &lt;span class="nx">sync&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">RWMutex&lt;/span>
+&lt;span class="nx">m&lt;/span> &lt;span class="kd">map&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="kt">string&lt;/span>&lt;span class="p">]&lt;/span>&lt;span class="kd">map&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="kt">string&lt;/span>&lt;span class="p">][]&lt;/span>&lt;span class="kt">uint64&lt;/span> &lt;span class="c1">// label key -&amp;gt; label value -&amp;gt; posting lists
+&lt;/span>&lt;span class="c1">&lt;/span> &lt;span class="nx">ordered&lt;/span> &lt;span class="kt">bool&lt;/span>
+&lt;span class="p">}&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>
+&lt;/div>
+&lt;ul>
+&lt;li>
+&lt;p>MemPostings 是 Head 中的索引结构，与 Block 的 postingOffset 不同，posting 是全量加载的，毕竟 Head 保存的数据较小，对内存压力也小。&lt;/p>
+&lt;/li>
+&lt;/ul>
+&lt;div class="src src-go">
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;span class="lnt">16
+&lt;/span>&lt;span class="lnt">17
+&lt;/span>&lt;span class="lnt">18
+&lt;/span>&lt;span class="lnt">19
+&lt;/span>&lt;span class="lnt">20
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code class="language-go" data-lang="go">&lt;span class="kd">type&lt;/span> &lt;span class="nx">stripeSeries&lt;/span> &lt;span class="kd">struct&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;span class="nx">size&lt;/span> &lt;span class="kt">int&lt;/span>
+&lt;span class="nx">series&lt;/span> &lt;span class="p">[]&lt;/span>&lt;span class="kd">map&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="kt">uint64&lt;/span>&lt;span class="p">]&lt;/span>&lt;span class="o">*&lt;/span>&lt;span class="nx">memSeries&lt;/span>
+&lt;span class="nx">hashes&lt;/span> &lt;span class="p">[]&lt;/span>&lt;span class="nx">seriesHashmap&lt;/span>
+&lt;span class="nx">locks&lt;/span> &lt;span class="p">[]&lt;/span>&lt;span class="nx">stripeLock&lt;/span>
+&lt;span class="nx">seriesLifecycleCallback&lt;/span> &lt;span class="nx">SeriesLifecycleCallback&lt;/span>
+&lt;span class="p">}&lt;/span>
+&lt;span class="kd">type&lt;/span> &lt;span class="nx">memSeries&lt;/span> &lt;span class="kd">struct&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;span class="nx">sync&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">RWMutex&lt;/span>
+&lt;span class="nx">mmappedChunks&lt;/span> &lt;span class="p">[]&lt;/span>&lt;span class="o">*&lt;/span>&lt;span class="nx">mmappedChunk&lt;/span> &lt;span class="c1">// 只读
+&lt;/span>&lt;span class="c1">&lt;/span> &lt;span class="nx">headChunk&lt;/span> &lt;span class="o">*&lt;/span>&lt;span class="nx">memChunk&lt;/span> &lt;span class="c1">// 读写
+&lt;/span>&lt;span class="c1">&lt;/span> &lt;span class="o">......&lt;/span> &lt;span class="c1">// 省略其他字段
+&lt;/span>&lt;span class="c1">&lt;/span> &lt;span class="p">}&lt;/span>
+&lt;span class="kd">type&lt;/span> &lt;span class="nx">mmappedChunk&lt;/span> &lt;span class="kd">struct&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;span class="c1">// 数据文件在磁盘上的位置，即上文中的 series ref
+&lt;/span>&lt;span class="c1">&lt;/span> &lt;span class="nx">ref&lt;/span> &lt;span class="kt">uint64&lt;/span>
+&lt;span class="nx">numSamples&lt;/span> &lt;span class="kt">uint16&lt;/span>
+&lt;span class="nx">minTime&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="nx">maxTime&lt;/span> &lt;span class="kt">int64&lt;/span>
+&lt;span class="p">}&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>
+&lt;/div>
+&lt;ul>
+&lt;li>
+&lt;p>&lt;a href="https://github.com/prometheus/prometheus/blob/bda05a23ada314a0b9806a362da39b7a1a4e04c3/tsdb/head.go#L1861">stripeSeries&lt;/a> 是比较的核心结构，series 字段的 key 为时间线，采用&lt;a href="https://gitee.com/mirrors/prometheus/blob/bda05a23ada314a0b9806a362da39b7a1a4e04c3/tsdb/head.go#L1771">自增&lt;/a>方式生成；value 为 memSeries，内部有存储具体数据的 chunk，采用分段锁思路来减少锁竞争。&lt;/p>
+&lt;/li>
+&lt;/ul>
+&lt;/div>
+&lt;/div>
+&lt;div id="outline-container-headline-11" class="outline-3">
+&lt;h3 id="headline-11">
 使用方式
-&lt;/h3&gt;
-&lt;div id=&#34;outline-text-headline-11&#34; class=&#34;outline-text-3&#34;&gt;
-&lt;p&gt;对于一个查询，大概涉及的步骤：&lt;/p&gt;
-&lt;ol&gt;
-&lt;li&gt;
-&lt;p&gt;根据 label 查出所涉及到的时间线，然后根据 filter 类型，进行集合运算，找出符合要求的时间线&lt;/p&gt;
-&lt;/li&gt;
-&lt;li&gt;
-&lt;p&gt;根据时间线信息与时间范围信息，去 block 内查询符合条件的数据&lt;/p&gt;
-&lt;/li&gt;
-&lt;/ol&gt;
-&lt;p&gt;在第一步主要在 &lt;a href=&#34;https://github.com/prometheus/prometheus/blob/bda05a23ada314a0b9806a362da39b7a1a4e04c3/tsdb/querier.go#L221&#34;&gt;PostingsForMatchers&lt;/a&gt; 函数中完成，主要有下面几个优化点：&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;
-&lt;p&gt;对于取反的 filter（ &lt;code&gt;!=&lt;/code&gt; &lt;code&gt;!~&lt;/code&gt; ），转化为等于的形式，这样因为等于形式对应的时间线往往会少于取反的效果，最后在合并时，减去这些取反的时间线即可。可参考：&lt;a href=&#34;https://github.com/prometheus-junkyard/tsdb/pull/572&#34;&gt;Be smarter in how we look at matchers. #572&lt;/a&gt;&lt;/p&gt;
-&lt;/li&gt;
-&lt;li&gt;
-&lt;p&gt;不同 label 的时间线合并时，利用了时间线有序的特点，采用类似 mergesort 的方式来&lt;a href=&#34;https://github.com/prometheus-junkyard/tsdb/pull/616&#34;&gt;惰性合并&lt;/a&gt;，大致过程如下：&lt;/p&gt;
-&lt;div class=&#34;src src-go&#34;&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
-&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt; 1
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 2
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 3
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 4
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 5
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 6
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 7
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 8
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 9
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;10
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;11
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;12
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;13
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;14
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;15
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;16
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;17
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;18
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;19
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;20
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;21
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;22
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;23
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;24
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;25
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;26
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;27
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;28
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;29
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;30
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;31
-&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;32
-&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
-&lt;td class=&#34;lntd&#34;&gt;
-&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-go&#34; data-lang=&#34;go&#34;&gt;&lt;span class=&#34;kd&#34;&gt;type&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;intersectPostings&lt;/span&gt; &lt;span class=&#34;kd&#34;&gt;struct&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
-  &lt;span class=&#34;nx&#34;&gt;arr&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;[]&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;Postings&lt;/span&gt; &lt;span class=&#34;c1&#34;&gt;// 需要合并的时间线数组
-&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;  &lt;span class=&#34;nx&#34;&gt;cur&lt;/span&gt; &lt;span class=&#34;kt&#34;&gt;uint64&lt;/span&gt; &lt;span class=&#34;c1&#34;&gt;// 当前的时间线
-&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
-
-&lt;span class=&#34;kd&#34;&gt;func&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;it&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;*&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;intersectPostings&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt; &lt;span class=&#34;nf&#34;&gt;doNext&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;()&lt;/span&gt; &lt;span class=&#34;kt&#34;&gt;bool&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
-&lt;span class=&#34;nx&#34;&gt;Loop&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;
-  &lt;span class=&#34;k&#34;&gt;for&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
-      &lt;span class=&#34;k&#34;&gt;for&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;_&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;p&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;:=&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;range&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;it&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;arr&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
-          &lt;span class=&#34;k&#34;&gt;if&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;!&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;p&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nf&#34;&gt;Seek&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;it&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;cur&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
-              &lt;span class=&#34;k&#34;&gt;return&lt;/span&gt; &lt;span class=&#34;kc&#34;&gt;false&lt;/span&gt;
-          &lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
-          &lt;span class=&#34;k&#34;&gt;if&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;p&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nf&#34;&gt;At&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;()&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;&amp;gt;&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;it&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;cur&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
-              &lt;span class=&#34;nx&#34;&gt;it&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;cur&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;p&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nf&#34;&gt;At&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;()&lt;/span&gt;
-              &lt;span class=&#34;k&#34;&gt;continue&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;Loop&lt;/span&gt;
-          &lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
-      &lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
-      &lt;span class=&#34;k&#34;&gt;return&lt;/span&gt; &lt;span class=&#34;kc&#34;&gt;true&lt;/span&gt;
-  &lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
-&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
-
-&lt;span class=&#34;kd&#34;&gt;func&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;it&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;*&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;intersectPostings&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt; &lt;span class=&#34;nf&#34;&gt;Next&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;()&lt;/span&gt; &lt;span class=&#34;kt&#34;&gt;bool&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
-  &lt;span class=&#34;k&#34;&gt;for&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;_&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;p&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;:=&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;range&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;it&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;arr&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
-      &lt;span class=&#34;k&#34;&gt;if&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;!&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;p&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nf&#34;&gt;Next&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;()&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
-          &lt;span class=&#34;k&#34;&gt;return&lt;/span&gt; &lt;span class=&#34;kc&#34;&gt;false&lt;/span&gt;
-      &lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
-      &lt;span class=&#34;k&#34;&gt;if&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;p&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nf&#34;&gt;At&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;()&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;&amp;gt;&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;it&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;cur&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
-          &lt;span class=&#34;nx&#34;&gt;it&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;cur&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;p&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nf&#34;&gt;At&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;()&lt;/span&gt;
-      &lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
-  &lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
-  &lt;span class=&#34;k&#34;&gt;return&lt;/span&gt; &lt;span class=&#34;nx&#34;&gt;it&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nf&#34;&gt;doNext&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;()&lt;/span&gt;
-&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
-&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
-&lt;/div&gt;
-&lt;/div&gt;
-&lt;/div&gt;
-&lt;/li&gt;
-&lt;/ul&gt;
-&lt;p&gt;在第一步查出符合条件的 chunk 所在文件以及 offset 信息之后，第二步的取数据则相对简单，直接使用 mmap 读数据即可，这间接利用操作系统的 page cache 来做缓存，自身不需要再去实现 Buffer Pool 之类的数据结构。&lt;/p&gt;
-&lt;/div&gt;
-&lt;/div&gt;
-&lt;/div&gt;
-&lt;/div&gt;
-&lt;div id=&#34;outline-container-headline-12&#34; class=&#34;outline-2&#34;&gt;
-&lt;h2 id=&#34;headline-12&#34;&gt;
+&lt;/h3>
+&lt;div id="outline-text-headline-11" class="outline-text-3">
+&lt;p>对于一个查询，大概涉及的步骤：&lt;/p>
+&lt;ol>
+&lt;li>
+&lt;p>根据 label 查出所涉及到的时间线，然后根据 filter 类型，进行集合运算，找出符合要求的时间线&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>根据时间线信息与时间范围信息，去 block 内查询符合条件的数据&lt;/p>
+&lt;/li>
+&lt;/ol>
+&lt;p>在第一步主要在 &lt;a href="https://github.com/prometheus/prometheus/blob/bda05a23ada314a0b9806a362da39b7a1a4e04c3/tsdb/querier.go#L221">PostingsForMatchers&lt;/a> 函数中完成，主要有下面几个优化点：&lt;/p>
+&lt;ul>
+&lt;li>
+&lt;p>对于取反的 filter（ &lt;code>!=&lt;/code> &lt;code>!~&lt;/code> ），转化为等于的形式，这样因为等于形式对应的时间线往往会少于取反的效果，最后在合并时，减去这些取反的时间线即可。可参考：&lt;a href="https://github.com/prometheus-junkyard/tsdb/pull/572">Be smarter in how we look at matchers. #572&lt;/a>&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>不同 label 的时间线合并时，利用了时间线有序的特点，采用类似 mergesort 的方式来&lt;a href="https://github.com/prometheus-junkyard/tsdb/pull/616">惰性合并&lt;/a>，大致过程如下：&lt;/p>
+&lt;div class="src src-go">
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;span class="lnt">16
+&lt;/span>&lt;span class="lnt">17
+&lt;/span>&lt;span class="lnt">18
+&lt;/span>&lt;span class="lnt">19
+&lt;/span>&lt;span class="lnt">20
+&lt;/span>&lt;span class="lnt">21
+&lt;/span>&lt;span class="lnt">22
+&lt;/span>&lt;span class="lnt">23
+&lt;/span>&lt;span class="lnt">24
+&lt;/span>&lt;span class="lnt">25
+&lt;/span>&lt;span class="lnt">26
+&lt;/span>&lt;span class="lnt">27
+&lt;/span>&lt;span class="lnt">28
+&lt;/span>&lt;span class="lnt">29
+&lt;/span>&lt;span class="lnt">30
+&lt;/span>&lt;span class="lnt">31
+&lt;/span>&lt;span class="lnt">32
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code class="language-go" data-lang="go">&lt;span class="kd">type&lt;/span> &lt;span class="nx">intersectPostings&lt;/span> &lt;span class="kd">struct&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;span class="nx">arr&lt;/span> &lt;span class="p">[]&lt;/span>&lt;span class="nx">Postings&lt;/span> &lt;span class="c1">// 需要合并的时间线数组
+&lt;/span>&lt;span class="c1">&lt;/span> &lt;span class="nx">cur&lt;/span> &lt;span class="kt">uint64&lt;/span> &lt;span class="c1">// 当前的时间线
+&lt;/span>&lt;span class="c1">&lt;/span>&lt;span class="p">}&lt;/span>
+&lt;span class="kd">func&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="nx">it&lt;/span> &lt;span class="o">*&lt;/span>&lt;span class="nx">intersectPostings&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="nf">doNext&lt;/span>&lt;span class="p">()&lt;/span> &lt;span class="kt">bool&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;span class="nx">Loop&lt;/span>&lt;span class="p">:&lt;/span>
+&lt;span class="k">for&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;span class="k">for&lt;/span> &lt;span class="nx">_&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="nx">p&lt;/span> &lt;span class="o">:=&lt;/span> &lt;span class="k">range&lt;/span> &lt;span class="nx">it&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">arr&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;span class="k">if&lt;/span> &lt;span class="p">!&lt;/span>&lt;span class="nx">p&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nf">Seek&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="nx">it&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">cur&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;span class="k">return&lt;/span> &lt;span class="kc">false&lt;/span>
+&lt;span class="p">}&lt;/span>
+&lt;span class="k">if&lt;/span> &lt;span class="nx">p&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nf">At&lt;/span>&lt;span class="p">()&lt;/span> &lt;span class="p">&amp;gt;&lt;/span> &lt;span class="nx">it&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">cur&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;span class="nx">it&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">cur&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="nx">p&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nf">At&lt;/span>&lt;span class="p">()&lt;/span>
+&lt;span class="k">continue&lt;/span> &lt;span class="nx">Loop&lt;/span>
+&lt;span class="p">}&lt;/span>
+&lt;span class="p">}&lt;/span>
+&lt;span class="k">return&lt;/span> &lt;span class="kc">true&lt;/span>
+&lt;span class="p">}&lt;/span>
+&lt;span class="p">}&lt;/span>
+&lt;span class="kd">func&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="nx">it&lt;/span> &lt;span class="o">*&lt;/span>&lt;span class="nx">intersectPostings&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="nf">Next&lt;/span>&lt;span class="p">()&lt;/span> &lt;span class="kt">bool&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;span class="k">for&lt;/span> &lt;span class="nx">_&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="nx">p&lt;/span> &lt;span class="o">:=&lt;/span> &lt;span class="k">range&lt;/span> &lt;span class="nx">it&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">arr&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;span class="k">if&lt;/span> &lt;span class="p">!&lt;/span>&lt;span class="nx">p&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nf">Next&lt;/span>&lt;span class="p">()&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;span class="k">return&lt;/span> &lt;span class="kc">false&lt;/span>
+&lt;span class="p">}&lt;/span>
+&lt;span class="k">if&lt;/span> &lt;span class="nx">p&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nf">At&lt;/span>&lt;span class="p">()&lt;/span> &lt;span class="p">&amp;gt;&lt;/span> &lt;span class="nx">it&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">cur&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;span class="nx">it&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">cur&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="nx">p&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nf">At&lt;/span>&lt;span class="p">()&lt;/span>
+&lt;span class="p">}&lt;/span>
+&lt;span class="p">}&lt;/span>
+&lt;span class="k">return&lt;/span> &lt;span class="nx">it&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nf">doNext&lt;/span>&lt;span class="p">()&lt;/span>
+&lt;span class="p">}&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>
+&lt;/div>
+&lt;/li>
+&lt;/ul>
+&lt;p>在第一步查出符合条件的 chunk 所在文件以及 offset 信息之后，第二步的取数据则相对简单，直接使用 mmap 读数据即可，这间接利用操作系统的 page cache 来做缓存，自身不需要再去实现 Buffer Pool 之类的数据结构。&lt;/p>
+&lt;/div>
+&lt;/div>
+&lt;/div>
+&lt;/div>
+&lt;div id="outline-container-headline-12" class="outline-2">
+&lt;h2 id="headline-12">
 总结
-&lt;/h2&gt;
-&lt;div id=&#34;outline-text-headline-12&#34; class=&#34;outline-text-2&#34;&gt;
-&lt;p&gt;通过上文的分析，大体上把 Prometheus 的存储结构以及查询流程分析了一遍，还有些细节没再展开去介绍，比如为了节约内存使用，label 使用了字典压缩，但这并不妨碍读者理解其原理。&lt;/p&gt;
-&lt;p&gt;
-此外，Prometheus 默认 2 小时一个 Block 对大时间范围查询不友好，因此后台会对定期 chunk 文件进行 compaction，合并后的文件大小为 &lt;code class=&#34;verbatim&#34;&gt;min(31d, retention_time * 0.1)&lt;/code&gt; ，相关细节后面有机会再单独介绍吧。&lt;/p&gt;
-&lt;/div&gt;
-&lt;/div&gt;
-&lt;div id=&#34;outline-container-headline-13&#34; class=&#34;outline-2&#34;&gt;
-&lt;h2 id=&#34;headline-13&#34;&gt;
+&lt;/h2>
+&lt;div id="outline-text-headline-12" class="outline-text-2">
+&lt;p>通过上文的分析，大体上把 Prometheus 的存储结构以及查询流程分析了一遍，还有些细节没再展开去介绍，比如为了节约内存使用，label 使用了字典压缩，但这并不妨碍读者理解其原理。&lt;/p>
+&lt;p>
+此外，Prometheus 默认 2 小时一个 Block 对大时间范围查询不友好，因此后台会对定期 chunk 文件进行 compaction，合并后的文件大小为 &lt;code class="verbatim">min(31d, retention_time * 0.1)&lt;/code> ，相关细节后面有机会再单独介绍吧。&lt;/p>
+&lt;/div>
+&lt;/div>
+&lt;div id="outline-container-headline-13" class="outline-2">
+&lt;h2 id="headline-13">
 参考
-&lt;/h2&gt;
-&lt;div id=&#34;outline-text-headline-13&#34; class=&#34;outline-text-2&#34;&gt;
-&lt;ul&gt;
-&lt;li&gt;
-&lt;p&gt;&lt;a href=&#34;https://my.oschina.net/alchemystar/blog/4985328&#34;&gt;Prometheus时序数据库-数据的查询&lt;/a&gt;&lt;/p&gt;
-&lt;/li&gt;
-&lt;li&gt;
-&lt;p&gt;&lt;a href=&#34;https://my.oschina.net/alchemystar/blog/4965684&#34;&gt;Prometheus时序数据库-磁盘中的存储结构&lt;/a&gt;&lt;/p&gt;
-&lt;/li&gt;
-&lt;li&gt;
-&lt;p&gt;&lt;a href=&#34;https://ganeshvernekar.com/blog/prometheus-tsdb-the-head-block/&#34;&gt;Prometheus TSDB (Part 1): The Head Block&lt;/a&gt;&lt;/p&gt;
-&lt;/li&gt;
-&lt;li&gt;
-&lt;p&gt;&lt;a href=&#34;https://ganeshvernekar.com/blog/prometheus-tsdb-persistent-block-and-its-index/&#34;&gt;Prometheus TSDB (Part 4): Persistent Block and its Index&lt;/a&gt;&lt;/p&gt;
-&lt;/li&gt;
-&lt;li&gt;
-&lt;p&gt;&lt;a href=&#34;https://ganeshvernekar.com/blog/prometheus-tsdb-queries/&#34;&gt;Prometheus TSDB (Part 5): Queries&lt;/a&gt;&lt;/p&gt;
-&lt;/li&gt;
-&lt;li&gt;
-&lt;p&gt;&lt;a href=&#34;https://www.alibabacloud.com/blog/prometheus-the-unicorn-in-metrics_595168&#34;&gt;Prometheus: The Unicorn in Metrics&lt;/a&gt;&lt;/p&gt;
-&lt;/li&gt;
-&lt;li&gt;
-&lt;p&gt;&lt;a href=&#34;https://fabxc.org/tsdb/&#34;&gt;Writing a Time Series Database from Scratch&lt;/a&gt;&lt;/p&gt;
-&lt;/li&gt;
-&lt;li&gt;
-&lt;p&gt;&lt;a href=&#34;https://github.com/prometheus/prometheus/blob/main/tsdb/docs/format/index.md&#34;&gt;https://github.com/prometheus/prometheus/blob/main/tsdb/docs/format/index.md&lt;/a&gt;&lt;/p&gt;
-&lt;/li&gt;
-&lt;/ul&gt;
-&lt;/div&gt;
-&lt;/div&gt;
-</description>
-    </item>
-    
-    <item>
-      <title>解读 InfluxDB IOx：基于列存的时序数据库</title>
-      <link>https://liujiacai.net/blog/2021/01/21/thoughts-of-influxdb-iox/</link>
-      <pubDate>Thu, 21 Jan 2021 00:00:00 +0000</pubDate>
-      
-      <guid>https://liujiacai.net/blog/2021/01/21/thoughts-of-influxdb-iox/</guid>
-      <description>
-&lt;p&gt;
-2020 年 12 月 10 日，InfluxDB CTO Paul 在官方博客发表一篇文章：&lt;a href=&#34;https://www.influxdata.com/blog/announcing-influxdb-iox/&#34;&gt;Announcing InfluxDB IOx – The Future Core of InfluxDB Built with Rust and Arrow&lt;/a&gt;，介绍了一个新项目 InfluxDB IOx，下一代的时序引擎。在时序数据库领域，InfluxDB 是当之无愧的佼佼者，常年在 &lt;a href=&#34;https://db-engines.com/en/ranking/time+series+dbms&#34;&gt;DB-Engine TimeSeries&lt;/a&gt; 分类下名列第一。因此，InfluxDB 的一举一动，也备受关注，毕竟时序这个圈就这么大。&lt;/p&gt;
-&lt;p&gt;
-InfluxDB 素来就有重写引擎的“传统”，在介绍 IOx 项目之前，先来回顾下其发展历程。&lt;/p&gt;
-&lt;div id=&#34;outline-container-headline-1&#34; class=&#34;outline-2&#34;&gt;
-&lt;h2 id=&#34;headline-1&#34;&gt;
+&lt;/h2>
+&lt;div id="outline-text-headline-13" class="outline-text-2">
+&lt;ul>
+&lt;li>
+&lt;p>&lt;a href="https://my.oschina.net/alchemystar/blog/4985328">Prometheus时序数据库-数据的查询&lt;/a>&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;a href="https://my.oschina.net/alchemystar/blog/4965684">Prometheus时序数据库-磁盘中的存储结构&lt;/a>&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;a href="https://ganeshvernekar.com/blog/prometheus-tsdb-the-head-block/">Prometheus TSDB (Part 1): The Head Block&lt;/a>&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;a href="https://ganeshvernekar.com/blog/prometheus-tsdb-persistent-block-and-its-index/">Prometheus TSDB (Part 4): Persistent Block and its Index&lt;/a>&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;a href="https://ganeshvernekar.com/blog/prometheus-tsdb-queries/">Prometheus TSDB (Part 5): Queries&lt;/a>&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;a href="https://www.alibabacloud.com/blog/prometheus-the-unicorn-in-metrics_595168">Prometheus: The Unicorn in Metrics&lt;/a>&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;a href="https://fabxc.org/tsdb/">Writing a Time Series Database from Scratch&lt;/a>&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;a href="https://github.com/prometheus/prometheus/blob/main/tsdb/docs/format/index.md">https://github.com/prometheus/prometheus/blob/main/tsdb/docs/format/index.md&lt;/a>&lt;/p>
+&lt;/li>
+&lt;/ul>
+&lt;/div>
+&lt;/div></description></item><item><title>解读 InfluxDB IOx：基于列存的时序数据库</title><link>https://liujiacai.net/blog/2021/01/21/thoughts-of-influxdb-iox/</link><pubDate>Thu, 21 Jan 2021 00:00:00 +0000</pubDate><guid>https://liujiacai.net/blog/2021/01/21/thoughts-of-influxdb-iox/</guid><description>
+&lt;p>
+2020 年 12 月 10 日，InfluxDB CTO Paul 在官方博客发表一篇文章：&lt;a href="https://www.influxdata.com/blog/announcing-influxdb-iox/">Announcing InfluxDB IOx – The Future Core of InfluxDB Built with Rust and Arrow&lt;/a>，介绍了一个新项目 InfluxDB IOx，下一代的时序引擎。在时序数据库领域，InfluxDB 是当之无愧的佼佼者，常年在 &lt;a href="https://db-engines.com/en/ranking/time+series+dbms">DB-Engine TimeSeries&lt;/a> 分类下名列第一。因此，InfluxDB 的一举一动，也备受关注，毕竟时序这个圈就这么大。&lt;/p>
+&lt;p>
+InfluxDB 素来就有重写引擎的“传统”，在介绍 IOx 项目之前，先来回顾下其发展历程。&lt;/p>
+&lt;div id="outline-container-headline-1" class="outline-2">
+&lt;h2 id="headline-1">
 发展历程
-&lt;/h2&gt;
-&lt;div id=&#34;outline-text-headline-1&#34; class=&#34;outline-text-2&#34;&gt;
-&lt;p&gt;在 &lt;a href=&#34;https://www.slideshare.net/influxdata/inside-the-influx-db-storage-engine&#34;&gt;Inside the InfluxDB storage engine&lt;/a&gt; 讲稿中有详细介绍 InfluxDB 要解决的问题以及迭代历史，不了解时序相关概念的读者建议先阅读该讲稿，这里只总结其迭代过程：&lt;/p&gt;
-&lt;ol&gt;
-&lt;li&gt;
-&lt;p&gt;使用基于 LSM 的 LevelDB 来开发存储引擎，但是有下面几个问题&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;
-&lt;p&gt;删除代价高&lt;/p&gt;
-&lt;/li&gt;
-&lt;li&gt;
-&lt;p&gt;需要打开过多的文件句柄&lt;/p&gt;
-&lt;/li&gt;
-&lt;/ul&gt;
-&lt;/li&gt;
-&lt;li&gt;
-&lt;p&gt;接着换成了基于 mmap COW B+Tree 的 BoltDB，问题有如下几个：&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;
-&lt;p&gt;写吞吐不高&lt;/p&gt;
-&lt;/li&gt;
-&lt;li&gt;
-&lt;p&gt;不支持压缩&lt;/p&gt;
-&lt;/li&gt;
-&lt;/ul&gt;
-&lt;/li&gt;
-&lt;li&gt;
-&lt;p&gt;不再基于开源项目，从头自研 &lt;a href=&#34;https://docs.influxdata.com/influxdb/v1.8/concepts/storage_engine/&#34;&gt;TSM&lt;/a&gt; 引擎，这也是现在使用的引擎。主要特点：&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;
-&lt;p&gt;与 LSM 类似，主要有三个组件：WAL、memory cache（类似 memtables）、Index files（类似 SSTables）&lt;/p&gt;
-&lt;/li&gt;
-&lt;li&gt;
-&lt;p&gt;为了加速查询，除了专门存储压缩数据的模块外，还有个单独的索引模块 TSI，其核心数据结构是一个倒排索引&lt;/p&gt;
-&lt;/li&gt;
-&lt;/ul&gt;
-&lt;/li&gt;
-&lt;/ol&gt;
-&lt;figure&gt;
-&lt;img src=&#34;https://img.alicdn.com/imgextra/i4/581166664/O1CN01iKsP2k1z6A2Vd1QS3_!!581166664.jpg&#34; alt=&#34;https://img.alicdn.com/imgextra/i4/581166664/O1CN01iKsP2k1z6A2Vd1QS3_!!581166664.jpg&#34; title=&#34;https://img.alicdn.com/imgextra/i4/581166664/O1CN01iKsP2k1z6A2Vd1QS3_!!581166664.jpg&#34; /&gt;&lt;figcaption&gt;
+&lt;/h2>
+&lt;div id="outline-text-headline-1" class="outline-text-2">
+&lt;p>在 &lt;a href="https://www.slideshare.net/influxdata/inside-the-influx-db-storage-engine">Inside the InfluxDB storage engine&lt;/a> 讲稿中有详细介绍 InfluxDB 要解决的问题以及迭代历史，不了解时序相关概念的读者建议先阅读该讲稿，这里只总结其迭代过程：&lt;/p>
+&lt;ol>
+&lt;li>
+&lt;p>使用基于 LSM 的 LevelDB 来开发存储引擎，但是有下面几个问题&lt;/p>
+&lt;ul>
+&lt;li>
+&lt;p>删除代价高&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>需要打开过多的文件句柄&lt;/p>
+&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;li>
+&lt;p>接着换成了基于 mmap COW B+Tree 的 BoltDB，问题有如下几个：&lt;/p>
+&lt;ul>
+&lt;li>
+&lt;p>写吞吐不高&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>不支持压缩&lt;/p>
+&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;li>
+&lt;p>不再基于开源项目，从头自研 &lt;a href="https://docs.influxdata.com/influxdb/v1.8/concepts/storage_engine/">TSM&lt;/a> 引擎，这也是现在使用的引擎。主要特点：&lt;/p>
+&lt;ul>
+&lt;li>
+&lt;p>与 LSM 类似，主要有三个组件：WAL、memory cache（类似 memtables）、Index files（类似 SSTables）&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>为了加速查询，除了专门存储压缩数据的模块外，还有个单独的索引模块 TSI，其核心数据结构是一个倒排索引&lt;/p>
+&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;/ol>
+&lt;figure>
+&lt;img src="https://img.alicdn.com/imgextra/i4/581166664/O1CN01iKsP2k1z6A2Vd1QS3_!!581166664.jpg" alt="https://img.alicdn.com/imgextra/i4/581166664/O1CN01iKsP2k1z6A2Vd1QS3_!!581166664.jpg" title="https://img.alicdn.com/imgextra/i4/581166664/O1CN01iKsP2k1z6A2Vd1QS3_!!581166664.jpg" />&lt;figcaption>
 InfluxDB 倒排索引
-&lt;/figcaption&gt;
-&lt;/figure&gt;
-&lt;p&gt;
-InfluxDB 迭代这么多次，个人觉的主要是两方面原因：&lt;/p&gt;
-&lt;ol&gt;
-&lt;li&gt;
-&lt;p&gt;随着时间推移，时序场景的使用越来复杂&lt;/p&gt;
-&lt;/li&gt;
-&lt;li&gt;
-&lt;p&gt;数据量越来越多，现有架构不足以支持&lt;/p&gt;
-&lt;/li&gt;
-&lt;/ol&gt;
-&lt;p&gt;由此，InfluxDB 开始着手新一代引擎的开发，也就是今天的主角：InfluxDB IOx。&lt;/p&gt;
-&lt;/div&gt;
-&lt;/div&gt;
-&lt;div id=&#34;outline-container-headline-2&#34; class=&#34;outline-2&#34;&gt;
-&lt;h2 id=&#34;headline-2&#34;&gt;
+&lt;/figcaption>
+&lt;/figure>
+&lt;p>
+InfluxDB 迭代这么多次，个人觉的主要是两方面原因：&lt;/p>
+&lt;ol>
+&lt;li>
+&lt;p>随着时间推移，时序场景的使用越来复杂&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>数据量越来越多，现有架构不足以支持&lt;/p>
+&lt;/li>
+&lt;/ol>
+&lt;p>由此，InfluxDB 开始着手新一代引擎的开发，也就是今天的主角：InfluxDB IOx。&lt;/p>
+&lt;/div>
+&lt;/div>
+&lt;div id="outline-container-headline-2" class="outline-2">
+&lt;h2 id="headline-2">
 InfluxDB IOx
-&lt;/h2&gt;
-&lt;div id=&#34;outline-text-headline-2&#34; class=&#34;outline-text-2&#34;&gt;
-&lt;p&gt;IOx 发音为 eye-ox，iron oxide（氧化铁）的简写，与锈（Rust）相呼应。&lt;/p&gt;
-&lt;div id=&#34;outline-container-headline-3&#34; class=&#34;outline-3&#34;&gt;
-&lt;h3 id=&#34;headline-3&#34;&gt;
+&lt;/h2>
+&lt;div id="outline-text-headline-2" class="outline-text-2">
+&lt;p>IOx 发音为 eye-ox，iron oxide（氧化铁）的简写，与锈（Rust）相呼应。&lt;/p>
+&lt;div id="outline-container-headline-3" class="outline-3">
+&lt;h3 id="headline-3">
 开源模式
-&lt;/h3&gt;
-&lt;div id=&#34;outline-text-headline-3&#34; class=&#34;outline-text-3&#34;&gt;
-&lt;p&gt;比较有意思的是，该文章一开始花了很大篇幅来讲述 InfluxDB 公司应该如何基于开源产品来盈利。&lt;/p&gt;
-&lt;p&gt;
-InfluxDB 现在的策略是开源单机版，闭源分布式版本。Paul 认为这种模式不利于其长远发展，主要原因有：&lt;/p&gt;
-&lt;ol&gt;
-&lt;li&gt;
-&lt;p&gt;闭源分布式版本意味着放弃了这个市场，也就是说会有更多竟品出来争夺这个市场&lt;/p&gt;
-&lt;/li&gt;
-&lt;li&gt;
-&lt;p&gt;基础性软件如果功能受限，就会导致一部分用户放弃使用它&lt;/p&gt;
-&lt;/li&gt;
-&lt;/ol&gt;
-&lt;p&gt;因此 InfluxDB 想要真正成为被广大开发者接受的基础软件，必须开源更多组件，而不是闭门造车。只有这样才能吸引更多用户；同时，使用的开源协议必须对商业公司友好，否则商业公司不会采纳，云托管厂商不会托管它，而是会开发他们自己的版本，这样就导致了社区的分裂，因此 IOx 采用 MIT &amp;amp; Apache 2 双协议开源方式。&lt;/p&gt;
-&lt;p&gt;
-全部组件都开源，公司如何盈利呢？文章中提到：系统的设计不仅仅是整体架构是否合理，也需要考虑如何进行商业化。那么 IOx 是如何设计的呢？&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;
-&lt;p&gt;联邦式（federated）的 share-nothing 架构&lt;/p&gt;
-&lt;/li&gt;
-&lt;/ul&gt;
-&lt;p&gt;用户对所有服务有绝对的控制权，这也就意味着用户需要一些额外的工具来辅助其管理集群。简单来说，这些工具可以是 shell 脚本与 cron 定时任务，在更复杂的场景下，就需要专业工具的支持了。而这就是 InfluxDB 的赢利点。&lt;/p&gt;
-&lt;p&gt;
-感觉这一点可以用 Hadoop 与 Cloudera 类比，接触过大数据的读者应该会比较清楚，我在很久之前也写过一些&lt;a href=&#34;https://liujiacai.net/blog/2014/07/17/cdh-ha-installation/&#34;&gt;文章&lt;/a&gt;，Hadoop 生态内的系统安装、运维是个很繁琐的事情。而使用 Cloudera，安装就是鼠标点几下的事，并且安装后有丰富的监控图表、运维工具，非常方便。&lt;/p&gt;
-&lt;p&gt;
-就在写这篇文章的同时，HN 上又出现与这个的话题相关的热贴 &lt;a href=&#34;https://news.ycombinator.com/item?id=25865094&#34;&gt;AWS announces forks of Elasticsearch and Kibana&lt;/a&gt;，只能说开源路漫漫其修远兮，InfluxDB 还需上下而求索。&lt;/p&gt;
-&lt;/div&gt;
-&lt;/div&gt;
-&lt;div id=&#34;outline-container-headline-4&#34; class=&#34;outline-3&#34;&gt;
-&lt;h3 id=&#34;headline-4&#34;&gt;
+&lt;/h3>
+&lt;div id="outline-text-headline-3" class="outline-text-3">
+&lt;p>比较有意思的是，该文章一开始花了很大篇幅来讲述 InfluxDB 公司应该如何基于开源产品来盈利。&lt;/p>
+&lt;p>
+InfluxDB 现在的策略是开源单机版，闭源分布式版本。Paul 认为这种模式不利于其长远发展，主要原因有：&lt;/p>
+&lt;ol>
+&lt;li>
+&lt;p>闭源分布式版本意味着放弃了这个市场，也就是说会有更多竟品出来争夺这个市场&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>基础性软件如果功能受限，就会导致一部分用户放弃使用它&lt;/p>
+&lt;/li>
+&lt;/ol>
+&lt;p>因此 InfluxDB 想要真正成为被广大开发者接受的基础软件，必须开源更多组件，而不是闭门造车。只有这样才能吸引更多用户；同时，使用的开源协议必须对商业公司友好，否则商业公司不会采纳，云托管厂商不会托管它，而是会开发他们自己的版本，这样就导致了社区的分裂，因此 IOx 采用 MIT &amp;amp; Apache 2 双协议开源方式。&lt;/p>
+&lt;p>
+全部组件都开源，公司如何盈利呢？文章中提到：系统的设计不仅仅是整体架构是否合理，也需要考虑如何进行商业化。那么 IOx 是如何设计的呢？&lt;/p>
+&lt;ul>
+&lt;li>
+&lt;p>联邦式（federated）的 share-nothing 架构&lt;/p>
+&lt;/li>
+&lt;/ul>
+&lt;p>用户对所有服务有绝对的控制权，这也就意味着用户需要一些额外的工具来辅助其管理集群。简单来说，这些工具可以是 shell 脚本与 cron 定时任务，在更复杂的场景下，就需要专业工具的支持了。而这就是 InfluxDB 的赢利点。&lt;/p>
+&lt;p>
+感觉这一点可以用 Hadoop 与 Cloudera 类比，接触过大数据的读者应该会比较清楚，我在很久之前也写过一些&lt;a href="https://liujiacai.net/blog/2014/07/17/cdh-ha-installation/">文章&lt;/a>，Hadoop 生态内的系统安装、运维是个很繁琐的事情。而使用 Cloudera，安装就是鼠标点几下的事，并且安装后有丰富的监控图表、运维工具，非常方便。&lt;/p>
+&lt;p>
+就在写这篇文章的同时，HN 上又出现与这个的话题相关的热贴 &lt;a href="https://news.ycombinator.com/item?id=25865094">AWS announces forks of Elasticsearch and Kibana&lt;/a>，只能说开源路漫漫其修远兮，InfluxDB 还需上下而求索。&lt;/p>
+&lt;/div>
+&lt;/div>
+&lt;div id="outline-container-headline-4" class="outline-3">
+&lt;h3 id="headline-4">
 Why IOx
-&lt;/h3&gt;
-&lt;div id=&#34;outline-text-headline-4&#34; class=&#34;outline-text-3&#34;&gt;
-&lt;p&gt;上面讲述了 InfluxDB 今后的商业运作模式，那么这次为什么又要从头开始重写整个系统呢？毕竟 InfluxDB 公司已经成立七年，已经有了不少商业用户。在文章中提到现有设计主要有以下几个致命性问题：&lt;/p&gt;
-&lt;ol&gt;
-&lt;li&gt;
-&lt;p&gt;无法解决时间线膨胀的问题&lt;/p&gt;
-&lt;/li&gt;
-&lt;li&gt;
-&lt;p&gt;在云原生环境下，对内存管理要求比较严格，这意味 mmap 不在适用，而且 InfluxDB 需要支持无本地盘的运行模式&lt;/p&gt;
-&lt;/li&gt;
-&lt;li&gt;
-&lt;p&gt;由于索引与数据分开存储，导致高效的数据导入导出功能难以实现&lt;/p&gt;
-&lt;/li&gt;
-&lt;/ol&gt;
-&lt;p&gt;上述这三个问题都是现有设计的核心之处，因此要想支持现阶段需求，重写是个比较好的选择。决定了重写，下一步就是技术栈的选择，InfluxDB 选择了 Rust + Apache Arrow 来构建下一代产品。&lt;/p&gt;
-&lt;/div&gt;
-&lt;/div&gt;
-&lt;div id=&#34;outline-container-headline-5&#34; class=&#34;outline-3&#34;&gt;
-&lt;h3 id=&#34;headline-5&#34;&gt;
+&lt;/h3>
+&lt;div id="outline-text-headline-4" class="outline-text-3">
+&lt;p>上面讲述了 InfluxDB 今后的商业运作模式，那么这次为什么又要从头开始重写整个系统呢？毕竟 InfluxDB 公司已经成立七年，已经有了不少商业用户。在文章中提到现有设计主要有以下几个致命性问题：&lt;/p>
+&lt;ol>
+&lt;li>
+&lt;p>无法解决时间线膨胀的问题&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>在云原生环境下，对内存管理要求比较严格，这意味 mmap 不在适用，而且 InfluxDB 需要支持无本地盘的运行模式&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>由于索引与数据分开存储，导致高效的数据导入导出功能难以实现&lt;/p>
+&lt;/li>
+&lt;/ol>
+&lt;p>上述这三个问题都是现有设计的核心之处，因此要想支持现阶段需求，重写是个比较好的选择。决定了重写，下一步就是技术栈的选择，InfluxDB 选择了 Rust + Apache Arrow 来构建下一代产品。&lt;/p>
+&lt;/div>
+&lt;/div>
+&lt;div id="outline-container-headline-5" class="outline-3">
+&lt;h3 id="headline-5">
 Why Rust
-&lt;/h3&gt;
-&lt;div id=&#34;outline-text-headline-5&#34; class=&#34;outline-text-3&#34;&gt;
-&lt;p&gt;Rust 是新时代的系统语言，无 GC，可以做到对内存的严格控制。其次，Rust 独特的所有权机制不仅可以避免内存使用的诸多问题，还可避免很多&lt;a href=&#34;https://blog.rust-lang.org/2015/04/10/Fearless-Concurrency.html&#34;&gt;并发问题&lt;/a&gt;；此外，Rust 有完善的依赖管理系统，提供 async/await 简化异步处理，并且不断有大公司宣布开始使用 Rust。&lt;/p&gt;
-&lt;p&gt;
-值得关注的是，Arrow 里面的子项目 &lt;a href=&#34;https://arrow.apache.org/blog/2019/02/04/datafusion-donation/&#34;&gt;DataFusion&lt;/a&gt;，它是个用 Rust 实现的通用查询引擎，支持 SQL 与 DataFrame 两种接口。我大概看了下 DataFusion 的实现，质量非常高，核心开发者 &lt;a href=&#34;https://github.com/andygrove&#34;&gt;Andy Grove&lt;/a&gt; 在查询引擎方面具有&lt;a href=&#34;https://www.andygrove.io/about/&#34;&gt;十多年&lt;/a&gt;的功底，整个项目的设计也非常漂亮，从 LogicalPlan 到 PhysicalPlan 也支持不少优化，在它基础之上来构建自己的引擎是在合适不过了，后面我也会尝试下，看看是否有机会在 &lt;a href=&#34;https://ruby-china.org/topics/40817&#34;&gt;CeresDB&lt;/a&gt; 中引入 DataFusion，对 OLAP 的支持也是 CeresDB 后面的发力点。&lt;/p&gt;
-&lt;/div&gt;
-&lt;/div&gt;
-&lt;div id=&#34;outline-container-headline-6&#34; class=&#34;outline-3&#34;&gt;
-&lt;h3 id=&#34;headline-6&#34;&gt;
+&lt;/h3>
+&lt;div id="outline-text-headline-5" class="outline-text-3">
+&lt;p>Rust 是新时代的系统语言，无 GC，可以做到对内存的严格控制。其次，Rust 独特的所有权机制不仅可以避免内存使用的诸多问题，还可避免很多&lt;a href="https://blog.rust-lang.org/2015/04/10/Fearless-Concurrency.html">并发问题&lt;/a>；此外，Rust 有完善的依赖管理系统，提供 async/await 简化异步处理，并且不断有大公司宣布开始使用 Rust。&lt;/p>
+&lt;p>
+值得关注的是，Arrow 里面的子项目 &lt;a href="https://arrow.apache.org/blog/2019/02/04/datafusion-donation/">DataFusion&lt;/a>，它是个用 Rust 实现的通用查询引擎，支持 SQL 与 DataFrame 两种接口。我大概看了下 DataFusion 的实现，质量非常高，核心开发者 &lt;a href="https://github.com/andygrove">Andy Grove&lt;/a> 在查询引擎方面具有&lt;a href="https://www.andygrove.io/about/">十多年&lt;/a>的功底，整个项目的设计也非常漂亮，从 LogicalPlan 到 PhysicalPlan 也支持不少优化，在它基础之上来构建自己的引擎是在合适不过了，后面我也会尝试下，看看是否有机会在 &lt;a href="https://ruby-china.org/topics/40817">CeresDB&lt;/a> 中引入 DataFusion，对 OLAP 的支持也是 CeresDB 后面的发力点。&lt;/p>
+&lt;/div>
+&lt;/div>
+&lt;div id="outline-container-headline-6" class="outline-3">
+&lt;h3 id="headline-6">
 Why Apache Arrow
-&lt;/h3&gt;
-&lt;div id=&#34;outline-text-headline-6&#34; class=&#34;outline-text-3&#34;&gt;
-&lt;p&gt;Apache Arrow 是一个通用性的基于内存的列式数据格式标准，它诞生的目的就是解决不同系统间如何高效交换数据。在大数据生态内，Parquet 是最为流行的文件存储格式，那为什么还需要 Arrow 呢？主要原因就在于 Parquet 主要是磁盘设计，磁盘的 IO 一般是整个系统的瓶颈，因此 Parquet 采用压缩来减小体积，在读取时，通过消耗一些 CPU 来补偿压缩带来优势；而对于内存而言，吞吐量不再是瓶颈，反而 CPU 资源更加珍贵。&lt;/p&gt;
-&lt;p&gt;
-根据 &lt;a href=&#34;http://dbmsmusings.blogspot.com/2017/10/apache-arrow-vs-parquet-and-orc-do-we.html&#34;&gt;Daniel Abadi 的实验&lt;/a&gt;，对于内存数据结构而言，行存/列存的区别不是很大，这是由于 CPU 的处理速度（12GB/s）小于内存到 CPU 的传输速度（30GB/s）。因此不论是行存还是列存，从内存中输送 0.25GB 还是 1.5GB 数据到 CPU 中，都不会对结果有大的影响。&lt;/p&gt;
-&lt;p&gt;
-Arrow 由此应运而生，有如下特点：&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;
-&lt;p&gt;专为内存设计（无压缩之类耗 CPU 的操作）&lt;/p&gt;
-&lt;/li&gt;
-&lt;li&gt;
-&lt;p&gt;与语言无关，有多种语言的实现&lt;/p&gt;
-&lt;/li&gt;
-&lt;li&gt;
-&lt;p&gt;对硬件友好，可以充分利用硬件的特性，比如 SIMD&lt;/p&gt;
-&lt;/li&gt;
-&lt;/ul&gt;
-&lt;p&gt;比较特别的是这个项目的启动形式与其他项目也不相同，Arrow 项目由 5 个 Apache Members、6 个 PMC Chairs 和一些其它项目的 PMC 及 committer 构成，他们直接找到 ASF 董事会，征得同意后直接以顶级 Apache 项目身份启动。&lt;/p&gt;
-&lt;p&gt;
-IOx 之所以选择 Arrow，是因为 Paul 认为专为时序场景优化的列存数据库是 InfluxDB 的未来，下面就来分析其原因。&lt;/p&gt;
-&lt;/div&gt;
-&lt;/div&gt;
-&lt;div id=&#34;outline-container-headline-7&#34; class=&#34;outline-3&#34;&gt;
-&lt;h3 id=&#34;headline-7&#34;&gt;
+&lt;/h3>
+&lt;div id="outline-text-headline-6" class="outline-text-3">
+&lt;p>Apache Arrow 是一个通用性的基于内存的列式数据格式标准，它诞生的目的就是解决不同系统间如何高效交换数据。在大数据生态内，Parquet 是最为流行的文件存储格式，那为什么还需要 Arrow 呢？主要原因就在于 Parquet 主要是磁盘设计，磁盘的 IO 一般是整个系统的瓶颈，因此 Parquet 采用压缩来减小体积，在读取时，通过消耗一些 CPU 来补偿压缩带来优势；而对于内存而言，吞吐量不再是瓶颈，反而 CPU 资源更加珍贵。&lt;/p>
+&lt;p>
+根据 &lt;a href="http://dbmsmusings.blogspot.com/2017/10/apache-arrow-vs-parquet-and-orc-do-we.html">Daniel Abadi 的实验&lt;/a>，对于内存数据结构而言，行存/列存的区别不是很大，这是由于 CPU 的处理速度（12GB/s）小于内存到 CPU 的传输速度（30GB/s）。因此不论是行存还是列存，从内存中输送 0.25GB 还是 1.5GB 数据到 CPU 中，都不会对结果有大的影响。&lt;/p>
+&lt;p>
+Arrow 由此应运而生，有如下特点：&lt;/p>
+&lt;ul>
+&lt;li>
+&lt;p>专为内存设计（无压缩之类耗 CPU 的操作）&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>与语言无关，有多种语言的实现&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>对硬件友好，可以充分利用硬件的特性，比如 SIMD&lt;/p>
+&lt;/li>
+&lt;/ul>
+&lt;p>比较特别的是这个项目的启动形式与其他项目也不相同，Arrow 项目由 5 个 Apache Members、6 个 PMC Chairs 和一些其它项目的 PMC 及 committer 构成，他们直接找到 ASF 董事会，征得同意后直接以顶级 Apache 项目身份启动。&lt;/p>
+&lt;p>
+IOx 之所以选择 Arrow，是因为 Paul 认为专为时序场景优化的列存数据库是 InfluxDB 的未来，下面就来分析其原因。&lt;/p>
+&lt;/div>
+&lt;/div>
+&lt;div id="outline-container-headline-7" class="outline-3">
+&lt;h3 id="headline-7">
 Why Columnar database
-&lt;/h3&gt;
-&lt;div id=&#34;outline-text-headline-7&#34; class=&#34;outline-text-3&#34;&gt;
-&lt;p&gt;列存数据库的主要场景是 OLAP，而时序数据库算是 OLAP 的一个特殊场景。&lt;/p&gt;
-&lt;blockquote&gt;
-&lt;p&gt;OLAP won’t just be about large scale analytical queries, but also about near real-time queries answered in milliseconds.&lt;/p&gt;
-&lt;/blockquote&gt;
-&lt;p&gt;
+&lt;/h3>
+&lt;div id="outline-text-headline-7" class="outline-text-3">
+&lt;p>列存数据库的主要场景是 OLAP，而时序数据库算是 OLAP 的一个特殊场景。&lt;/p>
+&lt;blockquote>
+&lt;p>OLAP won’t just be about large scale analytical queries, but also about near real-time queries answered in milliseconds.&lt;/p>
+&lt;/blockquote>
+&lt;p>
 对 InfluxDB 而言，它把指标作为一个表，指标的 tags + fields + timestamp 作为列，持久化时采用 Parquet 格式，一个表对应一个 Parquet 文件，根据 InfluxDB 测试，这种数据组织方式的压缩效果与现在 TSM 的类似。
-此外，所有的数据都会分区，规则由用户自定义（一般为时间）。每个分区内，会记录一份概要（summary）文件，主要包含该分区内有哪些表，表有哪些列，以及每列的统计值（比如，max/min/count），查询时根据这个概要文件来缩小数据范围（即剪枝）。下图是 IOx 中数据的分布&lt;/p&gt;
-&lt;figure&gt;
-&lt;img src=&#34;https://img.alicdn.com/imgextra/i2/581166664/O1CN015oXYTf1z6A2VczbzA_!!581166664.png&#34; alt=&#34;https://img.alicdn.com/imgextra/i2/581166664/O1CN015oXYTf1z6A2VczbzA_!!581166664.png&#34; title=&#34;https://img.alicdn.com/imgextra/i2/581166664/O1CN015oXYTf1z6A2VczbzA_!!581166664.png&#34; /&gt;&lt;figcaption&gt;
+此外，所有的数据都会分区，规则由用户自定义（一般为时间）。每个分区内，会记录一份概要（summary）文件，主要包含该分区内有哪些表，表有哪些列，以及每列的统计值（比如，max/min/count），查询时根据这个概要文件来缩小数据范围（即剪枝）。下图是 IOx 中数据的分布&lt;/p>
+&lt;figure>
+&lt;img src="https://img.alicdn.com/imgextra/i2/581166664/O1CN015oXYTf1z6A2VczbzA_!!581166664.png" alt="https://img.alicdn.com/imgextra/i2/581166664/O1CN015oXYTf1z6A2VczbzA_!!581166664.png" title="https://img.alicdn.com/imgextra/i2/581166664/O1CN015oXYTf1z6A2VczbzA_!!581166664.png" />&lt;figcaption>
 IOx 中的数据分布
-&lt;/figcaption&gt;
-&lt;/figure&gt;
-&lt;p&gt;
-这里来分析一下上述设计是如何解决 Why IOx 中提到的三个问题：&lt;/p&gt;
-&lt;ol&gt;
-&lt;li&gt;
-&lt;p&gt;对于时间线膨胀问题，IOx 不再单独维护倒排索引，取而代之的是每个分区的概要文件。在分区选择合理的情况下，概要文件的大小是比较可控的。相当于对之前的倒排索引做了分片。&lt;/p&gt;
-&lt;/li&gt;
-&lt;li&gt;
-&lt;p&gt;分区的概要文件仅仅是加速查询的辅助手段，读取数据时可以完全跳过概要文件，这样就为高效的数据导入导出提供了基础。如果仅仅把 TSI 中索引做分区处理，虽然也能解决时间线膨胀的问题，但 TSM 中的数据是编码后的，不读取索引文件就无法解析数据，这间接限制了数据导入导出。&lt;/p&gt;
-&lt;/li&gt;
-&lt;li&gt;
-&lt;p&gt;查询时，可以根据 LRU 之类的算法加载概要文件，更利于内存控制&lt;/p&gt;
-&lt;/li&gt;
-&lt;/ol&gt;
-&lt;p&gt;市面上的列存数据库多如牛毛，IOx 为什么重新造一个轮子呢？Paul 认为主要有以下两个原因：&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;
-&lt;p&gt;在查询层，需要支持字典压缩；基于窗口的聚合函数是一等成员，且需要特殊优化&lt;/p&gt;
-&lt;/li&gt;
-&lt;li&gt;
-&lt;p&gt;在持久化层，希望做到存储计算分离&lt;/p&gt;
-&lt;/li&gt;
-&lt;/ul&gt;
-&lt;p&gt;存储与计算的分离是近几年流行的设计，这一方面归功于像 S3 类似的对象存储逐渐流行，另一方面是网络带宽有了质的提高，万兆网卡（10Gb/s 即 1.25GB/s）也是云厂商的标配，这不比本地 SSD 差多少，再加上本地缓存、&lt;a href=&#34;https://en.wikipedia.org/wiki/Decision_tree_pruning&#34;&gt;剪枝&lt;/a&gt;技术，真正需要读取的数据并不是很多。存储计算分离可以说是云数据库的标配，主要优势有：&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;
-&lt;p&gt;提供资源利用率，按需分配&lt;/p&gt;
-&lt;/li&gt;
-&lt;li&gt;
-&lt;p&gt;计算节点无状态，有利于整个系统的高可用&lt;/p&gt;
-&lt;/li&gt;
-&lt;/ul&gt;
-&lt;p&gt;Snowflakes 是在这个方向上先驱者，早在 2016 发表的论文 &lt;a href=&#34;http://pages.cs.wisc.edu/~remzi/Classes/739/Spring2004/Papers/p215-dageville-snowflake.pdf&#34;&gt;The Snowflake Elastic Data Warehouse&lt;/a&gt; 就阐述了相关思想。推荐读者阅读。&lt;/p&gt;
-&lt;p&gt;
-对 IOx 而言，Arrow + DataFusion 为实现一个高性能列存数据库提供了坚定的基础，其开放的特性也符合 InfluxDB 迎合开源的设计初衷。Paul 认为开发者使用的工具处于不断的变化中，以 S3 为代表的对象存储已经取代 Hadoop 生态系统；容器化和 K8S 彻底改变了系统的部署与编排方式；下一个在大数据方向上的变革很有可能就是 Arrow 以及其关联项目，它们会是未来构建分析场景的基石。&lt;/p&gt;
-&lt;/div&gt;
-&lt;/div&gt;
-&lt;/div&gt;
-&lt;/div&gt;
-&lt;div id=&#34;outline-container-headline-8&#34; class=&#34;outline-2&#34;&gt;
-&lt;h2 id=&#34;headline-8&#34;&gt;
+&lt;/figcaption>
+&lt;/figure>
+&lt;p>
+这里来分析一下上述设计是如何解决 Why IOx 中提到的三个问题：&lt;/p>
+&lt;ol>
+&lt;li>
+&lt;p>对于时间线膨胀问题，IOx 不再单独维护倒排索引，取而代之的是每个分区的概要文件。在分区选择合理的情况下，概要文件的大小是比较可控的。相当于对之前的倒排索引做了分片。&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>分区的概要文件仅仅是加速查询的辅助手段，读取数据时可以完全跳过概要文件，这样就为高效的数据导入导出提供了基础。如果仅仅把 TSI 中索引做分区处理，虽然也能解决时间线膨胀的问题，但 TSM 中的数据是编码后的，不读取索引文件就无法解析数据，这间接限制了数据导入导出。&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>查询时，可以根据 LRU 之类的算法加载概要文件，更利于内存控制&lt;/p>
+&lt;/li>
+&lt;/ol>
+&lt;p>市面上的列存数据库多如牛毛，IOx 为什么重新造一个轮子呢？Paul 认为主要有以下两个原因：&lt;/p>
+&lt;ul>
+&lt;li>
+&lt;p>在查询层，需要支持字典压缩；基于窗口的聚合函数是一等成员，且需要特殊优化&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>在持久化层，希望做到存储计算分离&lt;/p>
+&lt;/li>
+&lt;/ul>
+&lt;p>存储与计算的分离是近几年流行的设计，这一方面归功于像 S3 类似的对象存储逐渐流行，另一方面是网络带宽有了质的提高，万兆网卡（10Gb/s 即 1.25GB/s）也是云厂商的标配，这不比本地 SSD 差多少，再加上本地缓存、&lt;a href="https://en.wikipedia.org/wiki/Decision_tree_pruning">剪枝&lt;/a>技术，真正需要读取的数据并不是很多。存储计算分离可以说是云数据库的标配，主要优势有：&lt;/p>
+&lt;ul>
+&lt;li>
+&lt;p>提供资源利用率，按需分配&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>计算节点无状态，有利于整个系统的高可用&lt;/p>
+&lt;/li>
+&lt;/ul>
+&lt;p>Snowflakes 是在这个方向上先驱者，早在 2016 发表的论文 &lt;a href="http://pages.cs.wisc.edu/~remzi/Classes/739/Spring2004/Papers/p215-dageville-snowflake.pdf">The Snowflake Elastic Data Warehouse&lt;/a> 就阐述了相关思想。推荐读者阅读。&lt;/p>
+&lt;p>
+对 IOx 而言，Arrow + DataFusion 为实现一个高性能列存数据库提供了坚定的基础，其开放的特性也符合 InfluxDB 迎合开源的设计初衷。Paul 认为开发者使用的工具处于不断的变化中，以 S3 为代表的对象存储已经取代 Hadoop 生态系统；容器化和 K8S 彻底改变了系统的部署与编排方式；下一个在大数据方向上的变革很有可能就是 Arrow 以及其关联项目，它们会是未来构建分析场景的基石。&lt;/p>
+&lt;/div>
+&lt;/div>
+&lt;/div>
+&lt;/div>
+&lt;div id="outline-container-headline-8" class="outline-2">
+&lt;h2 id="headline-8">
 总结
-&lt;/h2&gt;
-&lt;div id=&#34;outline-text-headline-8&#34; class=&#34;outline-text-2&#34;&gt;
-&lt;p&gt;在这个&lt;a href=&#34;https://news.ycombinator.com/item?id=25049253&#34;&gt;HN的讨论帖&lt;/a&gt;上看，与 IOx 类似的项目其实不少，比如 &lt;a href=&#34;https://news.ycombinator.com/item?id=25056991&#34;&gt;Durid&lt;/a&gt;, &lt;a href=&#34;https://news.ycombinator.com/item?id=25052481&#34;&gt;Dremio&lt;/a&gt;, &lt;a href=&#34;https://news.ycombinator.com/item?id=25057320&#34;&gt;ClickHouse&lt;/a&gt;，每个项目出来时会宣传自己多牛叉，记得之前在&lt;a href=&#34;https://zhuanlan.zhihu.com/p/338893564&#34;&gt;TerarkDB 完整开源及我的一些思考&lt;/a&gt;中看到过一个梗：&lt;/p&gt;
-&lt;blockquote&gt;
-&lt;p&gt;Oracle 平均每个月被干趴下一次&lt;/p&gt;
-&lt;/blockquote&gt;
-&lt;p&gt;
-想想这种“震惊体”也是无奈之举，否则怎么在如今信息爆炸的时代去推广自己的产品呢？不过我觉得 IOx 还是具有创新性的，尤其是其开放的特点。对于 InfluxDB 不擅长的领域，用户可以用合适的工具来处理存储在 S3 上的 Parquet 文件，比如数据分析师可以继续用 Pandas，大数据工程师可以继续用 Spark。这种开放性是之前系统没有做到的。&lt;/p&gt;
-&lt;p&gt;
-IOx 项目现在还处于起步期，感兴趣的读者可以相对容易地参与进去。最后，用原文的一段话来总结此文：&lt;/p&gt;
-&lt;blockquote&gt;
-&lt;p&gt;Open source is about creating a cambrian explosion in software that creates value that far outstrips what a single vendor manages to monetize. Open source is not a zero sum game. A larger community and ecosystem brings more opportunity to all vendors.&lt;/p&gt;
-&lt;/blockquote&gt;
-&lt;/div&gt;
-&lt;/div&gt;
-&lt;div id=&#34;outline-container-headline-9&#34; class=&#34;outline-2&#34;&gt;
-&lt;h2 id=&#34;headline-9&#34;&gt;
+&lt;/h2>
+&lt;div id="outline-text-headline-8" class="outline-text-2">
+&lt;p>在这个&lt;a href="https://news.ycombinator.com/item?id=25049253">HN的讨论帖&lt;/a>上看，与 IOx 类似的项目其实不少，比如 &lt;a href="https://news.ycombinator.com/item?id=25056991">Durid&lt;/a>, &lt;a href="https://news.ycombinator.com/item?id=25052481">Dremio&lt;/a>, &lt;a href="https://news.ycombinator.com/item?id=25057320">ClickHouse&lt;/a>，每个项目出来时会宣传自己多牛叉，记得之前在&lt;a href="https://zhuanlan.zhihu.com/p/338893564">TerarkDB 完整开源及我的一些思考&lt;/a>中看到过一个梗：&lt;/p>
+&lt;blockquote>
+&lt;p>Oracle 平均每个月被干趴下一次&lt;/p>
+&lt;/blockquote>
+&lt;p>
+想想这种“震惊体”也是无奈之举，否则怎么在如今信息爆炸的时代去推广自己的产品呢？不过我觉得 IOx 还是具有创新性的，尤其是其开放的特点。对于 InfluxDB 不擅长的领域，用户可以用合适的工具来处理存储在 S3 上的 Parquet 文件，比如数据分析师可以继续用 Pandas，大数据工程师可以继续用 Spark。这种开放性是之前系统没有做到的。&lt;/p>
+&lt;p>
+IOx 项目现在还处于起步期，感兴趣的读者可以相对容易地参与进去。最后，用原文的一段话来总结此文：&lt;/p>
+&lt;blockquote>
+&lt;p>Open source is about creating a cambrian explosion in software that creates value that far outstrips what a single vendor manages to monetize. Open source is not a zero sum game. A larger community and ecosystem brings more opportunity to all vendors.&lt;/p>
+&lt;/blockquote>
+&lt;/div>
+&lt;/div>
+&lt;div id="outline-container-headline-9" class="outline-2">
+&lt;h2 id="headline-9">
 参考
-&lt;/h2&gt;
-&lt;div id=&#34;outline-text-headline-9&#34; class=&#34;outline-text-2&#34;&gt;
-&lt;ul&gt;
-&lt;li&gt;
-&lt;p&gt;&lt;a href=&#34;https://www.influxdata.com/blog/apache-arrow-parquet-flight-and-their-ecosystem-are-a-game-changer-for-olap/&#34;&gt;Apache Arrow, Parquet, Flight and Their Ecosystem are a Game Changer for OLAP&lt;/a&gt;&lt;/p&gt;
-&lt;/li&gt;
-&lt;li&gt;
-&lt;p&gt;&lt;a href=&#34;https://medium.com/dataseries/analysis-of-the-storage-mechanism-in-influxdb-b84d686f3697&#34;&gt;Analysis of the Storage Mechanism in InfluxDB&lt;/a&gt;&lt;/p&gt;
-&lt;/li&gt;
-&lt;li&gt;
-&lt;p&gt;&lt;a href=&#34;https://tech.ipalfish.com/blog/2020/12/08/apache_arrow_summary/&#34;&gt;Apache Arrow：一种适合异构大数据系统的内存列存数据格式标准&lt;/a&gt;&lt;/p&gt;
-&lt;/li&gt;
-&lt;li&gt;
-&lt;p&gt;&lt;a href=&#34;https://zhuanlan.zhihu.com/p/163236128&#34;&gt;浅谈OLAP系统核心技术点&lt;/a&gt;&lt;/p&gt;
-&lt;/li&gt;
-&lt;li&gt;
-&lt;p&gt;&lt;a href=&#34;https://pingcap.com/blog-cn/distributed-system-in-2010s-1/&#34;&gt;分布式系统 in 2010s ：存储之数据库篇&lt;/a&gt;&lt;/p&gt;
-&lt;/li&gt;
-&lt;li&gt;
-&lt;p&gt;&lt;a href=&#34;https://zhuanlan.zhihu.com/p/97085692&#34;&gt;从大数据到数据库&lt;/a&gt;&lt;/p&gt;
-&lt;/li&gt;
-&lt;/ul&gt;
-&lt;/div&gt;
-&lt;/div&gt;
-</description>
-    </item>
-    
-  </channel>
-</rss>
+&lt;/h2>
+&lt;div id="outline-text-headline-9" class="outline-text-2">
+&lt;ul>
+&lt;li>
+&lt;p>&lt;a href="https://www.influxdata.com/blog/apache-arrow-parquet-flight-and-their-ecosystem-are-a-game-changer-for-olap/">Apache Arrow, Parquet, Flight and Their Ecosystem are a Game Changer for OLAP&lt;/a>&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;a href="https://medium.com/dataseries/analysis-of-the-storage-mechanism-in-influxdb-b84d686f3697">Analysis of the Storage Mechanism in InfluxDB&lt;/a>&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;a href="https://tech.ipalfish.com/blog/2020/12/08/apache_arrow_summary/">Apache Arrow：一种适合异构大数据系统的内存列存数据格式标准&lt;/a>&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;a href="https://zhuanlan.zhihu.com/p/163236128">浅谈OLAP系统核心技术点&lt;/a>&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;a href="https://pingcap.com/blog-cn/distributed-system-in-2010s-1/">分布式系统 in 2010s ：存储之数据库篇&lt;/a>&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;a href="https://zhuanlan.zhihu.com/p/97085692">从大数据到数据库&lt;/a>&lt;/p>
+&lt;/li>
+&lt;/ul>
+&lt;/div>
+&lt;/div></description></item></channel></rss>
