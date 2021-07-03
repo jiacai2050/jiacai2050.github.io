@@ -9,18 +9,15 @@
 闲暇时间，习惯听 Podcast（播客）
 打发时间，开阔眼界，这里记录一些印象深的节目。
 
-* 客户端
-** 泛用型
-- +iOS 自带的 [[https://support.apple.com/en-us/HT201859][Podcasts]]+
-- +[[https://overcast.fm/][Overcast]]+ ，从这个软件知道了 Smart Speed 功能，可以跳过音频中的空白部分
-- [[https://www.pocketcasts.com/][Pocket Casts]]，有与 Smart Speed 类似的 Trim Silence 功能；分类功能比 Overcast 强大，目前主力使用
-** 平台型
-- [[https://www.ximalaya.com/][喜马拉雅]]
-- [[https://fm.qq.com/][企鹅FM]]
-- [[https://www.qingting.fm/][蜻蜓 FM]]
-软件本身没有大的区别，主要是上面的资源不同。
-
 * 推荐节目
+** [[https://emacstalk.github.io/][EmacsTalk]]
+作为 Podcast 资深听众多年后， 我终于做起了自己的节目，一档专注在 Emacs 社区的程序员闲聊节目，欢迎读者收听。节目主旨：
+- 专注 Emacs 社区，探索 Emacs 社区背后的 奇人轶事
+- 不追求「枯燥无味」的干货，更关注「耐人寻味」经验分享
+同名微信公众号
+  #+ATTR_HTML: :width 400px
+  [[https://emacstalk.github.io/images/weixin.jpg]]
+
 ** 2020
 | 名称                       | 主播                  | 关键字                       |
 |----------------------------+-----------------------+------------------------------|
@@ -52,3 +49,14 @@
 - [[http://www.ximalaya.com/32674504/album/3836293/][《白话红楼梦-完》韦岽著]]，播主精致女王读的韦岽的书，如其名曰，白话讲解。
 - [[http://www.ximalaya.com/32674504/album/11064027/][《红楼梦》女王读原著]]，播主同精致女王，对原著的阅读。
 - [[https://www.ximalaya.com/renwen/350700/][刘心武揭秘红楼梦]]，刘老师从秦可卿入手，进行人物原型探究，得出"双悬日月照乾坤"的政治局面，比较脑洞大开。播主：声音者景行。声音很到位，浑厚，仿佛眼前能浮现书中的场景
+
+* 客户端
+** 泛用型
+- +iOS 自带的 [[https://support.apple.com/en-us/HT201859][Podcasts]]+
+- +[[https://overcast.fm/][Overcast]]+ ，从这个软件知道了 Smart Speed 功能，可以跳过音频中的空白部分
+- [[https://www.pocketcasts.com/][Pocket Casts]]，有与 Smart Speed 类似的 Trim Silence 功能；分类功能比 Overcast 强大，目前主力使用
+** 平台型
+- [[https://www.ximalaya.com/][喜马拉雅]]
+- [[https://fm.qq.com/][企鹅FM]]
+- [[https://www.qingting.fm/][蜻蜓 FM]]
+软件本身没有大的区别，主要是上面的资源不同。

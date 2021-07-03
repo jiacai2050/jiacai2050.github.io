@@ -7,18 +7,16 @@
 #+SUMMARY:
 
 #+begin_src clojure
-  (def 刘家财
-    (doto (Programmer.)
-      (.alias ["jiacai2050" "Jiacai Liu" "写代码的西瓜"])
-        (.hometown "LinYi Shandong")
-          (.university ^{:homepage "http://www.ytu.edu.cn/"} "Yantai University")
-      (.skill {:language [:Go :Clojure :Java :Python :Rust]
-               :framework [:Netty :Flask :Hadoop :Ring :Express]})
-      (.daydream "Make my codes run around the World, so keep writing")
-      (.favorites
-        {:sport ["Running" "Climbing" "Pingpong"]
-         :study ["Reading" "Writing" "Coding"]
-         :misc  ["Translation"]})))
+(def 刘家财
+  (doto (Programmer.)
+    (.alias "写代码的西瓜" "jiacai2050")
+    (.jobLocation "Hangzhou")
+    (.homepage "https://liujiacai.net")
+    (.university "Yantai University")
+    (.languages [:Rust :Go :Clojure])
+    (.favorites
+      {:sport ["Running" "Climbing" "Pingpong"]
+       :misc  ["Reading" "Hack Emacs"]})))
 #+end_src
 
 本博客主要目的记录个人学习过程中的所得所想，不代表所在公司观点。
@@ -37,35 +35,36 @@
 是的，生活的乐趣就在于此。
 
 * 与我交流
-- Email: jiacai2050+blog@gmail.com
+- Email: [[mailto:jiacai2050+blog@gmail.com][jiacai2050+blog@gmail.com]]
 - [[https://twitter.com/liujiacai][Twitter]] / [[https://weibo.com/liujiacai/][微博]]
-- Telegram 群组：https://t.me/clojurists
+- Telegram 群组：[[https://t.me/emacstalk]]
 - GPG key ID: =D3026E5C08A0BAB4=
   - Fingerprint: =6F734AE4297C7F62B6054F91D3026E5C08A0BAB4=
   - =curl https://keybase.io/liujiacai/pgp_keys.asc | gpg --import=
 
-* 工作经历
-- 2019/4-至今 杭州 [[https://www.antfin.com][蚂蚁金服]]
-- 2017/4-2019/3 昆山 [[https://leancloud.cn/][LeanCloud]]
-- 2016/4-2017/4 杭州 [[https://www.youzan.com/][有赞]]
-
 * 我的专栏
-- 英文博客：https://en.liujiacai.net/
+- [[https://en.liujiacai.net/][英文博客]]
 - 读书：[[https://www.douban.com/people/liujiacai/][豆瓣]]、[[https://www.goodreads.com/user/show/79743745-jiacai-liu][Goodreads]]
 - [[https://segmentfault.com/u/liujiacai][Segmentfault]]
+- [[https://weixin.sogou.com/weixin?&query=EmacsTalk][微信公众号 EmatacTalk]]，一档专注在 Emacs 社区的程序员闲聊节目
 - [[https://www.douban.com/group/660788][From SICP to Lisp 豆瓣小组]]
 - [[https://gold.xitu.io/user/57c2431b165abd00665ee39f][掘金]]，已停止更新
-- [[http://weixin.sogou.com/weixin?query=keepwritingcodes][KeepWritingCodes 公众号]]，已停止更新
+- +[[http://weixin.sogou.com/weixin?query=keepwritingcodes][KeepWritingCodes 公众号]]，已停止更新+
 - [[http://blog.csdn.net/jiacai2050][CSDN]]，大学期间写作的地方，已停止更新
 - [[http://www.importnew.com/author/liujiacai][ImportNew]]，技术文档翻译，已停止更新
 
 * 我的作品
-
+- [[https://github.com/jiacai2050/learn_clojure.mp4][Clojure 教学视频]]
 - [[https://github.com/jiacai2050/JCScheme][JCScheme]] Scheme 解释器，支持正则序与应用序两种求值方式，Java 实现
 - [[http://liujiacai.net/scheme.clj/][Scheme.clj]] Scheme 解释器，Clojure(Script) 实现
 - [[http://liujiacai.net/gooreplacer][gooreplacer]] 一个用于替换网页中Google Fonts/APIS等的 [[https://addons.mozilla.org/zh-CN/firefox/addon/gooreplacer/][Firefox]]/[[https://chrome.google.com/webstore/detail/jnlkjeecojckkigmchmfoigphmgkgbip][Chrome]] 插件
 - [[https://github.com/jiacai2050/history-master][history-master]] 一个用于分析浏览记录的 [[https://addons.mozilla.org/firefox/addon/advanced-history/][Firefox]]/[[https://chrome.google.com/webstore/detail/advanced-history/mkfgjjeggnmkbobjmelbjhdchcoadnin][Chrome]] 插件
 - [[https://github.com/jiacai2050/sicp][SICP 读书笔记]]：读书笔记与习题解答
+
+* 工作经历
+- 2019/4-至今 杭州 [[https://www.antfin.com][蚂蚁金服]]
+- 2017/4-2019/3 昆山 [[https://leancloud.cn/][LeanCloud]]
+- 2016/4-2017/4 杭州 [[https://www.youzan.com/][有赞]]
 
 * 互联网纪录片
 - [[http://www.tudou.com/programs/view/jefojo_-HjQ/&lvt=76][《互联网之子》]]RSS、Reddit 创始人传记
@@ -73,6 +72,7 @@
 - [[http://www.tudou.com/programs/view/lCsZxfWXJ0k/][《Revolution OS 操作系统革命》]]，一群改变世界的hacker
 
 * 站点更新日志
+- 2021-07-03, 基于 GitHub CI 自动构建网站
 - 2020-12-05，hexo3 --> hugo，主题 [[https://github.com/tufu9441/maupassant-hexo][maupassant]] --> [[https://github.com/olOwOlo/hugo-theme-even][even]]
 - 2017-03-06，hexo2 --> hexo3，主题 jacman --> maupassant
 - 2015-11-30，由多说评论迁移至 [[https://disqus.com/][disqus]]
