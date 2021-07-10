@@ -318,7 +318,12 @@ mu index&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
 &lt;p>mu4e 在 mu 的安装目录内，不需要再额外安装。除 mu4e 外，推荐安装下面这几个 Emacs 插件&lt;/p>
 &lt;ul>
 &lt;li>
-&lt;p>&lt;a href="https://github.com/agpchil/mu4e-maildirs-extension">maildirs&lt;/a>，它可以把每个目录邮件数展示出来。mu4e 相关配置可以在&lt;/p>
+&lt;p>&lt;del>&lt;del>&lt;a href="https://github.com/agpchil/mu4e-maildirs-extension">maildirs&lt;/a>，它可以把每个目录邮件数展示出来&lt;/del>&lt;/del> ，使用一段时间后发现 maildirs 更新邮件数特别慢，比较影响用户体验，可以直接定义 bookmarks 来定义需要重点关注的文件夹&lt;/p>
+&lt;figure>
+&lt;img src="https://img.alicdn.com/imgextra/i3/581166664/O1CN01wFLIH81z6A4aOcJQ7_!!581166664.gif" alt="https://img.alicdn.com/imgextra/i3/581166664/O1CN01wFLIH81z6A4aOcJQ7_!!581166664.gif" title="https://img.alicdn.com/imgextra/i3/581166664/O1CN01wFLIH81z6A4aOcJQ7_!!581166664.gif" />&lt;figcaption>
+maildirs 更新数字太慢示意图
+&lt;/figcaption>
+&lt;/figure>
 &lt;/li>
 &lt;li>
 &lt;p>&lt;a href="https://github.com/org-mime/org-mime">org-mime&lt;/a>，它可以把 org-mode 格式转为 HTML 的邮件&lt;/p>
@@ -327,7 +332,7 @@ mu index&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
 &lt;p>&lt;a href="https://github.com/joostkremers/visual-fill-column">visual-fill-column&lt;/a>，相当于 fill-column 与 visual-line-mode 的结合版，主要方便在大屏显示器上阅读，效果是把长行拆分是多行。&lt;/p>
 &lt;/li>
 &lt;/ul>
-&lt;p>这几个插件的配置可以在&lt;a href="https://github.com/jiacai2050/dotfiles/blob/master/.emacs.d/customizations/misc.org#email">这里&lt;/a>找到，这里主要介绍核心配置，细节不再赘述：&lt;/p>
+&lt;p>这几个插件的配置可以在&lt;a href="https://github.com/jiacai2050/dotfiles/blob/master/.config/emacs/core.org#email">这里&lt;/a>找到，这里主要介绍核心配置，细节不再赘述：&lt;/p>
 &lt;ul>
 &lt;li>
 &lt;p>&lt;code class="verbatim">mu4e-contexts&lt;/code> 配置多账户&lt;/p>
@@ -531,7 +536,6 @@ Flags 含义
 &lt;/tr>
 &lt;/tbody>
 &lt;/table>
-&lt;p>说明：mu 使用 &lt;a href="https://emacs-china.org/t/topic/305/77?u=jiacai2050">https://emacs-china.org/t/topic/305/77?u=jiacai2050&lt;/a>&lt;/p>
 &lt;/div>
 &lt;/div>
 &lt;/div>
@@ -645,21 +649,99 @@ elfeed-show
 &lt;/div>
 &lt;/div>
 &lt;/div>
+&lt;div id="outline-container-headline-17" class="outline-3">
+&lt;h3 id="headline-17">
+导入/导出
+&lt;/h3>
+&lt;div id="outline-text-headline-17" class="outline-text-3">
+&lt;p>elfeed 的数据库存放在本地，可以使用一些云盘来进行数据。此外，我实现了两个函数，来对指定的 tag 进行导出/导入，这样相当于只备份元数据。&lt;/p>
+&lt;p>
+导出时主要有两个 tag，一个是 &lt;code class="verbatim">+starred&lt;/code> ，表示加星的文章；另一个是 &lt;code class="verbatim">-unread&lt;/code> ，表示已读的。&lt;/p>
+&lt;div class="src src-emacs-lisp">
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;span class="lnt">16
+&lt;/span>&lt;span class="lnt">17
+&lt;/span>&lt;span class="lnt">18
+&lt;/span>&lt;span class="lnt">19
+&lt;/span>&lt;span class="lnt">20
+&lt;/span>&lt;span class="lnt">21
+&lt;/span>&lt;span class="lnt">22
+&lt;/span>&lt;span class="lnt">23
+&lt;/span>&lt;span class="lnt">24
+&lt;/span>&lt;span class="lnt">25
+&lt;/span>&lt;span class="lnt">26
+&lt;/span>&lt;span class="lnt">27
+&lt;/span>&lt;span class="lnt">28
+&lt;/span>&lt;span class="lnt">29
+&lt;/span>&lt;span class="lnt">30
+&lt;/span>&lt;span class="lnt">31
+&lt;/span>&lt;span class="lnt">32
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre class="chroma">&lt;code class="language-emacs-lisp" data-lang="emacs-lisp">&lt;span class="p">(&lt;/span>&lt;span class="nb">defun&lt;/span> &lt;span class="nv">my/elfeed-export&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="nv">output&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;span class="p">(&lt;/span>&lt;span class="nb">interactive&lt;/span> &lt;span class="s">&amp;#34;fOutput: &amp;#34;&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;span class="p">(&lt;/span>&lt;span class="nb">let*&lt;/span> &lt;span class="p">((&lt;/span>&lt;span class="nv">sf&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="nv">elfeed-search-parse-filter&lt;/span> &lt;span class="s">&amp;#34;+starred&amp;#34;&lt;/span>&lt;span class="p">))&lt;/span>
+&lt;span class="p">(&lt;/span>&lt;span class="nv">uf&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="nv">elfeed-search-parse-filter&lt;/span> &lt;span class="s">&amp;#34;-unread&amp;#34;&lt;/span>&lt;span class="p">))&lt;/span>
+&lt;span class="p">(&lt;/span>&lt;span class="nv">starred-entries&lt;/span> &lt;span class="o">&amp;#39;&lt;/span>&lt;span class="p">())&lt;/span>
+&lt;span class="p">(&lt;/span>&lt;span class="nv">read-entries&lt;/span> &lt;span class="o">&amp;#39;&lt;/span>&lt;span class="p">())&lt;/span>
+&lt;span class="p">(&lt;/span>&lt;span class="nv">hash-table&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="nf">make-hash-table&lt;/span>&lt;span class="p">)))&lt;/span>
+&lt;span class="p">(&lt;/span>&lt;span class="nv">with-elfeed-db-visit&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="nv">entry&lt;/span> &lt;span class="nv">feed&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;span class="p">(&lt;/span>&lt;span class="nb">when&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="nv">elfeed-search-filter&lt;/span> &lt;span class="nv">sf&lt;/span> &lt;span class="nv">entry&lt;/span> &lt;span class="nv">feed&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;span class="p">(&lt;/span>&lt;span class="nv">add-to-list&lt;/span> &lt;span class="ss">&amp;#39;starred-entries&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="nv">elfeed-entry-link&lt;/span> &lt;span class="nv">entry&lt;/span>&lt;span class="p">)))&lt;/span>
+&lt;span class="p">(&lt;/span>&lt;span class="nb">when&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="nv">elfeed-search-filter&lt;/span> &lt;span class="nv">uf&lt;/span> &lt;span class="nv">entry&lt;/span> &lt;span class="nv">feed&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;span class="p">(&lt;/span>&lt;span class="nv">add-to-list&lt;/span> &lt;span class="ss">&amp;#39;read-entries&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="nv">elfeed-entry-link&lt;/span> &lt;span class="nv">entry&lt;/span>&lt;span class="p">))))&lt;/span>
+&lt;span class="p">(&lt;/span>&lt;span class="nf">puthash&lt;/span> &lt;span class="nb">:starred&lt;/span> &lt;span class="nv">starred-entries&lt;/span> &lt;span class="nv">hash-table&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;span class="p">(&lt;/span>&lt;span class="nf">puthash&lt;/span> &lt;span class="nb">:read&lt;/span> &lt;span class="nv">read-entries&lt;/span> &lt;span class="nv">hash-table&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;span class="p">(&lt;/span>&lt;span class="nv">f-write-text&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="nf">prin1-to-string&lt;/span> &lt;span class="nv">hash-table&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="ss">&amp;#39;utf-8&lt;/span> &lt;span class="nv">output&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;span class="p">(&lt;/span>&lt;span class="nf">message&lt;/span> &lt;span class="s">&amp;#34;Export to %s. starred: %d, read: %d&amp;#34;&lt;/span> &lt;span class="nv">output&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="nf">length&lt;/span> &lt;span class="nv">starred-entries&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="nf">length&lt;/span> &lt;span class="nv">read-entries&lt;/span>&lt;span class="p">))))&lt;/span>
+&lt;span class="p">(&lt;/span>&lt;span class="nb">defun&lt;/span> &lt;span class="nv">my/elfeed-import&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="nv">f&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;span class="p">(&lt;/span>&lt;span class="nb">interactive&lt;/span> &lt;span class="s">&amp;#34;fInput: &amp;#34;&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;span class="p">(&lt;/span>&lt;span class="nb">let*&lt;/span> &lt;span class="p">((&lt;/span>&lt;span class="nv">hash-table&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="nf">read&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="nv">f-read-text&lt;/span> &lt;span class="nv">f&lt;/span>&lt;span class="p">)))&lt;/span>
+&lt;span class="p">(&lt;/span>&lt;span class="nv">starred-entries&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="nf">gethash&lt;/span> &lt;span class="nb">:starred&lt;/span> &lt;span class="nv">hash-table&lt;/span>&lt;span class="p">))&lt;/span>
+&lt;span class="p">(&lt;/span>&lt;span class="nv">read-entries&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="nf">gethash&lt;/span> &lt;span class="nb">:read&lt;/span> &lt;span class="nv">hash-table&lt;/span>&lt;span class="p">)))&lt;/span>
+&lt;span class="p">(&lt;/span>&lt;span class="nv">with-elfeed-db-visit&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="nv">entry&lt;/span> &lt;span class="nv">feed&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;span class="p">(&lt;/span>&lt;span class="nb">let*&lt;/span> &lt;span class="p">((&lt;/span>&lt;span class="nv">link&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="nv">elfeed-entry-link&lt;/span> &lt;span class="nv">entry&lt;/span>&lt;span class="p">)))&lt;/span>
+&lt;span class="p">(&lt;/span>&lt;span class="nb">when&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="nf">member&lt;/span> &lt;span class="nv">link&lt;/span> &lt;span class="nv">starred-entries&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;span class="p">(&lt;/span>&lt;span class="nv">elfeed-tag&lt;/span> &lt;span class="nv">entry&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="nf">intern&lt;/span> &lt;span class="s">&amp;#34;starred&amp;#34;&lt;/span>&lt;span class="p">)))&lt;/span>
+&lt;span class="p">(&lt;/span>&lt;span class="nb">when&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="nf">member&lt;/span> &lt;span class="nv">link&lt;/span> &lt;span class="nv">read-entries&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;span class="p">(&lt;/span>&lt;span class="nv">elfeed-untag&lt;/span> &lt;span class="nv">entry&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="nf">intern&lt;/span> &lt;span class="s">&amp;#34;unread&amp;#34;&lt;/span>&lt;span class="p">)))))&lt;/span>
+&lt;span class="p">(&lt;/span>&lt;span class="nf">message&lt;/span> &lt;span class="s">&amp;#34;Import starred: %d, read: %d&amp;#34;&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="nf">length&lt;/span> &lt;span class="nv">starred-entries&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="nf">length&lt;/span> &lt;span class="nv">read-entries&lt;/span>&lt;span class="p">))))&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
 &lt;/div>
 &lt;/div>
-&lt;div id="outline-container-headline-17" class="outline-2">
-&lt;h2 id="headline-17">
-笔记
-&lt;/h2>
-&lt;div id="outline-text-headline-17" class="outline-text-2">
-&lt;p>通过上面的配置，已经可以很好地在 Emacs 中阅读邮件与文章，还剩下如何记笔记没有介绍，对于 Emacser 来说，org-mode 是笔记的第一首选，而且 mu4e/elfeed 都支持 &lt;a href="https://orgmode.org/manual/Using-capture.html">org-capture&lt;/a>，直接在当前阅读的邮件或文章中执行就可以了。&lt;/p>
+&lt;/div>
+&lt;/div>
+&lt;/div>
 &lt;/div>
 &lt;/div>
 &lt;div id="outline-container-headline-18" class="outline-2">
 &lt;h2 id="headline-18">
-总结
+笔记
 &lt;/h2>
 &lt;div id="outline-text-headline-18" class="outline-text-2">
+&lt;p>通过上面的配置，已经可以很好地在 Emacs 中阅读邮件与文章，还剩下如何记笔记没有介绍，对于 Emacser 来说，org-mode 是笔记的第一首选，而且 mu4e/elfeed 都支持 &lt;a href="https://orgmode.org/manual/Using-capture.html">org-capture&lt;/a>，直接在当前阅读的邮件或文章中执行就可以了。&lt;/p>
+&lt;/div>
+&lt;/div>
+&lt;div id="outline-container-headline-19" class="outline-2">
+&lt;h2 id="headline-19">
+总结
+&lt;/h2>
+&lt;div id="outline-text-headline-19" class="outline-text-2">
 &lt;p>通过把邮件与 RSS 整合进 Emacs，可以充分进行沉浸式阅读，不再需要什么额外的软件，所有操作都在 Emacs 内完成，这是之前从未有过的体验。这可能也是 Emacs 自由、开放的魅力所在。&lt;/p>
 &lt;div class="src src-emacs-lisp">
 &lt;div class="highlight">&lt;div class="chroma">
@@ -673,11 +755,11 @@ elfeed-show
 &lt;/div>
 &lt;/div>
 &lt;/div>
-&lt;div id="outline-container-headline-19" class="outline-2">
-&lt;h2 id="headline-19">
+&lt;div id="outline-container-headline-20" class="outline-2">
+&lt;h2 id="headline-20">
 参考
 &lt;/h2>
-&lt;div id="outline-text-headline-19" class="outline-text-2">
+&lt;div id="outline-text-headline-20" class="outline-text-2">
 &lt;ul>
 &lt;li>
 &lt;p>&lt;a href="http://cachestocaches.com/2017/3/complete-guide-email-emacs-using-mu-and-/">A Complete Guide to Email in Emacs using Mu and Mu4e&lt;/a>&lt;/p>
