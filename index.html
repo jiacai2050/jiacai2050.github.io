@@ -1,8 +1,774 @@
-<html>
+<!doctype html>
+<html lang="en" class="scroll-smooth">
   <head>
-    <meta http-equiv="refresh" content="0; url=https://liujiacai.net" />
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Jiacai Liu (刘家财) — Systems Engineer & Open Source Maker</title>
+    <meta
+      name="description"
+      content="Personal portfolio of Jiacai Liu (jiacai2050) — Systems / Database Engineer, open source enthusiast, and host of EmacsTalk & RustTalk."
+    />
+    <link rel="icon" href="https://liujiacai.net/favicon.ico" />
+    <link rel="alternate" type="application/rss+xml" href="https://liujiacai.net/index.xml" title="Jiacai Liu's Blog" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        darkMode: 'media',
+        theme: {
+          extend: {
+            colors: {
+              brand: '#2563eb',
+            },
+          },
+        },
+      };
+    </script>
+    <style>
+      body {
+        background:
+          radial-gradient(circle at 15% 10%, rgba(37, 99, 235, 0.12), transparent 30rem),
+          radial-gradient(circle at 85% 20%, rgba(124, 58, 237, 0.1), transparent 28rem),
+          radial-gradient(circle at 50% 80%, rgba(14, 165, 233, 0.08), transparent 32rem),
+          #ffffff;
+      }
+
+      @media (prefers-color-scheme: dark) {
+        body {
+          background:
+            radial-gradient(circle at 15% 10%, rgba(37, 99, 235, 0.22), transparent 30rem),
+            radial-gradient(circle at 85% 20%, rgba(124, 58, 237, 0.18), transparent 28rem),
+            radial-gradient(circle at 50% 80%, rgba(14, 165, 233, 0.12), transparent 32rem),
+            #030712;
+        }
+      }
+
+      .hero-grid::before {
+        position: absolute;
+        z-index: -1;
+        inset: 0 10%;
+        background-image:
+          linear-gradient(rgba(96, 165, 250, 0.12) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(96, 165, 250, 0.12) 1px, transparent 1px);
+        background-size: 28px 28px;
+        content: '';
+        mask-image: linear-gradient(to bottom, black, transparent 85%);
+      }
+
+      .glass-card {
+        background: rgba(255, 255, 255, 0.68);
+        backdrop-filter: blur(12px);
+        transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+      }
+
+      .glass-card:hover {
+        box-shadow: 0 16px 36px rgba(37, 99, 235, 0.12);
+        transform: translateY(-3px);
+      }
+
+      @media (prefers-color-scheme: dark) {
+        .glass-card {
+          background: rgba(17, 24, 39, 0.62);
+        }
+
+        .glass-card:hover {
+          box-shadow: 0 16px 36px rgba(59, 130, 246, 0.18);
+        }
+      }
+
+      .code-font {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      }
+    </style>
   </head>
-  <body>
-    <p><a href="https://liujiacai.net">Redirect</a></p>
+  <body class="bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100 antialiased selection:bg-blue-500 selection:text-white">
+    <!-- Navigation bar -->
+    <nav class="sticky top-0 z-50 border-b border-gray-200/70 dark:border-gray-800/70 bg-white/70 dark:bg-gray-950/70 backdrop-blur-md">
+      <div class="max-w-5xl mx-auto px-6 h-16 flex items-center justify-between">
+        <a href="#" class="flex items-center gap-2.5 font-bold tracking-tight hover:text-brand transition">
+          <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-blue-600 to-violet-600 text-white text-sm font-black shadow-md shadow-blue-500/20">
+            J
+          </span>
+          <span>Jiacai Liu</span>
+        </a>
+        <div class="flex items-center gap-4 sm:gap-6 text-sm font-medium text-gray-600 dark:text-gray-300">
+          <a href="#about" class="hover:text-brand dark:hover:text-blue-400 transition">About</a>
+          <a href="#services" class="hover:text-brand dark:hover:text-blue-400 transition">Services</a>
+          <a href="#projects" class="hover:text-brand dark:hover:text-blue-400 transition">Projects</a>
+          <a href="#podcasts" class="hover:text-brand dark:hover:text-blue-400 transition">Podcasts</a>
+          <a href="#experience" class="hover:text-brand dark:hover:text-blue-400 transition">Career</a>
+          <a href="https://liujiacai.net" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 text-brand dark:text-blue-400 font-semibold hover:underline">
+            <span>Blog</span>
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
+            </svg>
+          </a>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <header class="hero-grid relative max-w-5xl mx-auto px-6 pt-16 pb-16 text-center sm:text-left">
+      <div class="flex flex-col-reverse sm:flex-row items-center sm:items-start justify-between gap-8">
+        <div class="flex-1">
+          <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-800 text-xs font-semibold text-blue-700 dark:text-blue-300 mb-5">
+            <span class="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+            Building systems & open source tools
+          </div>
+          <h1 class="text-4xl sm:text-6xl font-black tracking-tight text-gray-900 dark:text-white leading-tight">
+            Hi, I'm <span class="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent">Jiacai Liu</span>
+          </h1>
+          <p class="mt-4 text-xl sm:text-2xl font-medium text-gray-700 dark:text-gray-300">
+            Senior Software Architect &bull; Systems & Rust Enthusiast
+          </p>
+          <p class="mt-4 max-w-2xl text-base sm:text-lg text-gray-600 dark:text-gray-400 leading-relaxed">
+            Senior Software Architect at Xiaomi driving incremental Rust adoption across HyperOS. Former Ant Group infrastructure engineer. Hacker of compilers, storage engines, and open source tools.
+          </p>
+
+          <!-- Social links & quick actions -->
+          <div class="mt-6 flex flex-wrap items-center justify-center sm:justify-start gap-3">
+            <a href="https://github.com/jiacai2050" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-900 text-white dark:bg-white dark:text-gray-900 text-sm font-semibold hover:opacity-90 transition shadow-sm">
+              <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24">
+                <path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" />
+              </svg>
+              <span>GitHub</span>
+              <span class="text-xs px-1.5 py-0.5 rounded bg-gray-700 dark:bg-gray-200 text-gray-200 dark:text-gray-800">1k+</span>
+            </a>
+
+            <a href="https://twitter.com/liujiacai" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg border border-gray-300 dark:border-gray-700 text-sm font-medium hover:border-gray-400 dark:hover:border-gray-600 transition">
+              <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24">
+                <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+              </svg>
+              <span>Twitter</span>
+            </a>
+
+            <a href="https://mastodon.social/@liujiacai" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg border border-gray-300 dark:border-gray-700 text-sm font-medium hover:border-gray-400 dark:hover:border-gray-600 transition">
+              <svg class="w-4 h-4 fill-current text-[#6364ff]" viewBox="0 0 24 24">
+                <path d="M21.327 8.566c0-4.339-2.843-5.61-2.843-5.61C16.945 2.26 13.9 2 12 2s-4.945.26-6.484.956c0 0-2.843 1.27-2.843 5.61 0 .993-.019 2.18.047 3.428.188 3.518.98 6.96 4.316 7.828 1.58.411 2.923.493 3.993.454 1.95-.072 3.03-.647 3.03-.647l-.066-1.428s-1.472.464-3.118.418c-1.636-.046-3.37-.179-3.626-2.14a4.015 4.015 0 01-.06-.525c.983.24 1.986.377 2.996.41 1.256.042 2.474-.067 3.682-.204 2.457-.278 4.67-1.748 4.966-3.784.44-3.023.408-5.748.408-5.748zm-3.076 6.075h-2.193V9.658c0-1.077-.45-1.624-1.348-1.624-1.037 0-1.557.669-1.557 2.003v2.905h-2.316V10.037c0-1.334-.52-2.003-1.557-2.003-.898 0-1.348.547-1.348 1.624v4.983H5.749V9.45c0-1.076.275-1.93.824-2.56.57-.655 1.316-.99 2.24-.99 1.07 0 1.895.412 2.47 1.236L12 8.243l.717-1.107c.575-.824 1.4-1.236 2.47-1.236.924 0 1.67.335 2.24.99.55.63.824 1.484.824 2.56v5.191z" />
+              </svg>
+              <span>Mastodon</span>
+            </a>
+
+            <a href="https://t.me/liujiacai" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg border border-gray-300 dark:border-gray-700 text-sm font-medium hover:border-gray-400 dark:hover:border-gray-600 transition">
+              <svg class="w-4 h-4 fill-current text-[#229ED9]" viewBox="0 0 24 24">
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69a.2.2 0 00-.05-.18c-.06-.05-.14-.03-.21-.02-.09.02-1.49.95-4.22 2.79-.4.27-.76.41-1.08.4-.36-.01-1.04-.2-1.55-.37-.63-.2-1.12-.31-1.08-.66.02-.18.27-.36.74-.55 2.92-1.27 4.86-2.11 5.83-2.52 2.77-1.15 3.35-1.35 3.73-1.35.08 0 .27.02.39.12.1.08.13.19.14.27-.01.06.01.24 0 .38z"/>
+              </svg>
+              <span>Telegram</span>
+            </a>
+
+            <a href="mailto:blog@liujiacai.net" class="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg border border-gray-300 dark:border-gray-700 text-sm font-medium hover:border-gray-400 dark:hover:border-gray-600 transition">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
+              </svg>
+              <span>Email</span>
+            </a>
+          </div>
+        </div>
+
+        <!-- Profile Avatar & Card -->
+        <div class="flex-shrink-0 flex flex-col items-center">
+          <div class="relative group">
+            <div class="absolute -inset-1 rounded-full bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 opacity-70 blur-md group-hover:opacity-100 transition duration-300"></div>
+            <img
+              src="https://fs.liujiacai.net/cdn-img/me.webp"
+              alt="Jiacai Liu"
+              class="relative w-36 h-36 sm:w-44 sm:h-44 rounded-full object-cover border-4 border-white dark:border-gray-900 shadow-xl"
+              onerror="this.src='https://avatars.githubusercontent.com/u/3848910?v=4'"
+            />
+          </div>
+          <span class="mt-3 text-xs text-gray-500 dark:text-gray-400 font-mono">@ Golden Gate Bridge</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Content Container -->
+    <main class="max-w-5xl mx-auto px-6 space-y-20 pb-20">
+
+      <!-- About / Code Bio -->
+      <section id="about" class="pt-4">
+        <h2 class="text-2xl font-bold mb-6 flex items-center gap-2">
+          <svg class="w-6 h-6 text-brand" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+          </svg>
+          About Me
+        </h2>
+        <div class="grid md:grid-cols-5 gap-6">
+          <div class="md:col-span-3 space-y-4 text-gray-700 dark:text-gray-300 leading-relaxed">
+            <p>
+              I am a Senior Software Architect at <strong>Xiaomi Technology</strong> based in Hangzhou, currently leading
+              incremental Rust adoption across <strong>HyperOS</strong> — from the application layer to the core service framework layer — eliminating memory safety risks while elevating developer productivity through modern compiler checks.
+            </p>
+            <p>
+              Previously, I worked at <strong>Ant Group</strong> as an Infrastructure Platform Engineer, designing and implementing <strong>CeresDB</strong>, the distributed time-series database powering internet-scale metrics storage.
+            </p>
+            <p>
+              My deep interests center on <strong>systems programming, software architecture, OS & runtime internals, compilers, and database engines</strong>.
+              Long-time Emacs hacker and active builder in <strong>Rust, Zig, Go, and Clojure</strong>.
+            </p>
+            <div class="pt-2 flex flex-wrap gap-2 text-xs">
+              <span class="px-2.5 py-1 rounded-md bg-orange-50 dark:bg-orange-950/50 border border-orange-200 dark:border-orange-900 text-orange-700 dark:text-orange-300 font-medium">Rust & HyperOS</span>
+              <span class="px-2.5 py-1 rounded-md bg-blue-50 dark:bg-blue-950/50 border border-blue-200 dark:border-blue-900 text-blue-700 dark:text-blue-300 font-medium">Software Architecture</span>
+              <span class="px-2.5 py-1 rounded-md bg-purple-50 dark:bg-purple-950/50 border border-purple-200 dark:border-purple-900 text-purple-700 dark:text-purple-300 font-medium">Distributed Storage (TSDB)</span>
+              <span class="px-2.5 py-1 rounded-md bg-amber-50 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-900 text-amber-700 dark:text-amber-300 font-medium">Zig Ecosystem</span>
+            </div>
+          </div>
+
+          <!-- Clojure representation card -->
+          <div class="md:col-span-2 glass-card rounded-xl border border-gray-200 dark:border-gray-800 p-4 code-font text-xs overflow-x-auto shadow-sm">
+            <div class="flex items-center justify-between pb-3 mb-3 border-b border-gray-200 dark:border-gray-800 text-gray-500">
+              <span class="font-semibold flex items-center gap-1.5">
+                <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block"></span>
+                identity.clj
+              </span>
+              <span>Clojure</span>
+            </div>
+            <pre class="text-gray-800 dark:text-gray-200 leading-5"><code>(<span class="text-purple-600 dark:text-purple-400 font-bold">def</span> <span class="text-blue-600 dark:text-blue-400">jiacai-liu</span>
+  (<span class="text-emerald-600 dark:text-emerald-400">doto</span> (<span class="text-indigo-600 dark:text-indigo-400 font-semibold">Programmer.</span>)
+    (.<span class="text-sky-600 dark:text-sky-400">alias</span> <span class="text-amber-600 dark:text-amber-400">"写代码的西瓜"</span> <span class="text-amber-600 dark:text-amber-400">"jiacai2050"</span>)
+    (.<span class="text-sky-600 dark:text-sky-400">location</span> <span class="text-amber-600 dark:text-amber-400">"Hangzhou, China"</span>)
+    (.<span class="text-sky-600 dark:text-sky-400">almaMater</span> <span class="text-amber-600 dark:text-amber-400">"Yantai University"</span>)
+    (.<span class="text-sky-600 dark:text-sky-400">languages</span> [<span class="text-emerald-500">:Zig</span> <span class="text-emerald-500">:Rust</span> <span class="text-emerald-500">:Go</span> <span class="text-emerald-500">:Clojure</span>])
+    (.<span class="text-sky-600 dark:text-sky-400">passions</span> [<span class="text-amber-600 dark:text-amber-400">"Podcasting"</span> <span class="text-amber-600 dark:text-amber-400">"Hack Emacs"</span>
+                <span class="text-amber-600 dark:text-amber-400">"Climbing"</span> <span class="text-amber-600 dark:text-amber-400">"Cycling"</span>])))</code></pre>
+          </div>
+        </div>
+      </section>
+
+      <!-- Live Cloud Services & Web Apps -->
+      <section id="services">
+        <div class="flex flex-col sm:flex-row sm:items-end justify-between mb-8 gap-4">
+          <div>
+            <h2 class="text-2xl font-bold flex items-center gap-2">
+              <svg class="w-6 h-6 text-brand" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 21a9.004 9.004 0 008.716-6.747M12 21a9.004 9.004 0 01-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 017.843 4.582M12 3a8.997 8.997 0 00-7.843 4.582m15.686 0A11.953 11.953 0 0112 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0121 12c0 .778-.099 1.533-.284 2.253m0 0A17.919 17.919 0 0112 16.5c-3.162 0-6.133-.815-8.716-2.247m0 0A9.015 9.015 0 013 12c0-1.605.42-3.113 1.157-4.418" />
+              </svg>
+              Live Services & Web Apps
+            </h2>
+            <p class="text-gray-600 dark:text-gray-400 text-sm mt-1">
+              Production utility services and web applications hosted on edge infrastructure.
+            </p>
+          </div>
+        </div>
+
+        <div class="grid sm:grid-cols-2 gap-6">
+          <!-- IP Information Service -->
+          <a href="https://ip.liujiacai.net" target="_blank" rel="noopener noreferrer" class="glass-card group block rounded-xl border border-gray-200 dark:border-gray-800 p-6 hover:border-brand dark:hover:border-brand transition">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-3">
+                <span class="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-100 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 text-xl font-bold shadow-sm">
+                  🌐
+                </span>
+                <div>
+                  <h3 class="font-bold text-lg group-hover:text-brand transition flex items-center gap-1.5">
+                    IP Information
+                  </h3>
+                  <span class="text-xs text-gray-500 font-mono">ip.liujiacai.net</span>
+                </div>
+              </div>
+              <svg class="w-5 h-5 text-gray-400 group-hover:text-brand transition" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 19.5l15-15m0 0H8.25m11.25 0v11.25" />
+              </svg>
+            </div>
+            <p class="text-gray-600 dark:text-gray-400 text-sm mt-4 leading-relaxed">
+              Ultra-fast, edge-powered public IP and geolocation lookup service running on Cloudflare Workers. Features dark/light themes and instant JSON API capabilities.
+            </p>
+            <div class="mt-5 pt-4 border-t border-gray-100 dark:border-gray-800/80 flex items-center justify-between text-xs">
+              <div class="flex gap-2">
+                <span class="px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300">Cloudflare Edge</span>
+                <span class="px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300">Fast & Free</span>
+              </div>
+              <span class="text-brand font-medium group-hover:underline inline-flex items-center gap-1">
+                Open Service &rarr;
+              </span>
+            </div>
+          </a>
+
+          <!-- Mark It Down Service -->
+          <a href="https://md.liujiacai.net" target="_blank" rel="noopener noreferrer" class="glass-card group block rounded-xl border border-gray-200 dark:border-gray-800 p-6 hover:border-brand dark:hover:border-brand transition">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-3">
+                <span class="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-100 dark:bg-violet-950/60 text-violet-600 dark:text-violet-400 text-xl font-bold shadow-sm">
+                  📝
+                </span>
+                <div>
+                  <h3 class="font-bold text-lg group-hover:text-brand transition flex items-center gap-1.5">
+                    Mark It Down
+                  </h3>
+                  <span class="text-xs text-gray-500 font-mono">md.liujiacai.net</span>
+                </div>
+              </div>
+              <svg class="w-5 h-5 text-gray-400 group-hover:text-brand transition" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 19.5l15-15m0 0H8.25m11.25 0v11.25" />
+              </svg>
+            </div>
+            <p class="text-gray-600 dark:text-gray-400 text-sm mt-4 leading-relaxed">
+              Powerful document-to-Markdown converter. Transforms web pages, PDFs, Office documents (Word/Excel), and images into clean, structured Markdown ready for LLMs and note-taking.
+            </p>
+            <div class="mt-5 pt-4 border-t border-gray-100 dark:border-gray-800/80 flex items-center justify-between text-xs">
+              <div class="flex gap-2">
+                <span class="px-2 py-0.5 rounded-full bg-violet-100 dark:bg-violet-950/50 text-violet-700 dark:text-violet-300">Document Converter</span>
+                <span class="px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300">LLM Ready</span>
+              </div>
+              <span class="text-brand font-medium group-hover:underline inline-flex items-center gap-1">
+                Open Service &rarr;
+              </span>
+            </div>
+          </a>
+        </div>
+      </section>
+
+      <!-- Featured Projects Section -->
+      <section id="projects">
+        <div class="flex flex-col sm:flex-row sm:items-end justify-between mb-8 gap-4">
+          <div>
+            <h2 class="text-2xl font-bold flex items-center gap-2">
+              <svg class="w-6 h-6 text-brand" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M17.25 6.75L22.5 12l-5.25 5.25m-10.5 0L1.5 12l5.25-5.25m7.5-3l-4.5 16.5" />
+              </svg>
+              Projects & Creations
+            </h2>
+            <p class="text-gray-600 dark:text-gray-400 text-sm mt-1">
+              Selected developer tools, browser extensions, and systems experiments.
+            </p>
+          </div>
+          <a href="https://jiacai2050.github.io/x/" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1.5 text-sm font-semibold text-brand hover:underline">
+            <span>Explore All Projects on /x/</span>
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+            </svg>
+          </a>
+        </div>
+
+        <!-- Project Grid -->
+        <div class="space-y-10">
+
+          <!-- Category 1: Systems & DevTools -->
+          <div>
+            <h3 class="text-sm font-semibold tracking-wider uppercase text-gray-500 dark:text-gray-400 mb-4 flex items-center gap-2">
+              <span class="w-1.5 h-1.5 rounded-full bg-brand"></span>
+              Systems & Developer Infrastructure
+            </h3>
+            <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+
+              <!-- menshen -->
+              <a href="https://github.com/jiacai2050/menshen" target="_blank" rel="noopener noreferrer" class="glass-card group block rounded-xl border border-gray-200 dark:border-gray-800 p-5 hover:border-brand dark:hover:border-brand transition">
+                <div class="flex items-center justify-between">
+                  <h4 class="font-semibold text-base group-hover:text-brand transition flex items-center gap-1.5">
+                    menshen (门神)
+                  </h4>
+                  <svg class="w-4 h-4 text-gray-400 group-hover:text-brand transition" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 19.5l15-15m0 0H8.25m11.25 0v11.25" />
+                  </svg>
+                </div>
+                <p class="text-gray-600 dark:text-gray-400 text-xs mt-2 leading-relaxed">
+                  Lightweight, local-first AI Gateway for OpenAI & Anthropic protocols. Features key injection, model overriding, caching, and SQLite auditing in a single Go binary.
+                </p>
+                <div class="mt-4 flex gap-1.5">
+                  <span class="text-xs px-2 py-0.5 rounded bg-cyan-100 dark:bg-cyan-950/50 text-cyan-700 dark:text-cyan-300">Go</span>
+                  <span class="text-xs px-2 py-0.5 rounded bg-blue-100 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300">AI Gateway</span>
+                  <span class="text-xs px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">SQLite</span>
+                </div>
+              </a>
+
+              <!-- peekd -->
+              <a href="https://github.com/jiacai2050/peekd" target="_blank" rel="noopener noreferrer" class="glass-card group block rounded-xl border border-gray-200 dark:border-gray-800 p-5 hover:border-brand dark:hover:border-brand transition">
+                <div class="flex items-center justify-between">
+                  <h4 class="font-semibold text-base group-hover:text-brand transition">
+                    peekd
+                  </h4>
+                  <svg class="w-4 h-4 text-gray-400 group-hover:text-brand transition" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 19.5l15-15m0 0H8.25m11.25 0v11.25" />
+                  </svg>
+                </div>
+                <p class="text-gray-600 dark:text-gray-400 text-xs mt-2 leading-relaxed">
+                  High-performance web file server for browsing and sharing local files. Rich previews for Markdown, Org-mode, PDFs, archives, and media with HTTP range support.
+                </p>
+                <div class="mt-4 flex gap-1.5">
+                  <span class="text-xs px-2 py-0.5 rounded bg-cyan-100 dark:bg-cyan-950/50 text-cyan-700 dark:text-cyan-300">Go</span>
+                  <span class="text-xs px-2 py-0.5 rounded bg-emerald-100 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300">File Server</span>
+                  <span class="text-xs px-2 py-0.5 rounded bg-purple-100 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300">Wasm</span>
+                </div>
+              </a>
+
+              <!-- flauth -->
+              <a href="https://github.com/jiacai2050/flauth" target="_blank" rel="noopener noreferrer" class="glass-card group block rounded-xl border border-gray-200 dark:border-gray-800 p-5 hover:border-brand dark:hover:border-brand transition">
+                <div class="flex items-center justify-between">
+                  <h4 class="font-semibold text-base group-hover:text-brand transition flex items-center gap-1.5">
+                    Flauth 🔐
+                  </h4>
+                  <svg class="w-4 h-4 text-gray-400 group-hover:text-brand transition" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 19.5l15-15m0 0H8.25m11.25 0v11.25" />
+                  </svg>
+                </div>
+                <p class="text-gray-600 dark:text-gray-400 text-xs mt-2 leading-relaxed">
+                  Privacy-first, open-source 2FA/TOTP authenticator. Cross-platform GUI (Android, macOS, Linux, Windows) & CLI with WebDAV cloud sync and Keychain/Keystore hardware encryption.
+                </p>
+                <div class="mt-4 flex gap-1.5">
+                  <span class="text-xs px-2 py-0.5 rounded bg-indigo-100 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-300">Security / 2FA</span>
+                  <span class="text-xs px-2 py-0.5 rounded bg-blue-100 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300">Cross-Platform</span>
+                </div>
+              </a>
+
+              <!-- awesome-zig -->
+              <a href="https://github.com/zigcc/awesome-zig" target="_blank" rel="noopener noreferrer" class="glass-card group block rounded-xl border border-gray-200 dark:border-gray-800 p-5 hover:border-brand dark:hover:border-brand transition">
+                <div class="flex items-center justify-between">
+                  <h4 class="font-semibold text-base group-hover:text-brand transition flex items-center gap-1.5">
+                    awesome-zig
+                  </h4>
+                  <div class="flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300">
+                    ★ 2.5k
+                  </div>
+                </div>
+                <p class="text-gray-600 dark:text-gray-400 text-xs mt-2 leading-relaxed">
+                  The definitive curated community collection of awesome Zig libraries, build utilities, frameworks, tutorials, and ecosystem resources.
+                </p>
+                <div class="mt-4 flex gap-1.5">
+                  <span class="text-xs px-2 py-0.5 rounded bg-amber-100 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300">Zig Ecosystem</span>
+                  <span class="text-xs px-2 py-0.5 rounded bg-emerald-100 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300">Community</span>
+                </div>
+              </a>
+
+              <!-- zigcli -->
+              <a href="https://github.com/jiacai2050/zigcli" target="_blank" rel="noopener noreferrer" class="glass-card group block rounded-xl border border-gray-200 dark:border-gray-800 p-5 hover:border-brand dark:hover:border-brand transition">
+                <div class="flex items-center justify-between">
+                  <h4 class="font-semibold text-base group-hover:text-brand transition flex items-center gap-1.5">
+                    zigcli
+                  </h4>
+                  <div class="flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300">
+                    ★ 130+
+                  </div>
+                </div>
+                <p class="text-gray-600 dark:text-gray-400 text-xs mt-2 leading-relaxed">
+                  A comprehensive toolkit and framework for building ergonomic, high-performance command-line programs in Zig.
+                </p>
+                <div class="mt-4 flex gap-1.5">
+                  <span class="text-xs px-2 py-0.5 rounded bg-amber-100 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300">Zig</span>
+                  <span class="text-xs px-2 py-0.5 rounded bg-purple-100 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300">CLI Framework</span>
+                </div>
+              </a>
+
+              <!-- X - Infinite Possibilities -->
+              <a href="https://jiacai2050.github.io/x/" target="_blank" rel="noopener noreferrer" class="glass-card group block rounded-xl border border-blue-200 dark:border-blue-900/60 p-5 hover:border-brand dark:hover:border-brand transition">
+                <div class="flex items-center justify-between">
+                  <h4 class="font-semibold text-base group-hover:text-brand transition flex items-center gap-1.5">
+                    X — Infinite Possibilities
+                  </h4>
+                  <svg class="w-4 h-4 text-gray-400 group-hover:text-brand transition" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 19.5l15-15m0 0H8.25m11.25 0v11.25" />
+                  </svg>
+                </div>
+                <p class="text-gray-600 dark:text-gray-400 text-xs mt-2 leading-relaxed">
+                  A diverse collection of open-source tools, compiler utilities, browser extensions, and experiments by Jiacai Liu.
+                </p>
+                <div class="mt-4 flex gap-1.5">
+                  <span class="text-xs px-2 py-0.5 rounded bg-blue-100 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300">Portfolio</span>
+                  <span class="text-xs px-2 py-0.5 rounded bg-violet-100 dark:bg-violet-950/50 text-violet-700 dark:text-violet-300">Open Source</span>
+                </div>
+              </a>
+            </div>
+          </div>
+
+          <!-- Category 2: Browser Extensions & Products -->
+          <div>
+            <h3 class="text-sm font-semibold tracking-wider uppercase text-gray-500 dark:text-gray-400 mb-4 flex items-center gap-2">
+              <span class="w-1.5 h-1.5 rounded-full bg-violet-500"></span>
+              Browser Extensions & Productivity
+            </h3>
+            <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+
+              <!-- Gooreplacer -->
+              <a href="https://jiacai2050.github.io/x/gooreplacer/" target="_blank" rel="noopener noreferrer" class="glass-card group block rounded-xl border border-gray-200 dark:border-gray-800 p-5 hover:border-brand dark:hover:border-brand transition">
+                <div class="flex items-center justify-between">
+                  <h4 class="font-semibold text-base group-hover:text-brand transition">
+                    Gooreplacer
+                  </h4>
+                  <svg class="w-4 h-4 text-gray-400 group-hover:text-brand transition" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 19.5l15-15m0 0H8.25m11.25 0v11.25" />
+                  </svg>
+                </div>
+                <p class="text-gray-600 dark:text-gray-400 text-xs mt-2 leading-relaxed">
+                  Redirect URLs, block requests, and modify HTTP headers with clean declarative rules. Thousands of daily users.
+                </p>
+                <div class="mt-4 flex flex-wrap gap-1.5">
+                  <span class="text-xs px-1.5 py-0.5 rounded bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300">Chrome</span>
+                  <span class="text-xs px-1.5 py-0.5 rounded bg-orange-100 dark:bg-orange-900/50 text-orange-700 dark:text-orange-300">Firefox</span>
+                </div>
+              </a>
+
+              <!-- Link Preview -->
+              <a href="https://jiacai2050.github.io/x/link-preview/" target="_blank" rel="noopener noreferrer" class="glass-card group block rounded-xl border border-gray-200 dark:border-gray-800 p-5 hover:border-brand dark:hover:border-brand transition">
+                <div class="flex items-center justify-between">
+                  <h4 class="font-semibold text-base group-hover:text-brand transition">
+                    Link Preview
+                  </h4>
+                  <svg class="w-4 h-4 text-gray-400 group-hover:text-brand transition" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 19.5l15-15m0 0H8.25m11.25 0v11.25" />
+                  </svg>
+                </div>
+                <p class="text-gray-600 dark:text-gray-400 text-xs mt-2 leading-relaxed">
+                  Instantly preview link metadata (title, summary & OG tags) on hover without opening endless browser tabs.
+                </p>
+                <div class="mt-4 flex flex-wrap gap-1.5">
+                  <span class="text-xs px-1.5 py-0.5 rounded bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300">Chrome</span>
+                  <span class="text-xs px-1.5 py-0.5 rounded bg-orange-100 dark:bg-orange-900/50 text-orange-700 dark:text-orange-300">Firefox</span>
+                </div>
+              </a>
+
+              <!-- Text Saver -->
+              <a href="https://jiacai2050.github.io/x/text-saver/" target="_blank" rel="noopener noreferrer" class="glass-card group block rounded-xl border border-gray-200 dark:border-gray-800 p-5 hover:border-brand dark:hover:border-brand transition">
+                <div class="flex items-center justify-between">
+                  <h4 class="font-semibold text-base group-hover:text-brand transition">
+                    Text Saver
+                  </h4>
+                  <svg class="w-4 h-4 text-gray-400 group-hover:text-brand transition" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 19.5l15-15m0 0H8.25m11.25 0v11.25" />
+                  </svg>
+                </div>
+                <p class="text-gray-600 dark:text-gray-400 text-xs mt-2 leading-relaxed">
+                  Save snippets, web selections, or whole pages with a single click. Cross-device sync and exportable.
+                </p>
+                <div class="mt-4 flex flex-wrap gap-1.5">
+                  <span class="text-xs px-1.5 py-0.5 rounded bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300">Chrome</span>
+                  <span class="text-xs px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300">Edge</span>
+                </div>
+              </a>
+
+              <!-- Draft Pilot -->
+              <a href="https://jiacai2050.github.io/x/draft-pilot/" target="_blank" rel="noopener noreferrer" class="glass-card group block rounded-xl border border-gray-200 dark:border-gray-800 p-5 hover:border-brand dark:hover:border-brand transition">
+                <div class="flex items-center justify-between">
+                  <h4 class="font-semibold text-base group-hover:text-brand transition">
+                    Draft Pilot
+                  </h4>
+                  <svg class="w-4 h-4 text-gray-400 group-hover:text-brand transition" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 19.5l15-15m0 0H8.25m11.25 0v11.25" />
+                  </svg>
+                </div>
+                <p class="text-gray-600 dark:text-gray-400 text-xs mt-2 leading-relaxed">
+                  Writing assistant designed for non-native English developers to draft professional GitHub comments and reviews.
+                </p>
+                <div class="mt-4 flex flex-wrap gap-1.5">
+                  <span class="text-xs px-1.5 py-0.5 rounded bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300">Chrome</span>
+                  <span class="text-xs px-1.5 py-0.5 rounded bg-purple-100 dark:bg-purple-900/50 text-purple-700 dark:text-purple-300">AI</span>
+                </div>
+              </a>
+
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- Podcasts & Media Section -->
+      <section id="podcasts">
+        <h2 class="text-2xl font-bold mb-6 flex items-center gap-2">
+          <svg class="w-6 h-6 text-brand" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 18.75a6 6 0 006-6v-1.5m-6 7.5a6 6 0 01-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15.75a3 3 0 01-3-3V4.5a3 3 0 116 0v8.25a3 3 0 01-3 3z" />
+          </svg>
+          Podcasts & Content Creation
+        </h2>
+
+        <div class="grid sm:grid-cols-2 gap-6">
+          <!-- EmacsTalk -->
+          <div class="glass-card rounded-xl border border-gray-200 dark:border-gray-800 p-6 flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between mb-3">
+                <span class="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-purple-100 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300">Audio Podcast</span>
+                <span class="text-xs text-gray-500 font-mono">emacs.liujiacai.net</span>
+              </div>
+              <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-2">EmacsTalk</h3>
+              <p class="text-gray-600 dark:text-gray-400 text-sm leading-relaxed">
+                A Chinese-speaking podcast focused on GNU Emacs, editor philosophy, Lisp culture, and the Hacker spirit. Interviewing developers, contributors, and package maintainers.
+              </p>
+            </div>
+            <div class="mt-6 pt-4 border-t border-gray-100 dark:border-gray-800 flex items-center justify-between">
+              <a href="https://emacs.liujiacai.net" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1.5 text-sm font-semibold text-brand hover:underline">
+                <span>Listen to Episodes</span>
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
+                </svg>
+              </a>
+            </div>
+          </div>
+
+          <!-- RustTalk -->
+          <div class="glass-card rounded-xl border border-gray-200 dark:border-gray-800 p-6 flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between mb-3">
+                <span class="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-orange-100 dark:bg-orange-950/60 text-orange-700 dark:text-orange-300">Community & Podcast</span>
+                <span class="text-xs text-gray-500 font-mono">rusttalk.github.io</span>
+              </div>
+              <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-2">RustTalk</h3>
+              <p class="text-gray-600 dark:text-gray-400 text-sm leading-relaxed">
+                A podcast sharing deep-dive experiences with the Rust programming language, memory safety idioms, production practices, and the thriving Rust open-source ecosystem.
+              </p>
+            </div>
+            <div class="mt-6 pt-4 border-t border-gray-100 dark:border-gray-800 flex items-center justify-between">
+              <a href="https://rusttalk.github.io" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1.5 text-sm font-semibold text-brand hover:underline">
+                <span>Visit RustTalk</span>
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
+                </svg>
+              </a>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Work Experience & Career -->
+      <section id="experience">
+        <h2 class="text-2xl font-bold mb-6 flex items-center gap-2">
+          <svg class="w-6 h-6 text-brand" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M20.25 14.15v4.25c0 1.094-.787 2.036-1.872 2.18-2.087.277-4.216.42-6.378.42s-4.291-.143-6.378-.42c-1.085-.144-1.872-1.086-1.872-2.18v-4.25m16.5 0a2.18 2.18 0 00.75-1.661V8.706c0-1.081-.768-2.015-1.837-2.175a48.114 48.114 0 00-3.413-.387m4.5 8.006c-.194.165-.42.295-.673.38A23.978 23.978 0 0112 15.75c-2.648 0-5.195-.429-7.577-1.22a2.016 2.016 0 01-.673-.38m0 0A2.18 2.18 0 013 12.489V8.706c0-1.081.768-2.015 1.837-2.175a48.111 48.111 0 013.413-.387m7.5 0V5.25A2.25 2.25 0 0013.5 3h-3a2.25 2.25 0 00-2.25 2.25v.894m7.5 0a48.667 48.667 0 00-7.5 0M12 12.75h.008v.008H12v-.008z" />
+          </svg>
+          Career Experience
+        </h2>
+
+        <div class="relative pl-6 sm:pl-8 border-l border-gray-200 dark:border-gray-800 space-y-8">
+
+          <!-- Xiaomi Technology -->
+          <div class="relative">
+            <span class="absolute -left-[31px] sm:-left-[39px] top-1.5 w-3.5 h-3.5 rounded-full bg-brand border-4 border-white dark:border-gray-950"></span>
+            <div class="flex flex-col sm:flex-row sm:items-baseline justify-between gap-1">
+              <h3 class="text-lg font-bold text-gray-900 dark:text-white">
+                Xiaomi Technology (小米)
+              </h3>
+              <span class="text-xs font-mono text-gray-500">Jul 2025 &ndash; Present &bull; Nanjing &bull; On-site</span>
+            </div>
+            <p class="text-sm font-medium text-brand dark:text-blue-400 mt-0.5">
+              Senior Software Architect
+            </p>
+            <p class="text-gray-600 dark:text-gray-400 text-sm mt-2 leading-relaxed">
+              Driving incremental Rust adoption across <strong>HyperOS</strong> — from the application layer to the service framework layer — replacing C/C++ modules to eliminate memory safety risks while boosting development efficiency via Rust’s toolchain & compile-time checks.
+            </p>
+            <div class="mt-2.5 flex flex-wrap gap-1.5">
+              <span class="text-[11px] px-2 py-0.5 rounded bg-orange-100 dark:bg-orange-950/50 text-orange-700 dark:text-orange-300">Rust</span>
+              <span class="text-[11px] px-2 py-0.5 rounded bg-blue-100 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300">Software Architecture</span>
+              <span class="text-[11px] px-2 py-0.5 rounded bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300">HyperOS</span>
+            </div>
+          </div>
+
+          <!-- Ant Group -->
+          <div class="relative">
+            <span class="absolute -left-[31px] sm:-left-[39px] top-1.5 w-3.5 h-3.5 rounded-full bg-gray-400 dark:bg-gray-600 border-4 border-white dark:border-gray-950"></span>
+            <div class="flex flex-col sm:flex-row sm:items-baseline justify-between gap-1">
+              <h3 class="text-lg font-bold text-gray-900 dark:text-white">
+                Ant Group (蚂蚁集团)
+              </h3>
+              <span class="text-xs font-mono text-gray-500">Apr 2019 &ndash; Jun 2025 &bull; Hangzhou</span>
+            </div>
+            <p class="text-sm font-medium text-gray-700 dark:text-gray-300 mt-0.5">
+              Infrastructure Platform Engineer
+            </p>
+            <p class="text-gray-600 dark:text-gray-400 text-sm mt-2 leading-relaxed">
+              Designed and implemented time series database <strong>CeresDB</strong>. CeresDB, as the database storing the massive metrics data of Ant Group, is a distributed TSDB for global, internet-scale applications with high availability and scalability.
+            </p>
+            <div class="mt-2.5 flex flex-wrap gap-1.5">
+              <span class="text-[11px] px-2 py-0.5 rounded bg-blue-100 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300">Distributed TSDB</span>
+              <span class="text-[11px] px-2 py-0.5 rounded bg-orange-100 dark:bg-orange-950/50 text-orange-700 dark:text-orange-300">Rust</span>
+              <span class="text-[11px] px-2 py-0.5 rounded bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300">High Availability</span>
+            </div>
+          </div>
+
+          <!-- LeanCloud -->
+          <div class="relative">
+            <span class="absolute -left-[31px] sm:-left-[39px] top-1.5 w-3.5 h-3.5 rounded-full bg-gray-400 dark:bg-gray-600 border-4 border-white dark:border-gray-950"></span>
+            <div class="flex flex-col sm:flex-row sm:items-baseline justify-between gap-1">
+              <h3 class="text-lg font-bold text-gray-900 dark:text-white">
+                LeanCloud
+              </h3>
+              <span class="text-xs font-mono text-gray-500">2017/04 – 2019/03 &bull; Suzhou</span>
+            </div>
+            <p class="text-sm font-medium text-gray-700 dark:text-gray-300 mt-0.5">
+              Backend Systems Engineer
+            </p>
+            <p class="text-gray-600 dark:text-gray-400 text-sm mt-2 leading-relaxed">
+              Designed and maintained BaaS microservices, message queues, and high-concurrency real-time notification infrastructure.
+            </p>
+          </div>
+
+          <!-- Youzan -->
+          <div class="relative">
+            <span class="absolute -left-[31px] sm:-left-[39px] top-1.5 w-3.5 h-3.5 rounded-full bg-gray-400 dark:bg-gray-600 border-4 border-white dark:border-gray-950"></span>
+            <div class="flex flex-col sm:flex-row sm:items-baseline justify-between gap-1">
+              <h3 class="text-lg font-bold text-gray-900 dark:text-white">
+                Youzan (有赞)
+              </h3>
+              <span class="text-xs font-mono text-gray-500">2015/04 – 2017/04 &bull; Hangzhou</span>
+            </div>
+            <p class="text-sm font-medium text-gray-700 dark:text-gray-300 mt-0.5">
+              Data Platform Engineer
+            </p>
+            <p class="text-gray-600 dark:text-gray-400 text-sm mt-2 leading-relaxed">
+              Engineered large-scale real-time data streaming pipelines, distributed computation clusters, and merchant analytics.
+            </p>
+          </div>
+
+          <!-- UCloud -->
+          <div class="relative">
+            <span class="absolute -left-[31px] sm:-left-[39px] top-1.5 w-3.5 h-3.5 rounded-full bg-gray-400 dark:bg-gray-600 border-4 border-white dark:border-gray-950"></span>
+            <div class="flex flex-col sm:flex-row sm:items-baseline justify-between gap-1">
+              <h3 class="text-lg font-bold text-gray-900 dark:text-white">
+                UCloud
+              </h3>
+              <span class="text-xs font-mono text-gray-500">2014/07 – 2015/03 &bull; Shanghai</span>
+            </div>
+            <p class="text-sm font-medium text-gray-700 dark:text-gray-300 mt-0.5">
+              Hadoop / Distributed Storage Engineer
+            </p>
+            <p class="text-gray-600 dark:text-gray-400 text-sm mt-2 leading-relaxed">
+              Managed Hadoop / HDFS distributed clusters, performance tuning, and big data cloud services.
+            </p>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- Writing & Blog Highlights -->
+      <section>
+        <div class="glass-card rounded-2xl border border-gray-200 dark:border-gray-800 p-8 text-center sm:text-left flex flex-col sm:flex-row items-center justify-between gap-6">
+          <div class="max-w-xl">
+            <h3 class="text-xl font-bold text-gray-900 dark:text-white">
+              Tech Blog & Essays (2014 &ndash; 2026)
+            </h3>
+            <p class="text-gray-600 dark:text-gray-400 text-sm mt-2 leading-relaxed">
+              Over a decade of persistent writing on compiler internals, Zig 0.17 build pipelines, JVM Garbage Collection in-depth, Lisp metaprogramming, and hacker culture.
+            </p>
+          </div>
+          <div class="flex flex-wrap items-center gap-3">
+            <a href="https://liujiacai.net" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-brand text-white text-sm font-semibold hover:bg-blue-700 transition shadow-md shadow-blue-500/20">
+              <span>Read Blog</span>
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+              </svg>
+            </a>
+            <a href="https://liujiacai.net/index.xml" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-gray-300 dark:border-gray-700 text-sm font-semibold hover:border-gray-400 dark:hover:border-gray-600 transition">
+              <svg class="w-4 h-4 text-orange-500" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M6.503 20.752c0 1.794-1.456 3.248-3.251 3.248-1.796 0-3.252-1.454-3.252-3.248 0-1.794 1.456-3.248 3.252-3.248 1.795.001 3.251 1.454 3.251 3.248zm-6.503-12.572v4.811c6.05.062 10.96 4.966 11.022 11.009h4.817c-.062-8.71-7.118-15.758-15.839-15.82zm0-8.18v4.813c10.563.061 19.126 8.624 19.187 19.187h4.813c-.061-13.221-10.767-23.939-24-24z"/>
+              </svg>
+              <span>RSS Feed</span>
+            </a>
+          </div>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-gray-200 dark:border-gray-800/80 bg-gray-50/50 dark:bg-gray-950 text-gray-500 dark:text-gray-400 py-12 text-xs">
+      <div class="max-w-5xl mx-auto px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div>
+          <p>&copy; 2014 &ndash; 2026 Jiacai Liu. All rights reserved.</p>
+          <p class="mt-1 font-mono text-[11px] text-gray-400 dark:text-gray-500">
+            GPG: D3026E5C08A0BAB4 &bull; Made with Emacs
+          </p>
+        </div>
+        <div class="flex items-center gap-4">
+          <a href="https://liujiacai.net" class="hover:text-brand transition">Blog</a>
+          <a href="https://jiacai2050.github.io/x/" class="hover:text-brand transition">Projects (/x/)</a>
+          <a href="https://github.com/jiacai2050" class="hover:text-brand transition">GitHub</a>
+          <a href="https://twitter.com/liujiacai" class="hover:text-brand transition">Twitter</a>
+          <a href="https://mastodon.social/@liujiacai" class="hover:text-brand transition">Mastodon</a>
+        </div>
+      </div>
+    </footer>
   </body>
 </html>
